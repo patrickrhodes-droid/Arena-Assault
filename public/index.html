@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arena Assault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game-container"></div>
+  <div id="vignette"></div>
+
+  <div id="menu-screen">
+    <h1>ARENA ASSAULT</h1>
+    <p class="subtitle">TACTICAL COMBAT SIMULATION</p>
+
+    <div class="menu-name-wrap">
+      <label for="player-name">PLAYER NAME</label>
+      <input type="text" id="player-name" maxlength="16" placeholder="Enter your name">
+    </div>
+
+    <div id="lobby-status">
+      <div id="player-list">Connecting...</div>
+    </div>
+
+    <button class="deploy-btn" id="deploy-btn">READY UP</button>
+
+    <div class="controls-box">
+      <span class="key">W A S D</span><span>Move</span>
+      <span class="key">SPACE</span><span>Jump</span>
+      <span class="key">SHIFT</span><span>Sprint</span>
+      <span class="key">1 2 3 4 / Q</span><span>Switch Weapon</span>
+      <span class="key">MOUSE</span><span>Aim</span>
+      <span class="key">CLICK</span><span>Fire</span>
+      <span class="key">RMB</span><span>Aim Down Sights</span>
+      <span class="key">E (HOLD)</span><span>Revive</span>
+      <span class="key">R</span><span>Reload</span>
+      <span class="key">ESC</span><span>Pause</span>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div id="health-bar-wrap">
+      <div id="health-label">HEALTH</div>
+      <div id="health-bar-bg"><div id="health-bar-fill"></div></div>
+      <div id="health-text">100</div>
+    </div>
+
+    <div id="ammo-wrap">
+      <div id="weapon-name">ASSAULT RIFLE</div>
+      <span id="ammo-current">30</span><span id="ammo-sep">/</span><span id="ammo-max">30</span>
+      <div id="reload-text">RELOADING</div>
+    </div>
+
+    <div id="score-display">
+      <div id="score-label">SCORE</div>
+      <div id="score-value">0</div>
+    </div>
+
+    <div id="wave-display">
+      <div id="wave-label">WAVE</div>
+      <div id="wave-value">1</div>
+    </div>
+
+    <div id="boss-health-wrap">
+      <div id="boss-health-name">TITAN BRUTE</div>
+      <div id="boss-health-bg"><div id="boss-health-fill"></div></div>
+    </div>
+
+    <div id="crosshair"><div id="crosshair-dot"></div></div>
+
+    <div id="scope-overlay">
+      <div id="scope-shadow"></div>
+      <div id="scope-ring"><div id="scope-dot"></div></div>
+    </div>
+
+    <div id="damage-overlay"></div>
+
+    <div id="wave-announce">
+      <div class="wa-title"></div>
+      <div class="wa-sub"></div>
+    </div>
+
+    <div id="click-prompt">CLICK TO AIM</div>
+
+    <div id="revive-prompt-hud">
+      <div class="revive-text-box">HOLD <span>E</span> TO REVIVE</div>
+      <div id="revive-progress-bar-bg">
+        <div id="revive-progress-bar-fill"></div>
+      </div>
+    </div>
+
+    <canvas id="minimap" width="140" height="140"></canvas>
+  </div>
+
+  <div id="pause-menu">
+    <div id="pause-panel">
+      <h2>PAUSED</h2>
+      <button class="pause-btn" id="resume-btn">RESUME</button>
+      <button class="pause-btn" id="view-btn">VIEW: THIRD PERSON</button>
+      <div id="sens-wrap">
+        <label for="sens-slider">SENSITIVITY: <span id="sens-val">5</span></label>
+        <input type="range" id="sens-slider" min="1" max="10" value="5">
+      </div>
+      <button class="pause-btn" id="exit-btn">EXIT TO MENU</button>
+    </div>
+  </div>
+
+  <div id="gameover-screen">
+    <div class="gameover-panel">
+      <h1 id="gameover-title">K.I.A.</h1>
+      <div id="gameover-subtitle">Mission failed</div>
+      <div id="stats-grid">
+        <div class="go-stat">SCORE: <span id="go-score">0</span></div>
+        <div class="go-stat">WAVES: <span id="go-waves">0</span></div>
+        <div class="go-stat">TOTAL KILLS: <span id="go-kills">0</span></div>
+        <div class="go-stat">DOG KILLS: <span id="go-dogkills">0</span></div>
+        <div class="go-stat">BOSS KILLS: <span id="go-bosskills">0</span></div>
+        <div class="go-stat">ACCURACY: <span id="go-acc">0%</span></div>
+        <div class="go-stat">DAMAGE: <span id="go-dmg">0</span></div>
+      </div>
+      <div id="rankings-section" hidden>
+        <h2>FINAL RANKINGS</h2>
+        <div id="rankings-content"></div>
+      </div>
+      <button id="redeploy-btn">REDEPLOY</button>
+    </div>
+  </div>
+
+  <div id="revive-overlay">
+    <div id="revive-text">YOU ARE DOWNED!</div>
+    <div id="revive-prompt">Waiting for revive...</div>
+    <div id="revive-bar-bg">
+      <div id="revive-bar-fill"></div>
+    </div>
+  </div>
+
+  <div id="spectator-overlay">
+    <div class="spectator-title">SPECTATING</div>
+    <div class="spectator-subtitle">Waiting for the next wave respawn</div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
