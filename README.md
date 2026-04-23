@@ -1,6 +1,6 @@
 # Arena Assault
 
-Arena Assault is a browser-based wave survival shooter built with `Three.js`, `Express`, and `Socket.IO`. The project used to live inside one large HTML file; it is now split into smaller frontend modules with a dedicated server entrypoint and a documented folder structure.
+Arena Assault is a browser-based wave survival shooter built with `Three.js`, `Express`, and `Socket.IO`. The project is split into smaller frontend modules with a dedicated server entrypoint and a documented folder structure.
 
 ## How to run
 
