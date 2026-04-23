@@ -12,6 +12,7 @@ export const game = {
   score: 0,
   wave: 0,
   hp: P_MAX_HP,
+  effectiveMaxHP: P_MAX_HP,
   ammo: createWeaponAmmo()[DEFAULT_WEAPON],
   stats: createStats(),
   isHost: false,
@@ -42,6 +43,8 @@ export const game = {
   nextEnemyPing: 60,
   enemyPingTmr: 0,
   teammateAlertPulse: 0,
+  sprintLocked: false,
+  wLastTapTime: 0,
   menuOrbit: 0,
   lastTime: 0,
   mouseDown: false,
@@ -64,6 +67,8 @@ export const game = {
   netSyncTmr: 0,
   swordSwingProgress: 0,
   muzzleTmr: 0,
+  knockbackX: 0,
+  knockbackZ: 0,
   keys: {},
   scene: null,
   camera: null,
@@ -80,6 +85,7 @@ export const game = {
 export function resetSessionState() {
   game.score = 0;
   game.wave = 0;
+  game.effectiveMaxHP = P_MAX_HP;
   game.hp = P_MAX_HP;
   game.stats = createStats();
   game.currentWeapon = DEFAULT_WEAPON;
@@ -108,11 +114,15 @@ export function resetSessionState() {
   game.waveElapsed = 0;
   game.nextEnemyPing = 60;
   game.enemyPingTmr = 0;
+  game.sprintLocked = false;
+  game.wLastTapTime = 0;
   game.downedTime = 0;
   game.netSyncTmr = 0;
   game.reviveHoldTime = 0;
   game.swordSwingProgress = 0;
   game.muzzleTmr = 0;
+  game.knockbackX = 0;
+  game.knockbackZ = 0;
   game.fpRecoilZ = 0;
   game.fpRecoilRX = 0;
 }

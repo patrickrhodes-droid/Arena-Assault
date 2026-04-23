@@ -65,6 +65,7 @@ const actions = {
   updatePlayerName: (event) => {
     game.playerName = event.target.value.trim() || "";
     event.target.style.borderColor = game.playerName ? "var(--border)" : "";
+    try { window.localStorage.setItem("arena_player_name", game.playerName); } catch { }
     game.socket?.emit("playerNameUpdate", { playerName: game.playerName || "Anonymous" });
   },
   updateSensitivity: () => {
@@ -135,6 +136,17 @@ window.addEventListener("load", () => {
     // Ignore local storage failures.
   }
 
+  try {
+    const savedName = window.localStorage.getItem("arena_player_name");
+    if (savedName) {
+      game.playerName = savedName;
+      game.dom.playerName.value = savedName;
+      game.socket?.emit("playerNameUpdate", { playerName: savedName });
+    }
+  } catch {
+    // Ignore local storage failures.
+  }
+
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
 });
 
@@ -150,7 +162,11 @@ function startGame() {
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
 
+  const playerCount = 1 + Object.keys(game.remotePlayers).length;
+  game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
+  game.hp = game.effectiveMaxHP;
   resetSessionState();
+  game.hp = game.effectiveMaxHP;
   cleanupGame();
   hideRankings();
   resetCombatState();
@@ -305,7 +321,7 @@ function revivePlayerLocal(emitToServer = true) {
   game.dom.revivePromptHud.style.display = "none";
   game.dom.reviveProgressBg.style.display = "none";
   game.dom.reviveProgressFill.style.width = "0%";
-  game.hp = Math.max(1, Math.floor(P_MAX_HP * 0.3));
+  game.hp = Math.max(1, Math.floor(game.effectiveMaxHP * 0.3));
   game.netSyncTmr = 0;
   window.clearTimeout(game.reviveTimeout);
   if (emitToServer) {
@@ -324,7 +340,7 @@ function respawnPlayerLocal(emitToServer = true) {
   game.localPlayerIsDowned = false;
   game.localPlayerIsSpectating = false;
   game.state = "PLAYING";
-  game.hp = P_MAX_HP;
+  game.hp = game.effectiveMaxHP;
   game.isAiming = false;
   game.isReloading = false;
   game.reloadTmr = 0;

@@ -5,7 +5,7 @@ import { game } from "./state.js";
 import { spawnBullet, spawnHealthPackVisual } from "./combat.js";
 import { createBoss, createDog, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { createRemotePlayer, removeRemotePlayer } from "./scene.js";
-import { updateLobbyUI } from "./ui.js";
+import { updateLobbyUI, showTeammateDownAlert } from "./ui.js";
 
 export function initNetworking(actions) {
   if (game.socket) {
@@ -127,6 +127,7 @@ export function initNetworking(actions) {
     remote.isAlive = player.isAlive ?? remote.isAlive;
     remote.isDowned = player.isDowned ?? remote.isDowned;
     remote.isSpectating = player.isSpectating ?? remote.isSpectating;
+    remote.hp = player.hp ?? remote.hp;
     remote.score = player.score ?? remote.score;
     remote.kills = player.kills ?? remote.kills;
     remote.dogKills = player.dogKills ?? remote.dogKills;
@@ -147,6 +148,7 @@ export function initNetworking(actions) {
       remote.isAlive = false;
       remote.isDowned = true;
       remote.isSpectating = false;
+      remote.hp = 0;
       remote.stats = data.stats;
       remote.score = data.stats?.score || 0;
       remote.kills = data.stats?.kills || 0;
@@ -154,6 +156,7 @@ export function initNetworking(actions) {
       remote.bossKills = data.stats?.bossKills || 0;
       remote.totalKills = data.stats?.totalKills || data.stats?.kills || 0;
       remote.wave = data.stats?.wave || remote.wave;
+      showTeammateDownAlert(remote.playerName);
     }
   });
 
@@ -232,7 +235,7 @@ export function initNetworking(actions) {
     }
 
     if (data.playerId === game.socket.id) {
-      game.hp = Math.min(P_MAX_HP, game.hp + 30);
+      game.hp = Math.min(game.effectiveMaxHP ?? P_MAX_HP, game.hp + 30);
       game.audio.reviveComplete();
       actions.updateHUD();
     }

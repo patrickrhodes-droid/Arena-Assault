@@ -24,10 +24,13 @@ export function getBossEnemy() {
 }
 
 function createHealthBar(colorMaterial) {
-  const hpBar = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
+  const hpBar = new THREE.Group();
+  const bg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
   const hpFill = new THREE.Mesh(game.shared.hpFgGeo, colorMaterial);
+  hpFill.position.set(-0.6, 0, 0.002);
+  hpBar.add(bg);
+  hpBar.add(hpFill);
   game.scene.add(hpBar);
-  game.scene.add(hpFill);
   return { hpBar, hpFill };
 }
 
@@ -68,7 +71,7 @@ export function createSoldier(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = 58 + game.wave * 12;
+  const hpMax = Math.round((58 + game.wave * 12) * Math.pow(1.1, game.wave));
   const { hpBar, hpFill } = createHealthBar(game.shared.hpFgMatSoldier);
   const speed = 3.5 + Math.random() * 1.5 + game.wave * 0.2;
   const fireInterval = Math.max(0.8, 2.2 - game.wave * 0.1) + Math.random() * 0.4;
@@ -145,7 +148,7 @@ export function createDog(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = 46 + game.wave * 10;
+  const hpMax = Math.round((46 + game.wave * 10) * Math.pow(1.1, game.wave));
   const { hpBar, hpFill } = createHealthBar(game.shared.hpFgMatDog);
   const speed = 8 + Math.random() * 2 + game.wave * 0.3;
 
@@ -227,14 +230,17 @@ export function createBoss(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = 3600;
-  const hpBar = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
+  const hpMax = Math.round(3600 * Math.pow(1.1, game.wave));
+  const hpBar = new THREE.Group();
+  const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
   const hpFill = new THREE.Mesh(
     game.shared.hpFgGeo,
     new THREE.MeshBasicMaterial({ color: 0xffb347, side: THREE.DoubleSide }),
   );
+  hpFill.position.set(-0.6, 0, 0.002);
+  hpBar.add(hpBarBg);
+  hpBar.add(hpFill);
   game.scene.add(hpBar);
-  game.scene.add(hpFill);
 
   game.enemies.push({
     id,
@@ -252,7 +258,7 @@ export function createBoss(position, id = Math.random()) {
     radius: 1.45,
     hp: hpMax,
     maxHp: hpMax,
-    spd: 2.6,
+    spd: 12,
     atkDmg: 28,
     atkTmr: 0,
     swingTmr: 0,
@@ -274,11 +280,7 @@ export function removeEnemy(index) {
   game.scene.remove(enemy.group);
   disposeObject3D(enemy.group);
   game.scene.remove(enemy.hpBar);
-  enemy.hpBar.geometry.dispose();
-  enemy.hpBar.material.dispose();
-  game.scene.remove(enemy.hpFg);
-  enemy.hpFg.geometry.dispose();
-  enemy.hpFg.material.dispose();
+  disposeObject3D(enemy.hpBar);
   game.enemies.splice(index, 1);
 
   if (
@@ -356,6 +358,13 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
         showDamage?.();
         addShake?.(0.2);
         spawnParticles(playerPosition.clone().setY(1), 4, 0xff4422, 3);
+
+        if (enemy.type === "boss") {
+          const knockDir = new THREE.Vector3(dx, 0, dz).normalize();
+          const speed = 6 * 3.1 * 3;
+          game.knockbackX = knockDir.x * speed;
+          game.knockbackZ = knockDir.z * speed;
+        }
 
         if (game.hp <= 0) {
           game.hp = 0;
@@ -554,12 +563,8 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
 
 function updateHealthBar(enemy) {
   const hpY = enemy.type === "soldier" ? 2.3 : enemy.type === "dog" ? 1.3 : 5.3;
-  const hpPosition = enemy.group.position.clone().setY(enemy.group.position.y + hpY);
-  enemy.hpBar.position.copy(hpPosition);
+  enemy.hpBar.position.copy(enemy.group.position).setY(enemy.group.position.y + hpY);
   enemy.hpBar.lookAt(game.camera.position);
-  enemy.hpFg.position.copy(hpPosition);
-  enemy.hpFg.position.z += 0.01;
-  enemy.hpFg.lookAt(game.camera.position);
   enemy.hpFg.scale.x = Math.max(0, enemy.hp / enemy.maxHp);
 }
 
@@ -723,12 +728,12 @@ export function trySwordHit() {
     }
 
     const distance = game.visuals.player.playerGroup.position.distanceTo(enemy.group.position);
-    if (distance >= 4.5) {
+    if (distance >= 6.5) {
       continue;
     }
 
     const toEnemy = enemy.group.position.clone().sub(game.visuals.player.playerGroup.position).normalize();
-    if (toEnemy.dot(cameraDirection) > 0.8) {
+    if (toEnemy.dot(cameraDirection) > 0.5) {
       processHit(enemy, enemy.type === "boss" ? 160 : 9999, enemy.group.position.clone().setY(1.5));
     }
   }

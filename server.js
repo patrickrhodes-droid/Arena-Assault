@@ -70,6 +70,7 @@ io.on('connection', (socket) => {
         if (typeof movementData.dogKills === 'number') players[socket.id].dogKills = movementData.dogKills;
         if (typeof movementData.bossKills === 'number') players[socket.id].bossKills = movementData.bossKills;
         if (typeof movementData.totalKills === 'number') players[socket.id].totalKills = movementData.totalKills;
+        if (typeof movementData.hp === 'number') players[socket.id].hp = movementData.hp;
         if (typeof movementData.wave === 'number') players[socket.id].wave = movementData.wave;
         if (typeof movementData.isAlive === 'boolean') players[socket.id].isAlive = movementData.isAlive;
         if (typeof movementData.isDowned === 'boolean') players[socket.id].isDowned = movementData.isDowned;

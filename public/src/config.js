@@ -2,7 +2,7 @@ export const ARENA_SIZE = 72;
 export const HALF = ARENA_SIZE / 2;
 export const WALL_H = 6;
 export const P_RAD = 0.5;
-export const P_MAX_HP = 100;
+export const P_MAX_HP = 1000;
 export const B_SPD_E = 28;
 export const BASE_FOV = 70;
 export const GRAV = 20;
@@ -18,7 +18,7 @@ export const WEAPON_DEFS = {
   pistol: {
     label: "SERVICE PISTOL",
     mag: 14,
-    fireRate: 0.18,
+    fireRate: 0.54,
     reload: 1.2,
     pellets: 1,
     damage: 34,
@@ -26,7 +26,7 @@ export const WEAPON_DEFS = {
     spreadAim: 0.007,
     bulletSpeed: 96,
     bulletLife: 2.7,
-    aimFov: 62,
+    aimFov: 28,
     aimCamDist: 6.2,
     recoilZ: 0.05,
     recoilRX: 0.04,
@@ -39,12 +39,12 @@ export const WEAPON_DEFS = {
     fireRate: 0.09,
     reload: 1.6,
     pellets: 1,
-    damage: 25,
+    damage: 23,
     spreadHip: 0.022,
     spreadAim: 0.008,
     bulletSpeed: 90,
     bulletLife: 3,
-    aimFov: 56,
+    aimFov: 28,
     aimCamDist: 6.5,
     recoilZ: 0.08,
     recoilRX: 0.05,
@@ -57,8 +57,8 @@ export const WEAPON_DEFS = {
     fireRate: 0.72,
     reload: 2.2,
     pellets: 8,
-    damage: 18,
-    minDamage: 4,
+    damage: 36,
+    minDamage: 8,
     falloffStart: 8,
     falloffEnd: 30,
     spreadHip: 0.12,
@@ -78,12 +78,12 @@ export const WEAPON_DEFS = {
     fireRate: 1.15,
     reload: 2.6,
     pellets: 1,
-    damage: 240,
+    damage: 480,
     spreadHip: 0.012,
     spreadAim: 0.0015,
     bulletSpeed: 160,
     bulletLife: 3.5,
-    aimFov: 28,
+    aimFov: 19,
     aimCamDist: 6.8,
     recoilZ: 0.18,
     recoilRX: 0.14,

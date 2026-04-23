@@ -18,6 +18,14 @@ export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
     game.keys[event.code] = true;
 
+    if (event.code === "KeyW" && game.state === "PLAYING") {
+      const now = performance.now();
+      if (now - game.wLastTapTime < 300) {
+        game.sprintLocked = true;
+      }
+      game.wLastTapTime = now;
+    }
+
     if (event.code === "Space") {
       if (game.localPlayerIsAlive) {
         event.preventDefault();
@@ -45,6 +53,9 @@ export function setupInput(actions) {
   document.addEventListener("keyup", (event) => {
     if (game.localPlayerIsAlive) {
       game.keys[event.code] = false;
+    }
+    if (event.code === "KeyW") {
+      game.sprintLocked = false;
     }
   });
 
@@ -76,11 +87,16 @@ export function setupInput(actions) {
 
     game.camTheta -= event.movementX * game.sens;
     if (usingFirstPersonView()) {
-      game.camPhi = Math.max(-1.25, Math.min(1.1, game.camPhi + event.movementY * game.sens));
+      game.camPhi = Math.max(-1.25, Math.min(1.5, game.camPhi + event.movementY * game.sens));
     } else {
       game.camPhi = Math.max(-0.55, Math.min(0.85, game.camPhi - event.movementY * game.sens));
     }
   });
+
+  document.addEventListener("wheel", (event) => {
+    if (usingFirstPersonView() || document.pointerLockElement !== game.renderer.domElement) return;
+    game.camDist = Math.max(3, Math.min(20, game.camDist + event.deltaY * 0.01));
+  }, { passive: true });
 
   document.addEventListener("pointerlockchange", actions.onPointerLockChange);
   document.addEventListener("pointerlockerror", actions.onPointerLockError);
@@ -118,7 +134,7 @@ export function updatePlayer(actions) {
   if (game.keys.KeyD) moveDirection.add(right);
   if (game.keys.KeyA) moveDirection.sub(right);
 
-  game.isSprinting = (!!game.keys.ShiftLeft || !!game.keys.ShiftRight) && game.localPlayerIsAlive;
+  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -127,7 +143,7 @@ export function updatePlayer(actions) {
 
   if (game.isMoving) {
     moveDirection.normalize();
-    const speed = 6 * (game.isSprinting ? 1.55 : 1);
+    const speed = 6 * (game.isSprinting ? 3.1 : 1);
     game.visuals.player.playerGroup.position.addScaledVector(moveDirection, speed * game.dt);
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;
@@ -158,6 +174,18 @@ export function updatePlayer(actions) {
 
   for (const obstacle of game.oBs) {
     resolveCircleBox(game.visuals.player.playerGroup.position, P_RAD, obstacle, game.visuals.player.playerGroup.position.y);
+  }
+
+  if (game.knockbackX !== 0 || game.knockbackZ !== 0) {
+    game.visuals.player.playerGroup.position.x += game.knockbackX * game.dt;
+    game.visuals.player.playerGroup.position.z += game.knockbackZ * game.dt;
+    const decay = Math.pow(0.04, game.dt);
+    game.knockbackX *= decay;
+    game.knockbackZ *= decay;
+    if (Math.abs(game.knockbackX) < 0.05 && Math.abs(game.knockbackZ) < 0.05) {
+      game.knockbackX = 0;
+      game.knockbackZ = 0;
+    }
   }
 
   game.visuals.player.playerGroup.position.x = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.x));
@@ -345,15 +373,17 @@ function handleFiring(actions) {
 function updateWeaponVisuals() {
   if (game.currentWeapon === "sword" && game.swordSwingProgress > 0) {
     game.swordSwingProgress += game.dt / getWeapon().fireRate;
+    const wv = game.visuals.weapon;
     if (game.swordSwingProgress >= 1) {
       game.swordSwingProgress = 0;
-      game.visuals.weapon.firstPersonGun.rotation.set(0, 0, 0);
+      wv.firstPersonGun.rotation.set(0, 0, 0);
+      const swordTp = wv.glbGroups?.sword?.tpGroup;
+      if (swordTp) swordTp.rotation.set(0, 0, 0);
     } else {
-      game.visuals.weapon.firstPersonGun.rotation.set(
-        Math.sin(game.swordSwingProgress * Math.PI) * -0.8,
-        Math.sin(game.swordSwingProgress * Math.PI) * 1.8,
-        0,
-      );
+      const s = Math.sin(game.swordSwingProgress * Math.PI);
+      wv.firstPersonGun.rotation.set(s * 0.5, s * -1, 1);
+      const swordTp = wv.glbGroups?.sword?.tpGroup;
+      if (swordTp) swordTp.rotation.set(s * -0.3, s * 2, 0.8);
     }
   }
 
@@ -439,8 +469,13 @@ export function updateCamera() {
     game.camera.lookAt(lookTarget);
   }
 
-  game.dom.crosshair.classList.toggle("hidden", scopedSniper);
+  const hasRedDot = game.isAiming && (game.currentWeapon === "pistol" || game.currentWeapon === "assault");
+  game.dom.crosshair.classList.toggle("hidden", scopedSniper || hasRedDot);
   game.dom.scopeOverlay.classList.toggle("show", scopedSniper);
+  game.dom.redDotOverlay.classList.toggle("show", hasRedDot);
+
+  const sniperFpGroup = game.visuals.weapon.glbGroups?.sniper?.fpGroup;
+  if (sniperFpGroup) sniperFpGroup.visible = game.currentWeapon === "sniper" && !scopedSniper && game.visuals.weapon.glbGroups.sniper.loaded;
 }
 
 export function resetViewState() {

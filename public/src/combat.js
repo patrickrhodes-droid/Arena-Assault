@@ -149,12 +149,14 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       for (let enemyIndex = game.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
         const enemy = game.enemies[enemyIndex];
         const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
-        const hitRadius = enemy.type === "boss" ? 5.2 : 1.0;
-        const dx = position.x - enemy.group.position.x;
-        const dy = position.y - (enemy.group.position.y + enemyHeight);
-        const dz = position.z - enemy.group.position.z;
+        const hitRadiusSq = enemy.type === "boss" ? 5.2 : 1.0;
+        const enemyCenter = new THREE.Vector3(
+          enemy.group.position.x,
+          enemy.group.position.y + enemyHeight,
+          enemy.group.position.z,
+        );
 
-        if (dx * dx + dy * dy + dz * dz < hitRadius) {
+        if (distanceSqPointToSegment(enemyCenter, previousPosition, position) < hitRadiusSq) {
           processHit?.(enemy, bulletDamageAtDistance(bullet), position.clone());
           shouldRemove = true;
           break;
@@ -199,6 +201,10 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 }
 
 export function processHit(enemy, damage, particlePosition) {
+  if (enemy.type === "boss" && game.currentWeapon !== "sword") {
+    return;
+  }
+
   if (game.socket) {
     game.socket.emit("enemyHit", { id: enemy.id, damage });
   }

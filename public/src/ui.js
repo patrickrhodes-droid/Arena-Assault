@@ -1,4 +1,4 @@
-import { ARENA_SIZE, HALF, P_MAX_HP } from "./config.js";
+import { ARENA_SIZE, HALF, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
 import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemy } from "./enemies.js";
@@ -55,6 +55,10 @@ export function cacheDom() {
     goBossKills: document.getElementById("go-bosskills"),
     goAccuracy: document.getElementById("go-acc"),
     goDamage: document.getElementById("go-dmg"),
+    redDotOverlay: document.getElementById("red-dot-overlay"),
+    teammatePanel: document.getElementById("teammate-panel"),
+    teammateAlert: document.getElementById("teammate-alert"),
+    inventoryBar: document.getElementById("inventory-bar"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
@@ -133,7 +137,7 @@ export function updateLobbyUI(players) {
 export function updateHUD() {
   const weapon = getWeapon();
   const boss = getBossEnemy();
-  const percent = Math.max(0, game.hp / P_MAX_HP);
+  const percent = Math.max(0, game.hp / game.effectiveMaxHP);
   game.dom.hpFill.style.width = `${percent * 100}%`;
   game.dom.hpText.textContent = Math.ceil(game.hp);
   game.dom.ammoCurrent.textContent = game.localPlayerIsAlive
@@ -153,6 +157,36 @@ export function updateHUD() {
     game.dom.bossName.textContent = boss.bossName || "BOSS";
     game.dom.bossFill.style.width = `${Math.max(0, boss.hp / boss.maxHp) * 100}%`;
   }
+
+  const remotes = Object.values(game.remotePlayers);
+  if (remotes.length > 0) {
+    game.dom.teammatePanel.innerHTML = remotes.map((r) => {
+      const maxHp = game.effectiveMaxHP ?? P_MAX_HP;
+      const hpPct = r.isAlive && !r.isDowned
+        ? Math.max(0, Math.min(100, ((r.hp ?? maxHp) / maxHp) * 100))
+        : 0;
+      const statusClass = r.isSpectating ? "spectating" : r.isDowned ? "downed" : "alive";
+      const statusText = r.isSpectating ? "SPEC" : r.isDowned ? "DOWN" : "ALIVE";
+      return `<div class="teammate-row">
+        <div class="teammate-name">${r.playerName || "??"}</div>
+        <div class="teammate-hp-bg"><div class="teammate-hp-fill" style="width:${hpPct}%"></div></div>
+        <div class="teammate-status ${statusClass}">${statusText}</div>
+      </div>`;
+    }).join("");
+    game.dom.teammatePanel.style.display = "block";
+  } else {
+    game.dom.teammatePanel.style.display = "none";
+  }
+
+  game.dom.inventoryBar.innerHTML = WEAPON_ORDER.map((id, idx) => {
+    const def = WEAPON_DEFS[id];
+    const isActive = game.currentWeapon === id;
+    const shortName = def.label.split(" ").pop();
+    return `<div class="inv-slot${isActive ? " active" : ""}">
+      <div class="inv-key">${idx + 1}</div>
+      <div class="inv-name">${shortName}</div>
+    </div>`;
+  }).join("");
 }
 
 export function showDamage() {
@@ -163,11 +197,24 @@ export function showDamage() {
   }, 150);
 }
 
+export function showTeammateDownAlert(name) {
+  const el = game.dom.teammateAlert;
+  el.textContent = `! TEAMMATE DOWN: ${(name || "TEAMMATE").toUpperCase()}`;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  game.teammateAlertPulse = 4;
+}
+
 export function drawMinimap() {
   const context = game.dom.minimapContext;
-  const width = 140;
-  const height = 140;
+  const width = 200;
+  const height = 200;
   const scale = width / ARENA_SIZE;
+
+  if (game.teammateAlertPulse > 0) {
+    game.teammateAlertPulse = Math.max(0, game.teammateAlertPulse - game.dt);
+  }
 
   context.clearRect(0, 0, width, height);
   context.fillStyle = "rgba(5,10,15,0.85)";
@@ -213,14 +260,24 @@ export function drawMinimap() {
   for (const player of Object.values(game.remotePlayers)) {
     const x = (player.group.position.x + HALF) * scale;
     const y = (player.group.position.z + HALF) * scale;
+    const alertActive = game.teammateAlertPulse > 0 && player.isDowned;
+    const pulse = alertActive ? 0.5 + 0.5 * Math.sin((4 - game.teammateAlertPulse) * 10) : 0;
+    const dotRadius = 3.5 + (alertActive ? pulse * 2.5 : 0);
     context.fillStyle = player.isSpectating
       ? "#9aa7b5"
       : player.isDowned
-        ? "#ffbb55"
+        ? (alertActive ? `rgba(255,${140 + Math.round(pulse * 60)},80,0.95)` : "#ffbb55")
         : "#66b3ff";
     context.beginPath();
-    context.arc(x, y, 3.5, 0, Math.PI * 2);
+    context.arc(x, y, dotRadius, 0, Math.PI * 2);
     context.fill();
+    if (alertActive) {
+      context.strokeStyle = "rgba(255,120,60,0.7)";
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.arc(x, y, dotRadius + 3 + pulse * 3, 0, Math.PI * 2);
+      context.stroke();
+    }
     const initial = (player.playerName || "?").charAt(0).toUpperCase();
     context.fillStyle = "#dfe8f1";
     context.font = "9px Rajdhani";

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 import { ARENA_SIZE, HALF, WALL_H } from "./config.js";
 import { game } from "./state.js";
@@ -256,57 +257,7 @@ function buildPlayer() {
 }
 
 function buildWeaponVisuals() {
-  const gunMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.8 });
-  const sightMat = new THREE.MeshStandardMaterial({
-    color: 0xffcc66,
-    emissive: 0xffb347,
-    emissiveIntensity: 0.65,
-    transparent: true,
-    opacity: 0.42,
-  });
-
-  const thirdPersonGun = new THREE.Group();
-  const tpBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.5), gunMat);
-  tpBarrel.position.set(0, 0, -0.35);
-  thirdPersonGun.add(tpBarrel);
-  thirdPersonGun.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.3), gunMat));
-
-  const tpGrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), gunMat);
-  tpGrip.position.set(0, -0.12, 0.05);
-  thirdPersonGun.add(tpGrip);
-
-  const tpSight = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.035, 0.02), sightMat);
-  tpSight.position.set(0, 0.07, -0.1);
-  thirdPersonGun.add(tpSight);
-
-  const tpMag = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.1, 0.06), gunMat);
-  tpMag.position.set(0, -0.08, 0.05);
-  thirdPersonGun.add(tpMag);
-  thirdPersonGun.position.set(0.5, 1.35, -0.3);
-
-  game.visuals.player.playerGroup.add(thirdPersonGun);
-
-  const tpMuzzle = new THREE.Object3D();
-  tpMuzzle.position.set(0, 0, -0.6);
-  thirdPersonGun.add(tpMuzzle);
-
   const firstPersonGun = new THREE.Group();
-  const fpBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.5), gunMat);
-  fpBarrel.position.set(0, 0, -0.35);
-  firstPersonGun.add(fpBarrel);
-  firstPersonGun.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.3), gunMat));
-
-  const fpGrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), gunMat);
-  fpGrip.position.set(0, -0.12, 0.05);
-  firstPersonGun.add(fpGrip);
-
-  const fpSight = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.035, 0.02), sightMat);
-  fpSight.position.set(0, 0.07, -0.1);
-  firstPersonGun.add(fpSight);
-
-  const fpMag = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.1, 0.06), gunMat);
-  fpMag.position.set(0, -0.08, 0.05);
-  firstPersonGun.add(fpMag);
   firstPersonGun.position.set(0.25, -0.2, -0.5);
   firstPersonGun.visible = false;
   game.camera.add(firstPersonGun);
@@ -315,6 +266,10 @@ function buildWeaponVisuals() {
   const fpMuzzle = new THREE.Object3D();
   fpMuzzle.position.set(0, 0, -0.6);
   firstPersonGun.add(fpMuzzle);
+
+  const tpMuzzle = new THREE.Object3D();
+  tpMuzzle.position.set(0.5, 1.35, -0.8);
+  game.visuals.player.playerGroup.add(tpMuzzle);
 
   const flashMesh = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 6, 6),
@@ -328,19 +283,21 @@ function buildWeaponVisuals() {
   game.scene.add(flashLight);
 
   game.visuals.weapon = {
-    gunMat,
-    sightMat,
-    thirdPersonGun,
     firstPersonGun,
     tpMuzzle,
     fpMuzzle,
-    tpBarrel,
-    fpBarrel,
-    tpSight,
-    fpSight,
     flashMesh,
     flashLight,
     weaponModels: {
+      pistol: {
+        tpPos: [0.48, 1.3, -0.22],
+        tpScale: [0.8, 0.8, 0.7],
+        tpMuzzleZ: -0.38,
+        fpPos: [0.22, -0.24, -0.42],
+        fpAdsPos: [0.01, -0.12, -0.34],
+        fpScale: [0.8, 0.8, 0.72],
+        fpMuzzleZ: -0.38,
+      },
       sword: {
         tpPos: [0.5, 1.2, -0.2],
         tpScale: [1, 1, 1],
@@ -364,7 +321,7 @@ function buildWeaponVisuals() {
         tpScale: [1.28, 1.1, 0.95],
         tpMuzzleZ: -0.74,
         fpPos: [0.28, -0.18, -0.58],
-        fpAdsPos: [0.03, -0.11, -0.5],
+        fpAdsPos: [0.0, -0.08, -0.35],
         fpScale: [1.3, 1.08, 1.02],
         fpMuzzleZ: -0.74,
       },
@@ -379,6 +336,46 @@ function buildWeaponVisuals() {
       },
     },
   };
+
+  const weaponGlbDefs = {
+    pistol:  { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
+    assault: { file: "/assets/models/Assault Rifle.glb", scale: 0.125, rotY: 0 },
+    shotgun: { file: "/assets/models/Shotgun.glb",       scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
+    sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
+    sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
+  };
+
+  const glbGroups = {};
+  for (const [key, { file, scale, rotY, posY = 0, posZ = 0 }] of Object.entries(weaponGlbDefs)) {
+    const fpGroup = new THREE.Group();
+    fpGroup.visible = false;
+    firstPersonGun.add(fpGroup);
+
+    const tpGroup = new THREE.Group();
+    tpGroup.visible = false;
+    game.visuals.player.playerGroup.add(tpGroup);
+
+    glbGroups[key] = { fpGroup, tpGroup, loaded: false };
+
+    new GLTFLoader().load(file, (gltf) => {
+      const fpCopy = gltf.scene.clone(true);
+      fpCopy.scale.setScalar(scale);
+      fpCopy.rotation.y = rotY;
+      fpCopy.position.set(0, posY, posZ);
+      fpGroup.add(fpCopy);
+
+      const tpCopy = gltf.scene.clone(true);
+      tpCopy.scale.setScalar(scale);
+      tpCopy.rotation.y = rotY;
+      tpCopy.position.set(0, posY, posZ);
+      tpGroup.add(tpCopy);
+
+      glbGroups[key].loaded = true;
+      if (game.currentWeapon === key) applyWeaponModel();
+    });
+  }
+
+  game.visuals.weapon.glbGroups = glbGroups;
 }
 
 function buildSharedRuntimeAssets() {
@@ -396,13 +393,33 @@ function buildSharedRuntimeAssets() {
   game.shared.hpFgMatDog = new THREE.MeshBasicMaterial({ color: 0xff8833, side: THREE.DoubleSide });
 }
 
+function createNametag(name) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 56;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "rgba(0,0,0,0.52)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "bold 30px Rajdhani, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#00ffcc";
+  ctx.fillText((name || "?").toUpperCase(), canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(1.7, 0.37, 1);
+  sprite.position.set(0, 2.4, 0);
+  return sprite;
+}
+
 export function createRemotePlayer(id, initialData = {}) {
   if (game.remotePlayers[id]) {
     return game.remotePlayers[id];
   }
 
   const { bodyMat, legMat, visorMat } = game.visuals.player;
-  const gunMat = game.visuals.weapon.gunMat;
+  const gunMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.8 });
   const group = new THREE.Group();
 
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.4), bodyMat);
@@ -441,6 +458,10 @@ export function createRemotePlayer(id, initialData = {}) {
   remoteGun.position.set(0.5, 1.35, -0.3);
   group.add(remoteGun);
 
+  const playerName = initialData.playerName || `Player ${id.slice(0, 8)}`;
+  const nametag = createNametag(playerName);
+  group.add(nametag);
+
   group.position.set(initialData.x ?? 0, initialData.y ?? 0, initialData.z ?? 0);
   game.scene.add(group);
 
@@ -448,17 +469,19 @@ export function createRemotePlayer(id, initialData = {}) {
     group,
     leftLeg,
     rightLeg,
+    nametag,
     walkT: 0,
     isAlive: initialData.isAlive ?? true,
     isDowned: initialData.isDowned ?? false,
     isSpectating: initialData.isSpectating ?? false,
+    hp: initialData.hp ?? 100,
     kills: initialData.kills ?? 0,
     dogKills: initialData.dogKills ?? 0,
     bossKills: initialData.bossKills ?? 0,
     totalKills: initialData.totalKills ?? initialData.kills ?? 0,
     score: initialData.score ?? 0,
     wave: initialData.wave ?? 0,
-    playerName: initialData.playerName || `Player ${id.slice(0, 8)}`,
+    playerName,
     playerId: id,
     stats: initialData.stats || {},
   };
@@ -478,27 +501,23 @@ export function removeRemotePlayer(id) {
 
 export function applyWeaponModel() {
   const model = game.visuals.weapon.weaponModels[game.currentWeapon];
-  const weaponVisuals = game.visuals.weapon;
+  const wv = game.visuals.weapon;
 
-  weaponVisuals.thirdPersonGun.position.set(...model.tpPos);
-  weaponVisuals.thirdPersonGun.scale.set(...model.tpScale);
-  weaponVisuals.tpMuzzle.position.set(0, 0, model.tpMuzzleZ);
+  wv.firstPersonGun.position.set(...model.fpPos);
+  wv.firstPersonGun.scale.set(1, 1, 1);
+  wv.firstPersonGun.rotation.set(0, 0, 0);
+  wv.fpMuzzle.position.set(0, 0, model.fpMuzzleZ);
+  wv.tpMuzzle.position.set(model.tpPos[0], model.tpPos[1], model.tpPos[2] + model.tpMuzzleZ);
 
-  weaponVisuals.firstPersonGun.position.set(...model.fpPos);
-  weaponVisuals.firstPersonGun.scale.set(...model.fpScale);
-  weaponVisuals.firstPersonGun.rotation.set(0, 0, 0);
-  weaponVisuals.fpMuzzle.position.set(0, 0, model.fpMuzzleZ);
-
-  if (game.currentWeapon === "sword") {
-    weaponVisuals.fpBarrel.scale.set(0.2, 2.5, 0.05);
-    weaponVisuals.fpBarrel.position.set(0, 0.2, -0.4);
-  } else {
-    weaponVisuals.fpBarrel.scale.set(1, 1, 1);
-    weaponVisuals.fpBarrel.position.set(0, 0, -0.35);
+  if (wv.glbGroups) {
+    for (const [key, g] of Object.entries(wv.glbGroups)) {
+      const active = key === game.currentWeapon && g.loaded;
+      g.fpGroup.visible = active;
+      g.tpGroup.visible = active;
+      if (active) {
+        g.tpGroup.position.set(...model.tpPos);
+        g.tpGroup.scale.set(1, 1, 1);
+      }
+    }
   }
-
-  weaponVisuals.sightMat.emissiveIntensity =
-    game.currentWeapon === "sniper" ? 0.75 : game.currentWeapon === "shotgun" ? 0.24 : 0.38;
-  weaponVisuals.tpSight.scale.setScalar(game.currentWeapon === "sniper" ? 0.68 : 0.88);
-  weaponVisuals.fpSight.scale.setScalar(game.currentWeapon === "sniper" ? 0.52 : 0.72);
 }
