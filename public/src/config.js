@@ -18,7 +18,7 @@ export const WEAPON_DEFS = {
   pistol: {
     label: "SERVICE PISTOL",
     mag: 14,
-    fireRate: 0.54,
+    fireRate: 0.3,
     reload: 1.2,
     pellets: 1,
     damage: 34,

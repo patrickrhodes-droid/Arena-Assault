@@ -62,6 +62,7 @@ export function setupInput(actions) {
   document.addEventListener("mousedown", (event) => {
     if (event.button === 0) {
       game.mouseDown = true;
+      game.mouseClicked = true;
     }
     if (event.button === 2 && game.state === "PLAYING") {
       event.preventDefault();
@@ -305,8 +306,9 @@ function handleFiring(actions) {
   const weapon = getWeapon();
   game.fireTmr -= game.dt;
 
+  const triggerDown = weapon.mode === "pistol" ? game.mouseClicked : game.mouseDown;
   if (
-    !game.mouseDown
+    !triggerDown
     || game.fireTmr > 0
     || game.isReloading
     || (game.ammo <= 0 && weapon.mode !== "sword")
@@ -317,6 +319,7 @@ function handleFiring(actions) {
   }
 
   game.fireTmr = weapon.fireRate;
+  if (weapon.mode === "pistol") game.mouseClicked = false;
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;

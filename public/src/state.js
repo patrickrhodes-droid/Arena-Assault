@@ -48,6 +48,7 @@ export const game = {
   menuOrbit: 0,
   lastTime: 0,
   mouseDown: false,
+  mouseClicked: false,
   damageTimeout: null,
   fpRecoilZ: 0,
   fpRecoilRX: 0,
