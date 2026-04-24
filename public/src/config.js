@@ -108,10 +108,10 @@ export const WEAPON_DEFS = {
 };
 
 export const CHARACTERS = {
-  iestyn:  { name: "Iestyn",  headColor: 0xff5544, headScale: 1.5 },
+  iestyn:  { name: "Iestyn",  headColor: 0xff5544, headScale: 1 },
   patrick: { name: "Patrick", headColor: 0x55aaff, headScale: 1.0 },
-  will:    { name: "Will",    headColor: 0x66dd66, headScale: 1.25 },
-  matt:    { name: "Matt",    headColor: 0xffcc33, headScale: 0.8 },
+  will:    { name: "Will",    headColor: 0x66dd66, headScale: 1 },
+  matt:    { name: "Matt",    headColor: 0xffcc33, headScale: 1 },
 };
 
 export const CHARACTER_ORDER = ["iestyn", "patrick", "will", "matt"];
