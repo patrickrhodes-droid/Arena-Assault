@@ -96,7 +96,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.4,
     reload: 0.1,
     pellets: 0,
-    damage: 999,
+    damage: 480,
     range: 4.5,
     arc: 1.2,
     bulletSpeed: 0,
@@ -106,6 +106,48 @@ export const WEAPON_DEFS = {
     mode: "sword",
   },
 };
+
+export const CHARACTERS = {
+  iestyn:  { name: "Iestyn",  headColor: 0xff5544, headScale: 1.5 },
+  patrick: { name: "Patrick", headColor: 0x55aaff, headScale: 1.0 },
+  will:    { name: "Will",    headColor: 0x66dd66, headScale: 1.25 },
+  matt:    { name: "Matt",    headColor: 0xffcc33, headScale: 0.8 },
+};
+
+export const CHARACTER_ORDER = ["iestyn", "patrick", "will", "matt"];
+
+export const PVP_WIN_KILLS = 13;
+export const PVP_KILLS_PER_WEAPON = 2;
+export const PVP_SWORD_KILLS_TO_WIN = 5;
+export const PVP_CORNERS = [
+  [-60, -60],
+  [60, -60],
+  [-60, 60],
+  [60, 60],
+];
+
+export const MAP_DEFS = {
+  arena: {
+    name: "COMBAT ARENA",
+    subtitle: "Industrial Training Facility",
+    accentColor: "#3ce6cb",
+    previewGradient: "linear-gradient(135deg,#1b2734 0%,#2a3c4e 50%,#152030 100%)",
+  },
+  desert: {
+    name: "DUST BOWL",
+    subtitle: "Abandoned Desert Outpost",
+    accentColor: "#ff9933",
+    previewGradient: "linear-gradient(135deg,#c27a30 0%,#8B5A20 50%,#d48840 100%)",
+  },
+  city: {
+    name: "DOWNTOWN",
+    subtitle: "Urban Combat Zone",
+    accentColor: "#4488ff",
+    previewGradient: "linear-gradient(135deg,#0a0f1a 0%,#1a2040 50%,#080c14 100%)",
+  },
+};
+
+export const MAP_ORDER = ["arena", "desert", "city"];
 
 export function createWeaponAmmo() {
   return Object.fromEntries(

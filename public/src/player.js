@@ -27,7 +27,7 @@ export function setupInput(actions) {
       game.wLastTapTime = now;
     }
 
-    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+    if (event.code === "ControlLeft" || event.code === "ControlRight") {
       if (game.state === "PLAYING" && game.localPlayerIsAlive && !game.isOnLadder) {
         game.isCrouching = !game.isCrouching;
         if (game.isCrouching) {
@@ -45,14 +45,16 @@ export function setupInput(actions) {
       }
     }
 
-    if (event.code === "Digit1") actions.setWeapon("pistol");
-    if (event.code === "Digit2") actions.setWeapon("assault");
-    if (event.code === "Digit3") actions.setWeapon("shotgun");
-    if (event.code === "Digit4") actions.setWeapon("sniper");
-    if (event.code === "Digit5") actions.setWeapon("sword");
-    if (event.code === "KeyQ") {
-      cycleWeapon();
-      actions.updateHUD();
+    if (game.mode !== "PVP") {
+      if (event.code === "Digit1") actions.setWeapon("pistol");
+      if (event.code === "Digit2") actions.setWeapon("assault");
+      if (event.code === "Digit3") actions.setWeapon("shotgun");
+      if (event.code === "Digit4") actions.setWeapon("sniper");
+      if (event.code === "Digit5") actions.setWeapon("sword");
+      if (event.code === "KeyQ") {
+        cycleWeapon();
+        actions.updateHUD();
+      }
     }
     if (event.code === "KeyR" && game.state === "PLAYING" && !game.isReloading && game.ammo < getWeapon().mag) {
       startReload();
@@ -148,7 +150,8 @@ export function updatePlayer(actions) {
   if (game.keys.KeyD) moveDirection.add(right);
   if (game.keys.KeyA) moveDirection.sub(right);
 
-  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
+  const sprintInput = game.keys.ShiftLeft || game.keys.ShiftRight || game.sprintLocked;
+  game.isSprinting = sprintInput && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -424,6 +427,20 @@ function handleFiring(actions) {
         minDamage: weapon.minDamage,
         falloffStart: weapon.falloffStart,
         falloffEnd: weapon.falloffEnd,
+        shooterId: game.socket?.id,
+        weapon: game.currentWeapon,
+      });
+      // Broadcast for visibility on other clients (visual-only bullet there).
+      game.socket?.emit("fireBullet", {
+        x: bulletPosition.x,
+        y: bulletPosition.y,
+        z: bulletPosition.z,
+        dx: bulletDirection.x,
+        dy: bulletDirection.y,
+        dz: bulletDirection.z,
+        spd: weapon.bulletSpeed,
+        life: weapon.bulletLife,
+        weapon: game.currentWeapon,
       });
     }
   }
@@ -582,6 +599,11 @@ export function syncLocalPlayerState(force = false) {
     isAlive: game.localPlayerIsAlive,
     isDowned: game.localPlayerIsDowned,
     isSpectating: game.localPlayerIsSpectating,
+    isCrouching: game.isCrouching,
+    isSprinting: game.isSprinting,
+    currentWeapon: game.currentWeapon,
+    swordSwing: game.swordSwingProgress > 0 && game.swordSwingProgress < 1 ? game.swordSwingProgress : 0,
+    pvpDying: Boolean(game.pvpDying),
     stats: {
       score: game.score,
       kills: game.stats.kills,

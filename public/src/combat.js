@@ -114,6 +114,8 @@ export function spawnBullet(position, direction, isPlayer, options = {}, fromRem
   group.lookAt(position.clone().add(direction));
   game.scene.add(group);
 
+  const shooterId = options.shooterId ?? (isPlayer && !fromRemote ? game.socket?.id : null);
+
   game.bullets.push({
     mesh: group,
     dir: direction.clone(),
@@ -125,6 +127,9 @@ export function spawnBullet(position, direction, isPlayer, options = {}, fromRem
     falloffStart: options.falloffStart,
     falloffEnd: options.falloffEnd,
     distance: 0,
+    shooterId,
+    fromRemote,
+    weapon: options.weapon ?? null,
   });
 }
 
@@ -161,6 +166,45 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
           shouldRemove = true;
           break;
         }
+      }
+    }
+
+    if (!shouldRemove && bullet.isPlayer && game.mode === "PVP"
+      && bullet.shooterId === game.socket?.id && !bullet.fromRemote) {
+      const prevXZ = new THREE.Vector3(previousPosition.x, 0, previousPosition.z);
+      const currXZ = new THREE.Vector3(position.x, 0, position.z);
+      const seg = currXZ.clone().sub(prevXZ);
+      const segLenSq = seg.lengthSq();
+
+      for (const [remoteId, remote] of Object.entries(game.remotePlayers)) {
+        if (!remote.isAlive || remote.isDowned || remote.isSpectating) continue;
+
+        const rx = remote.group.position.x;
+        const ry = remote.group.position.y;
+        const rz = remote.group.position.z;
+
+        // Tall cylinder hitbox: XZ distance first, then vertical range.
+        const targetXZ = new THREE.Vector3(rx, 0, rz);
+        const xzDistSq = distanceSqPointToSegment(targetXZ, prevXZ, currXZ);
+        if (xzDistSq > 1.5) continue; // ~1.22m lateral radius — generous for sniping
+
+        const t = segLenSq > 1e-5
+          ? Math.max(0, Math.min(1, targetXZ.clone().sub(prevXZ).dot(seg) / segLenSq))
+          : 0;
+        const bulletYAtClosest = previousPosition.y + (position.y - previousPosition.y) * t;
+        if (bulletYAtClosest < ry - 0.2 || bulletYAtClosest > ry + 2.4) continue;
+
+        const damage = bulletDamageAtDistance(bullet);
+        game.stats.shotsHit += 1;
+        game.stats.damageDealt += damage;
+        spawnParticles(position.clone(), 4, 0xff6622, 3);
+        game.socket?.emit("pvpDamage", {
+          targetId: remoteId,
+          damage,
+          weapon: bullet.weapon || game.currentWeapon,
+        });
+        shouldRemove = true;
+        break;
       }
     }
 

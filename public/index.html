@@ -22,51 +22,129 @@
   <div id="game-container"></div>
   <div id="vignette"></div>
 
-  <div id="menu-screen">
-    <h1>ARENA ASSAULT</h1>
-    <p class="subtitle">TACTICAL COMBAT SIMULATION</p>
+  <!-- ── SCREEN 1: PLAYER ── -->
+  <div id="screen-player" class="lobby-screen active">
+    <div class="lobby-panel">
+      <h1>ARENA ASSAULT</h1>
+      <p class="subtitle">TACTICAL COMBAT SIMULATION</p>
 
-    <div class="menu-name-wrap">
-      <label for="player-name">PLAYER NAME</label>
-      <input type="text" id="player-name" maxlength="16" placeholder="Enter your name">
-    </div>
+      <div class="menu-name-wrap">
+        <label for="player-name">PLAYER NAME</label>
+        <input type="text" id="player-name" maxlength="16" placeholder="Enter your name">
+      </div>
 
-    <div id="lobby-status">
-      <div id="player-list">Connecting...</div>
-    </div>
-
-    <button class="deploy-btn" id="deploy-btn">READY UP</button>
-
-    <div id="join-link-box" hidden>
-      <div id="host-controls">
-        <div class="host-controls-title">HOST CONTROLS</div>
-        <div class="host-control-row">
-          <label for="skip-wave-select">START AT WAVE</label>
-          <select id="skip-wave-select"></select>
-        </div>
-        <div class="host-control-row">
-          <label for="invincibility-toggle">INVINCIBILITY</label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="invincibility-toggle">
-            <span class="toggle-slider"></span>
-          </label>
+      <div id="character-select" hidden>
+        <div class="character-select-title">SELECT OPERATOR</div>
+        <div id="character-grid">
+          <button type="button" class="character-card" data-character="iestyn">
+            <div class="character-head" style="background:#ff5544;width:48px;height:48px"></div>
+            <div class="character-name">IESTYN</div>
+          </button>
+          <button type="button" class="character-card" data-character="patrick">
+            <div class="character-head" style="background:#55aaff;width:32px;height:32px"></div>
+            <div class="character-name">PATRICK</div>
+          </button>
+          <button type="button" class="character-card" data-character="will">
+            <div class="character-head" style="background:#66dd66;width:40px;height:40px"></div>
+            <div class="character-name">WILL</div>
+          </button>
+          <button type="button" class="character-card" data-character="matt">
+            <div class="character-head" style="background:#ffcc33;width:26px;height:26px"></div>
+            <div class="character-name">MATT</div>
+          </button>
         </div>
       </div>
-      <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
-      <div id="copy-join-link-status" aria-live="polite"></div>
-    </div>
 
-    <div class="controls-box">
-      <span class="key">W A S D</span><span>Move</span>
-      <span class="key">SPACE</span><span>Jump</span>
-      <span class="key">SHIFT</span><span>Crouch (toggle)</span>
-      <span class="key">1 2 3 4 / Q</span><span>Switch Weapon</span>
-      <span class="key">MOUSE</span><span>Aim</span>
-      <span class="key">CLICK</span><span>Fire</span>
-      <span class="key">RMB</span><span>Aim Down Sights</span>
-      <span class="key">E (HOLD)</span><span>Revive</span>
-      <span class="key">R</span><span>Reload</span>
-      <span class="key">ESC</span><span>Pause</span>
+      <button class="deploy-btn" id="btn-to-map" disabled>NEXT →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 2: MAP SELECT ── -->
+  <div id="screen-map" class="lobby-screen">
+    <div class="lobby-panel">
+      <h2 class="screen-title">SELECT MAP</h2>
+
+      <div id="map-grid">
+        <button type="button" class="map-card selected" data-map="arena">
+          <div class="map-preview" style="background:linear-gradient(135deg,#1b2734 0%,#2a3c4e 50%,#152030 100%)">
+            <div class="map-preview-label" style="color:#3ce6cb">ARENA</div>
+          </div>
+          <div class="map-card-name">COMBAT ARENA</div>
+          <div class="map-card-sub">Industrial Training Facility</div>
+        </button>
+        <button type="button" class="map-card" data-map="desert">
+          <div class="map-preview" style="background:linear-gradient(135deg,#c27a30 0%,#8B5A20 50%,#d48840 100%)">
+            <div class="map-preview-label" style="color:#ff9933">DESERT</div>
+          </div>
+          <div class="map-card-name">DUST BOWL</div>
+          <div class="map-card-sub">Abandoned Desert Outpost</div>
+        </button>
+        <button type="button" class="map-card" data-map="city">
+          <div class="map-preview" style="background:linear-gradient(135deg,#0a0f1a 0%,#1a2040 50%,#080c14 100%)">
+            <div class="map-preview-label" style="color:#4488ff">CITY</div>
+          </div>
+          <div class="map-card-name">DOWNTOWN</div>
+          <div class="map-card-sub">Urban Combat Zone</div>
+        </button>
+      </div>
+
+      <div id="map-host-note" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:8px">WAITING FOR HOST TO SELECT MAP</div>
+
+      <div class="screen-nav">
+        <button class="deploy-btn secondary" id="btn-to-player">← BACK</button>
+        <button class="deploy-btn" id="btn-to-lobby">NEXT →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 3: LOBBY ── -->
+  <div id="screen-lobby" class="lobby-screen">
+    <div class="lobby-panel">
+      <h2 class="screen-title">LOBBY</h2>
+      <div id="map-chosen-label"></div>
+
+      <div id="lobby-status">
+        <div id="player-list">Connecting...</div>
+      </div>
+
+      <button class="deploy-btn" id="deploy-btn">READY UP</button>
+      <button class="deploy-btn pvp-btn" id="pvp-match-btn" hidden>PVP MATCH</button>
+
+      <div id="join-link-box" hidden>
+        <div id="host-controls">
+          <div class="host-controls-title">HOST CONTROLS</div>
+          <div class="host-control-row">
+            <label for="skip-wave-select">START AT WAVE</label>
+            <select id="skip-wave-select"></select>
+          </div>
+          <div class="host-control-row">
+            <label for="invincibility-toggle">INVINCIBILITY</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="invincibility-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
+        <div id="copy-join-link-status" aria-live="polite"></div>
+      </div>
+
+      <details class="controls-details">
+        <summary>CONTROLS</summary>
+        <div class="controls-box">
+          <span class="key">W A S D</span><span>Move</span>
+          <span class="key">SPACE</span><span>Jump</span>
+          <span class="key">SHIFT + W</span><span>Sprint</span>
+          <span class="key">CTRL</span><span>Crouch (toggle)</span>
+          <span class="key">1–5 / Q</span><span>Switch Weapon</span>
+          <span class="key">RMB</span><span>Aim Down Sights</span>
+          <span class="key">E (HOLD)</span><span>Revive</span>
+          <span class="key">R</span><span>Reload</span>
+          <span class="key">ESC</span><span>Pause</span>
+        </div>
+      </details>
+
+      <button class="deploy-btn secondary" id="btn-to-map-from-lobby">← BACK</button>
     </div>
   </div>
 
@@ -75,6 +153,10 @@
       <div id="health-label">HEALTH</div>
       <div id="health-bar-bg"><div id="health-bar-fill"></div></div>
       <div id="health-text">100</div>
+      <div id="pvp-score" hidden>
+        <span id="pvp-kills">0</span><span id="pvp-kills-sep">/</span><span id="pvp-kills-max">13</span>
+        <span id="pvp-rank">#1</span>
+      </div>
     </div>
 
     <div id="ammo-wrap">
@@ -129,6 +211,8 @@
 
     <div id="teammate-alert"></div>
     <div id="boss-impervious-alert"></div>
+    <div id="weapon-unlock-alert"></div>
+    <div id="respawn-fade"></div>
 
     <div id="inventory-bar"></div>
 
@@ -140,6 +224,7 @@
       <h2>PAUSED</h2>
       <button class="pause-btn" id="resume-btn">RESUME</button>
       <button class="pause-btn" id="view-btn">VIEW: THIRD PERSON</button>
+      <button class="pause-btn" id="fullscreen-btn">FULLSCREEN</button>
       <div id="sens-wrap">
         <label for="sens-slider">SENSITIVITY: <span id="sens-val">5</span></label>
         <input type="range" id="sens-slider" min="1" max="10" value="5">

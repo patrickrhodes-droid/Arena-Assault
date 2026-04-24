@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const path = require('path');
 const os = require('os');
 
-const PORT = 3000;
+const PORT = 3001;
 
 const publicDir = path.join(__dirname, 'public');
 
@@ -69,6 +69,34 @@ app.get('/arenatest.html', (req, res) => {
 
 let players = {};
 let currentWave = 0;
+let currentMode = 'COOP';
+let selectedMap = 'arena';
+
+const PVP_WIN_KILLS = 13;
+const PVP_KILLS_PER_WEAPON = 2;
+const PVP_SWORD_KILLS_TO_WIN = 5;
+const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword'];
+const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
+
+function computeWeaponForKills(kills) {
+    const idx = Math.min(Math.floor(kills / PVP_KILLS_PER_WEAPON), WEAPON_ORDER.length - 1);
+    return { idx, weapon: WEAPON_ORDER[idx] };
+}
+
+function buildPvPRankings() {
+    return Object.values(players)
+        .sort((a, b) => (b.pvpKills || 0) - (a.pvpKills || 0))
+        .map((p, idx) => ({
+            rank: idx + 1,
+            playerId: p.playerId,
+            playerName: p.playerName || `Player ${p.playerId.slice(0, 6)}`,
+            character: p.character || null,
+            kills: p.pvpKills || 0,
+            swordKills: p.pvpSwordKills || 0,
+            weaponsUnlocked: Math.min((p.pvpWeaponIdx || 0) + 1, WEAPON_ORDER.length),
+            status: p.isAlive ? 'ALIVE' : 'DEAD',
+        }));
+}
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -86,6 +114,11 @@ io.on('connection', (socket) => {
         isDowned: false,
         isSpectating: false,
         playerName: '',   // Empty until player types a name
+        character: null,
+        mode: 'COOP',
+        pvpKills: 0,
+        pvpSwordKills: 0,
+        pvpWeaponIdx: 0,
         score: 0,
         kills: 0,
         dogKills: 0,
@@ -128,6 +161,11 @@ io.on('connection', (socket) => {
         if (typeof movementData.isAlive === 'boolean') players[socket.id].isAlive = movementData.isAlive;
         if (typeof movementData.isDowned === 'boolean') players[socket.id].isDowned = movementData.isDowned;
         if (typeof movementData.isSpectating === 'boolean') players[socket.id].isSpectating = movementData.isSpectating;
+        if (typeof movementData.isCrouching === 'boolean') players[socket.id].isCrouching = movementData.isCrouching;
+        if (typeof movementData.isSprinting === 'boolean') players[socket.id].isSprinting = movementData.isSprinting;
+        if (typeof movementData.currentWeapon === 'string') players[socket.id].currentWeapon = movementData.currentWeapon;
+        if (typeof movementData.swordSwing === 'number') players[socket.id].swordSwing = movementData.swordSwing;
+        if (typeof movementData.pvpDying === 'boolean') players[socket.id].pvpDying = movementData.pvpDying;
         if (movementData.stats) players[socket.id].stats = movementData.stats;
         socket.broadcast.emit('playerMoved', players[socket.id]);
     });
@@ -152,16 +190,66 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('playerCharacterUpdate', (data) => {
+        if (players[socket.id] && data && typeof data.character === 'string') {
+            players[socket.id].character = data.character;
+            io.emit('updateLobby', players);
+        }
+    });
+
+    socket.on('hostSelectMap', (data) => {
+        if (!players[socket.id] || !players[socket.id].isHost) return;
+        if (typeof data.map === 'string') {
+            selectedMap = data.map;
+            io.emit('mapSelected', { map: selectedMap, hostId: socket.id });
+        }
+    });
+
     socket.on('startMatch', () => {
         if (players[socket.id] && players[socket.id].isHost) {
             currentWave = 0;
+            currentMode = 'COOP';
             Object.values(players).forEach(p => {
                 p.isAlive = true;
                 p.isDowned = false;
                 p.isSpectating = false;
+                p.mode = 'COOP';
+                p.pvpKills = 0;
+                p.pvpSwordKills = 0;
+                p.pvpWeaponIdx = 0;
             });
-            io.emit('matchStarted');
+            io.emit('matchStarted', { mode: 'COOP', map: selectedMap });
         }
+    });
+
+    socket.on('startPvPMatch', () => {
+        if (!players[socket.id] || !players[socket.id].isHost) return;
+
+        const eligible = Object.values(players).filter(p => p.playerName && p.character);
+        if (eligible.length < 2) return;
+
+        currentMode = 'PVP';
+        currentWave = 0;
+
+        // Deterministic spawn assignment: sort by playerId and map to corners.
+        const sortedIds = Object.keys(players).sort();
+        const spawnAssignments = {};
+        sortedIds.forEach((id, idx) => {
+            spawnAssignments[id] = idx % PVP_CORNERS.length;
+        });
+
+        Object.values(players).forEach(p => {
+            p.isAlive = true;
+            p.isDowned = false;
+            p.isSpectating = false;
+            p.mode = 'PVP';
+            p.pvpKills = 0;
+            p.pvpSwordKills = 0;
+            p.pvpWeaponIdx = 0;
+            p.weapon = 'pistol';
+        });
+
+        io.emit('matchStarted', { mode: 'PVP', map: selectedMap, spawnAssignments });
     });
 
     // Enemy sync (host -> clients)
@@ -202,6 +290,54 @@ io.on('connection', (socket) => {
             targetSocket.emit('playerDamaged', { targetId: data.targetId, damage: data.damage });
         }
     });
+
+    // PvP: shooter tells server they hit a target. Server forwards damage + shooterId.
+    socket.on('pvpDamage', (data) => {
+        if (currentMode !== 'PVP' || !data || !data.targetId) return;
+        const targetSocket = io.sockets.sockets.get(data.targetId);
+        if (targetSocket) {
+            targetSocket.emit('playerDamaged', {
+                targetId: data.targetId,
+                damage: data.damage,
+                shooterId: socket.id,
+                weapon: data.weapon || null,
+            });
+        }
+    });
+
+    function resolvePvPKill(shooterId, victimId, weaponUsed) {
+        const shooter = players[shooterId];
+        if (!shooter) return;
+
+        shooter.pvpKills = (shooter.pvpKills || 0) + 1;
+        if (weaponUsed === 'sword') {
+            shooter.pvpSwordKills = (shooter.pvpSwordKills || 0) + 1;
+        }
+        const progression = computeWeaponForKills(shooter.pvpKills);
+        shooter.pvpWeaponIdx = progression.idx;
+        shooter.weapon = progression.weapon;
+
+        io.emit('pvpKill', {
+            shooterId,
+            victimId,
+            weapon: weaponUsed,
+            standings: Object.fromEntries(Object.values(players).map(p => [p.playerId, {
+                pvpKills: p.pvpKills || 0,
+                pvpSwordKills: p.pvpSwordKills || 0,
+                pvpWeaponIdx: p.pvpWeaponIdx || 0,
+                playerName: p.playerName,
+                character: p.character,
+            }])),
+        });
+
+        if (shooter.pvpKills >= PVP_WIN_KILLS && shooter.pvpSwordKills >= PVP_SWORD_KILLS_TO_WIN) {
+            currentMode = 'COOP';
+            io.emit('pvpMatchOver', {
+                winnerId: shooterId,
+                rankings: buildPvPRankings(),
+            });
+        }
+    }
 
     // Revive progress (host -> downed player)
     socket.on('reviveProgress', (data) => {
@@ -244,9 +380,10 @@ io.on('connection', (socket) => {
 
     // Player death
     socket.on('playerDied', (data) => {
+        const isPvP = (data && data.mode === 'PVP') || currentMode === 'PVP';
         if (players[socket.id]) {
             players[socket.id].isAlive = false;
-            players[socket.id].isDowned = true;
+            players[socket.id].isDowned = !isPvP;
             players[socket.id].isSpectating = false;
             players[socket.id].stats = data.stats || {};
             players[socket.id].score = data.stats?.score || 0;
@@ -256,7 +393,15 @@ io.on('connection', (socket) => {
             players[socket.id].totalKills = data.stats?.totalKills || data.stats?.kills || 0;
             players[socket.id].wave = data.stats?.wave || 0;
         }
-        io.emit('playerDied', { playerId: socket.id, stats: data.stats });
+        io.emit('playerDied', { playerId: socket.id, stats: data.stats, mode: isPvP ? 'PVP' : 'COOP', killerId: data?.killerId || null });
+
+        if (isPvP) {
+            if (data?.killerId && players[data.killerId] && data.killerId !== socket.id) {
+                const weaponUsed = data.killerWeapon || WEAPON_ORDER[players[data.killerId].pvpWeaponIdx || 0];
+                resolvePvPKill(data.killerId, socket.id, weaponUsed);
+            }
+            return; // PvP: no global game-over on death; match ends only via win threshold.
+        }
 
         // Check if all players are dead/downed
         const allDead = Object.values(players).every(p => !p.isAlive || p.isDowned);

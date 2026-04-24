@@ -1,12 +1,23 @@
-import { ARENA_SIZE, HALF, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
+import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, P_MAX_HP, PVP_WIN_KILLS, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
 import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
+import { applyCharacterHead } from "./scene.js";
 
 export function cacheDom() {
   game.dom = {
     gameContainer: document.getElementById("game-container"),
-    menu: document.getElementById("menu-screen"),
+    menu: document.getElementById("screen-player"), // kept as alias
+    screenPlayer: document.getElementById("screen-player"),
+    screenMap: document.getElementById("screen-map"),
+    screenLobby: document.getElementById("screen-lobby"),
+    btnToMap: document.getElementById("btn-to-map"),
+    btnToPlayer: document.getElementById("btn-to-player"),
+    btnToLobby: document.getElementById("btn-to-lobby"),
+    btnToMapFromLobby: document.getElementById("btn-to-map-from-lobby"),
+    mapCards: document.querySelectorAll(".map-card"),
+    mapChosenLabel: document.getElementById("map-chosen-label"),
+    mapHostNote: document.getElementById("map-host-note"),
     hud: document.getElementById("hud"),
     pause: document.getElementById("pause-menu"),
     gameOver: document.getElementById("gameover-screen"),
@@ -65,19 +76,70 @@ export function cacheDom() {
     teammateAlert: document.getElementById("teammate-alert"),
     bossImperviousAlert: document.getElementById("boss-impervious-alert"),
     inventoryBar: document.getElementById("inventory-bar"),
+    pvpMatchBtn: document.getElementById("pvp-match-btn"),
+    characterSelect: document.getElementById("character-select"),
+    characterCards: document.querySelectorAll(".character-card"),
+    pvpScore: document.getElementById("pvp-score"),
+    pvpKills: document.getElementById("pvp-kills"),
+    pvpKillsMax: document.getElementById("pvp-kills-max"),
+    pvpRank: document.getElementById("pvp-rank"),
+    waveDisplay: document.getElementById("wave-display"),
+    statsGrid: document.getElementById("stats-grid"),
+    weaponUnlockAlert: document.getElementById("weapon-unlock-alert"),
+    respawnFade: document.getElementById("respawn-fade"),
+    fullscreenBtn: document.getElementById("fullscreen-btn"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
 }
 
+function showScreen(id) {
+  ["screen-player", "screen-map", "screen-lobby"].forEach((s) => {
+    document.getElementById(s)?.classList.toggle("active", s === id);
+  });
+}
+
 export function bindMenuControls(actions) {
   const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage, copyJoinLink } = actions;
+
+  // ── Screen navigation ──
+  game.dom.btnToMap.addEventListener("click", () => {
+    if (!game.myCharacter || !game.dom.playerName.value.trim()) return;
+    showScreen("screen-map");
+    // Sync host-selected map highlight.
+    syncMapCards(game.selectedMap);
+    const isHost = game.isHost;
+    game.dom.mapHostNote.style.display = isHost ? "none" : "block";
+    game.dom.mapCards.forEach((c) => { c.disabled = !isHost; });
+  });
+
+  game.dom.btnToPlayer.addEventListener("click", () => showScreen("screen-player"));
+  game.dom.btnToLobby.addEventListener("click", () => showScreen("screen-lobby"));
+  game.dom.btnToMapFromLobby.addEventListener("click", () => showScreen("screen-map"));
+
+  // ── Map cards ──
+  game.dom.mapCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      if (!game.isHost) return;
+      const mapId = card.dataset.map;
+      if (!mapId) return;
+      game.selectedMap = mapId;
+      syncMapCards(mapId);
+      game.socket?.emit("hostSelectMap", { map: mapId });
+      updateMapChosenLabel(mapId);
+    });
+  });
 
   game.dom.deployBtn.addEventListener("click", () => {
     const name = game.dom.playerName.value.trim();
     if (!name) {
       game.dom.playerName.style.borderColor = "var(--danger)";
       game.dom.playerName.placeholder = "Name required!";
+      return;
+    }
+
+    if (!game.myCharacter) {
+      game.dom.characterSelect.style.borderColor = "var(--danger)";
       return;
     }
 
@@ -93,10 +155,42 @@ export function bindMenuControls(actions) {
     game.dom.deployBtn.style.opacity = "0.5";
   });
 
+  game.dom.characterCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const characterId = card.dataset.character;
+      if (!characterId || !CHARACTERS[characterId]) return;
+      game.myCharacter = characterId;
+      game.dom.characterCards.forEach((c) => c.classList.toggle("selected", c === card));
+      game.dom.characterSelect.style.borderColor = "";
+      if (game.visuals?.player?.headGroup) {
+        applyCharacterHead(game.visuals.player.headGroup, characterId, { visor: game.visuals.player.visor });
+      }
+      game.socket?.emit("playerCharacterUpdate", { character: characterId });
+    });
+  });
+
+  game.dom.pvpMatchBtn.addEventListener("click", () => {
+    if (!game.isHost) return;
+    audioInit();
+    game.socket?.emit("startPvPMatch");
+  });
+
   game.dom.resumeBtn.addEventListener("click", actions.resumeGame);
   game.dom.exitBtn.addEventListener("click", reloadPage);
   game.dom.redeployBtn.addEventListener("click", reloadPage);
   game.dom.viewBtn.addEventListener("click", toggleView);
+  if (game.dom.fullscreenBtn) {
+    game.dom.fullscreenBtn.addEventListener("click", () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.();
+      } else {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+    });
+    document.addEventListener("fullscreenchange", () => {
+      game.dom.fullscreenBtn.textContent = document.fullscreenElement ? "EXIT FULLSCREEN" : "FULLSCREEN";
+    });
+  }
   game.dom.sensSlider.addEventListener("input", updateSensitivity);
   game.dom.playerName.addEventListener("input", updatePlayerName);
   game.dom.copyJoinLinkBtn.addEventListener("click", copyJoinLink);
@@ -117,10 +211,24 @@ export function bindMenuControls(actions) {
   });
 }
 
+export function syncMapCards(mapId) {
+  game.dom.mapCards.forEach((c) => {
+    c.classList.toggle("selected", c.dataset.map === mapId);
+  });
+}
+
+export function updateMapChosenLabel(mapId) {
+  const def = MAP_DEFS[mapId];
+  if (game.dom.mapChosenLabel) {
+    game.dom.mapChosenLabel.textContent = def ? `MAP: ${def.name}` : "";
+  }
+}
+
 export function updateLobbyUI(players) {
   const list = game.dom.lobbyList;
   list.innerHTML = "";
   let playerCount = 0;
+  let namedPlayersWithCharacter = 0;
 
   Object.values(players).forEach((player) => {
     const displayName = (player.playerName || "").trim();
@@ -129,9 +237,16 @@ export function updateLobbyUI(players) {
     }
 
     playerCount += 1;
+    if (player.character) namedPlayersWithCharacter += 1;
+
+    const characterInfo = player.character && CHARACTERS[player.character];
+    const characterLabel = characterInfo
+      ? `<span class="lobby-character" style="color:#${characterInfo.headColor.toString(16).padStart(6, "0")}">${characterInfo.name.toUpperCase()}</span>`
+      : '<span class="lobby-character" style="color:var(--muted)">PICKING...</span>';
+
     const row = document.createElement("div");
     row.className = "player-row";
-    row.innerHTML = `<span>${displayName} ${player.isHost ? '<span style="color:var(--muted);font-size:11px">(HOST)</span>' : ""}</span>
+    row.innerHTML = `<span>${displayName} ${player.isHost ? '<span style="color:var(--muted);font-size:11px">(HOST)</span>' : ""} ${characterLabel}</span>
       <span class="${player.isReady ? "player-ready" : "player-waiting"}">${player.isReady ? "READY" : "WAITING"}</span>`;
     list.appendChild(row);
 
@@ -149,11 +264,29 @@ export function updateLobbyUI(players) {
     return;
   }
 
+  const hasName = Boolean(localPlayer.playerName);
+  game.dom.characterSelect.hidden = !hasName;
+
+  // NEXT button on screen 1 requires both name and character.
+  const canAdvance = hasName && Boolean(game.myCharacter);
+  game.dom.btnToMap.disabled = !canAdvance;
+
   game.dom.deployBtn.style.display = "block";
   game.dom.deployBtn.disabled = false;
   game.dom.deployBtn.style.opacity = "1";
   const allReady = Object.values(players).every((player) => player.isReady);
   game.dom.deployBtn.textContent = localPlayer.isHost && allReady ? "START MISSION" : "READY UP";
+
+  const showPvPBtn = localPlayer.isHost
+    && hasName
+    && Boolean(game.myCharacter)
+    && playerCount >= 2
+    && namedPlayersWithCharacter >= 2;
+  game.dom.pvpMatchBtn.hidden = !showPvPBtn;
+
+  // Keep the map chosen label in sync.
+  updateMapChosenLabel(game.selectedMap);
+
   renderJoinLinkControls();
 }
 
@@ -182,6 +315,19 @@ export function updateHUD() {
   const percent = Math.max(0, game.hp / game.effectiveMaxHP);
   game.dom.hpFill.style.width = `${percent * 100}%`;
   game.dom.hpText.textContent = Math.ceil(game.hp);
+
+  const isPvP = game.mode === "PVP";
+  game.dom.pvpScore.hidden = !isPvP;
+  game.dom.waveDisplay.style.display = isPvP ? "none" : "";
+  game.dom.inventoryBar.style.display = isPvP ? "none" : "";
+  if (isPvP) {
+    game.dom.pvpKills.textContent = game.pvpKills;
+    game.dom.pvpKillsMax.textContent = PVP_WIN_KILLS;
+    const selfKills = game.pvpKills;
+    const remoteKillCounts = Object.values(game.remotePlayers).map((r) => r.pvpKills ?? 0);
+    const rank = 1 + remoteKillCounts.filter((k) => k > selfKills).length;
+    game.dom.pvpRank.textContent = `#${rank}`;
+  }
   game.dom.ammoCurrent.textContent = game.localPlayerIsAlive
     ? (game.isReloading ? "--" : game.ammo)
     : (game.localPlayerIsDowned ? "DOWNED" : game.localPlayerIsSpectating ? "SPEC" : "DEAD");
@@ -253,6 +399,14 @@ export function showTeammateDownAlert(name) {
   void el.offsetWidth;
   el.classList.add("show");
   game.teammateAlertPulse = 4;
+}
+
+export function showWeaponUnlockAlert(weaponLabel) {
+  const el = game.dom.weaponUnlockAlert;
+  el.textContent = `${(weaponLabel || "WEAPON").toUpperCase()} UNLOCKED`;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
 }
 
 export function showBossImperviousAlert() {
@@ -420,9 +574,45 @@ export function showRankings(rankings) {
   game.dom.rankingsSection.hidden = false;
 }
 
+export function showPvPRankings(rankings, winnerId) {
+  const rows = rankings.map((player, index) => {
+    const isYou = player.playerId === game.socket?.id;
+    const isWinner = player.playerId === winnerId;
+    return `
+      <tr class="${isYou ? "is-you" : ""} ${isWinner ? "is-winner" : ""}">
+        <td class="rankings-rank">${index + 1}</td>
+        <td class="rankings-name ${isYou ? "is-you" : ""}">${player.playerName || player.playerId}${isYou ? " (YOU)" : ""}${isWinner ? " <span style='color:#ffcc33'>WINNER</span>" : ""}</td>
+        <td class="center">${player.kills || 0}</td>
+        <td class="center">${player.swordKills || 0}</td>
+        <td class="center">${player.weaponsUnlocked || 1}/5</td>
+      </tr>
+    `;
+  }).join("");
+
+  game.dom.rankingsContent.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>RANK</th>
+          <th>PLAYER</th>
+          <th class="center">KILLS</th>
+          <th class="center">SWORD KILLS</th>
+          <th class="center">WEAPONS UNLOCKED</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  game.dom.gameOverTitle.textContent = winnerId === game.socket?.id ? "VICTORY" : "MATCH COMPLETE";
+  game.dom.gameOverSubtitle.textContent = "Gun-game standings";
+  game.dom.rankingsSection.hidden = false;
+  game.dom.statsGrid.style.display = "none";
+}
+
 export function hideRankings() {
   game.dom.gameOverTitle.textContent = "K.I.A.";
   game.dom.gameOverSubtitle.textContent = "Mission failed";
   game.dom.rankingsSection.hidden = true;
   game.dom.rankingsContent.innerHTML = "";
+  game.dom.statsGrid.style.display = "";
 }

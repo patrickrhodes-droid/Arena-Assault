@@ -311,7 +311,7 @@ export function createBoss(position, id = Math.random(), options = {}) {
     hp: hpMax,
     maxHp: hpMax,
     spd: 12,
-    atkDmg: 56,
+    atkDmg: 100 + game.wave * 10,
     atkTmr: 0,
     swingTmr: 0,
     windupTmr: 0,
@@ -443,6 +443,9 @@ export function finishWave() {
 }
 
 export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal } = {}) {
+  if (game.mode === "PVP") {
+    return;
+  }
   if (!game.isHost) {
     game.enemies.forEach((enemy) => {
       updateHealthBar(enemy);
@@ -516,7 +519,7 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
 
         if (enemy.type === "boss") {
           const knockDir = new THREE.Vector3(dx, 0, dz).normalize();
-          const speed = 6 * 3.1 * 10;
+          const speed = 185;
           game.knockbackX = knockDir.x * speed;
           game.knockbackZ = knockDir.z * speed;
         }
@@ -681,25 +684,25 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
         enemy.rightArm.rotation.x = -1.2;
         enemy.club.rotation.z = -1.1;
         if (enemy.windupTmr <= 0) {
-          enemy.swingTmr = 0.38;
+          enemy.swingTmr = 0.22;
         }
       } else if (enemy.swingTmr > 0) {
         enemy.swingTmr -= game.dt;
-        const progress = 1 - enemy.swingTmr / 0.38;
+        const progress = 1 - enemy.swingTmr / 0.22;
         enemy.rightArm.rotation.x = -1.2 + progress * 2.1;
         enemy.club.rotation.z = -1.1 + progress * 1.8;
       }
 
       const verticalGap = Math.abs((playerPosition.y + 1.1) - (enemyPosition.y + 2.2));
-      if (distance < 5.2 && verticalGap < 2.8) {
+      if (distance < 7.8 && verticalGap < 4.2) {
         enemy.atkTmr -= game.dt;
         if (enemy.atkTmr <= 0 && enemy.windupTmr <= 0 && enemy.swingTmr <= 0) {
-          enemy.atkTmr = 2.2;
-          enemy.windupTmr = 0.4;
+          enemy.atkTmr = 1.1;
+          enemy.windupTmr = 0.2;
         }
 
-        if (enemy.swingTmr > 0.16 && enemy.swingTmr < 0.24) {
-          enemy.swingTmr = 0.15;
+        if (enemy.swingTmr > 0.09 && enemy.swingTmr < 0.14) {
+          enemy.swingTmr = 0.08;
           addShake?.(0.35);
           applyMeleeDamage(enemy.atkDmg);
         }
@@ -846,6 +849,9 @@ function updateHealthBar(enemy) {
 }
 
 export function updateWaves() {
+  if (game.mode === "PVP") {
+    return;
+  }
   if (!game.isHost) {
     return;
   }
@@ -1071,22 +1077,50 @@ export function handleEnemyDamaged(data) {
 }
 
 export function trySwordHit() {
-  if (game.currentWeapon !== "sword" || !game.isHost) {
+  if (game.currentWeapon !== "sword") {
     return;
   }
 
   const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(game.camera.quaternion).normalize();
+  const camFlat = new THREE.Vector3(cameraDirection.x, 0, cameraDirection.z);
+  if (camFlat.lengthSq() > 0) camFlat.normalize();
+  const playerPos = game.visuals.player.playerGroup.position;
+
+  // PvP: sword hits remote players. Non-host is allowed so anyone can swing.
+  if (game.mode === "PVP") {
+    for (const [remoteId, remote] of Object.entries(game.remotePlayers)) {
+      if (!remote.isAlive || remote.isDowned || remote.isSpectating) continue;
+
+      const dx = remote.group.position.x - playerPos.x;
+      const dz = remote.group.position.z - playerPos.z;
+      const verticalGap = Math.abs(remote.group.position.y - playerPos.y);
+      const planarDistance = Math.hypot(dx, dz);
+      if (planarDistance >= 5.5 || verticalGap > 2.5) continue;
+
+      const toRemote = new THREE.Vector3(dx, 0, dz).normalize();
+      if (toRemote.dot(camFlat) < 0.3) continue;
+
+      game.socket?.emit("pvpDamage", {
+        targetId: remoteId,
+        damage: 999,
+        weapon: "sword",
+      });
+      game.stats.shotsHit += 1;
+      game.stats.damageDealt += 999;
+      spawnParticles(remote.group.position.clone().setY(1.5), 8, 0xff6622, 5);
+    }
+    return;
+  }
+
+  if (!game.isHost) return;
+
   for (const enemy of game.enemies) {
-    if (enemy.hp <= 0) {
-      continue;
-    }
+    if (enemy.hp <= 0) continue;
 
-    const distance = game.visuals.player.playerGroup.position.distanceTo(enemy.group.position);
-    if (distance >= 6.5) {
-      continue;
-    }
+    const distance = playerPos.distanceTo(enemy.group.position);
+    if (distance >= 6.5) continue;
 
-    const toEnemy = enemy.group.position.clone().sub(game.visuals.player.playerGroup.position).normalize();
+    const toEnemy = enemy.group.position.clone().sub(playerPos).normalize();
     if (toEnemy.dot(cameraDirection) > 0.5) {
       processHit(enemy, enemy.type === "boss" ? 160 : 9999, enemy.group.position.clone().setY(1.5));
     }

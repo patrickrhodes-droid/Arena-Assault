@@ -9,6 +9,16 @@ import {
 export const game = {
   socket: null,
   state: "MENU",
+  mode: "COOP",
+  selectedMap: "arena",
+  arenaGroup: null,
+  arenaLights: [],
+  myCharacter: null,
+  pvpKills: 0,
+  pvpWeaponIdx: 0,
+  pvpSwordKills: 0,
+  pvpStandings: {},
+  pvpSpawnAssignments: {},
   score: 0,
   wave: 0,
   hp: P_MAX_HP,
@@ -144,6 +154,10 @@ export function resetSessionState() {
   game.knockbackZ = 0;
   game.fpRecoilZ = 0;
   game.fpRecoilRX = 0;
+  game.pvpKills = 0;
+  game.pvpWeaponIdx = 0;
+  game.pvpSwordKills = 0;
+  game.pvpStandings = {};
 }
 
 export function addShake(amount) {
