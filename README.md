@@ -62,7 +62,9 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 |---|---|
 | W A S D | Move |
 | Space | Jump |
-| Shift | Sprint (double-tap W to toggle sprint lock) |
+| Double-tap W | Toggle sprint lock |
+| Shift | Crouch (toggle) |
+| W / S on a ladder | Climb up / down |
 | 1 / 2 / 3 / 4 / Q | Switch weapon |
 | Mouse | Aim |
 | Left click | Fire |
@@ -73,13 +75,13 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 
 ## Weapons
 
-| Slot | Name | Notes |
-|---|---|---|
-| 1 | Service Pistol | Semi-auto, fast fire rate, always available |
-| 2 | Assault Rifle | Full-auto, workhorse weapon |
-| 3 | Shotgun | 8 pellets, high close-range damage |
-| 4 | Sniper Rifle | High damage, slow fire, heavy ADS zoom |
-| Q | Tactical Blade (sword) | One-hit kills all non-boss enemies; big damage vs bosses |
+| Slot | Name | Damage | Notes |
+|---|---|---|---|
+| 1 | Service Pistol | 102 | Semi-auto, fast fire rate, always available |
+| 2 | Assault Rifle | 46 per bullet | Full-auto, 30-round mag |
+| 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
+| 4 | Sniper Rifle | 480 | Slow fire, heavy ADS zoom |
+| Q | Tactical Blade | 9999 / 160 vs boss | One-hit kills all non-boss enemies |
 
 All weapons have hip-fire and ADS spread, recoil, and reload animations. GLB models are rendered in first-person and on the third-person player model.
 
@@ -89,8 +91,8 @@ All weapons have hip-fire and ADS spread, recoil, and reload animations. GLB mod
 |---|---|---|
 | Soldier | Wave 1+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
 | Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
-| Skeleton | Wave 6+ | 1 HP, spawns in groups of 5. Wave 6 = 4 groups, +1 group per wave. Uses the Skeleton GLB model at ¼ scale. |
-| Titan Brute (boss) | Every 5th wave | Large melee boss with a club, high HP, and a jump escape. Multiple bosses and multiplied HP on later boss waves. |
+| Skeleton | Wave 6+ | 1 HP, spawns in groups of 5. Wave 6 = 4 groups (+1 per wave, capped at 8). Animated GLB model at ¾ scale. |
+| Titan Brute (boss) | Every 5th wave | Large melee boss (56 damage, heavy knockback). High HP, jump escape. Multiple bosses with multiplied HP on later boss waves. |
 
 ## Wave system
 
@@ -115,17 +117,19 @@ All weapons have hip-fire and ADS spread, recoil, and reload animations. GLB mod
 ## Arena
 
 - 144 × 144 unit open arena with boundary walls and neon accent strips.
-- Roughly 80 structures placed across the map: staircase pyramids, bunkers (north and south), tall towers (east, west, and four corners), crate clusters, diagonal cover barriers, metal barriers, and outer-wall cover.
+- Roughly 80 structures: staircase pyramids, bunkers (north and south), tall towers (east, west, and four corner sniper perches), crate clusters, diagonal cover barriers, metal barriers, and outer-wall cover.
+- **Sniper tower ladders**: each of the four corner perch towers has a climbable ladder (W/S to climb, Space to jump off). At the top the player can step onto the platform.
+- **Crouch**: Shift toggles crouch — speed drops to 45 %, camera lowers, player model squishes. Uncrouches automatically on jump or ladder grab.
 - Exponential fog at density 0.005 for visibility across the larger map.
 - 20 teal point lights spread across the arena floor.
 
 ## HUD and minimap
 
 - Health bar, ammo counter, weapon name, score, and wave number displayed at all times.
-- Boss HP bar appears during boss waves.
+- **Boss HP bar**: single boss shows its name and individual HP; two or more bosses show **TITAN BOSSES** with a combined percentage (killing one of two equal bosses drops it to 50%).
 - Crosshair with ADS scope overlays for sniper and red-dot for pistol/assault.
 - Inventory hotbar shows all weapon slots and highlights the active weapon.
-- **Minimap** (360 × 360 px, bottom-left): shows obstacles, all enemies (colour-coded by type), remote players, and a directional arrow for the local player.
+- **Minimap** (360 × 360 px, bottom-left): shows obstacles, all enemies (colour-coded by type — red for soldiers, orange for dogs, light-blue for skeletons, gold for bosses), remote players, and a directional arrow for the local player.
 
 ## Host controls
 
