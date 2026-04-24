@@ -111,10 +111,10 @@ Four playable characters with distinct heads:
 |---|---|---|
 | Iestyn | Red / coral | 1.5× |
 | Patrick | Blue | 1.0× (GLB face model) |
-| Will | Green | 1.25× |
+| Will | Green | 1.25× (GLB face model) |
 | Matt | Yellow | 0.8× |
 
-Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. All other characters use a coloured box placeholder designed to be swapped for GLBs in future.
+Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. Iestyn, Patrick, and Will use custom GLB models. Matt uses a coloured box placeholder designed to be swapped for a GLB in future.
 
 Heads use a layer-isolated point-light fill so they appear bright without any emissive glow bleeding onto the rest of the scene.
 

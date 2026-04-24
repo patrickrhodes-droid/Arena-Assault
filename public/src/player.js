@@ -370,6 +370,7 @@ function handleFiring(actions) {
   const triggerDown = weapon.mode === "pistol" ? game.mouseClicked : game.mouseDown;
   if (
     !triggerDown
+    || !game.localPlayerIsAlive
     || game.fireTmr > 0
     || game.isReloading
     || (game.ammo <= 0 && weapon.mode !== "sword")

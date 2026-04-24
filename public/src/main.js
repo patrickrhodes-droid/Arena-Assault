@@ -437,6 +437,12 @@ function playerDiedLocalPvP() {
   game.localPlayerIsDowned = false;
   game.localPlayerIsSpectating = false;
   game.pvpDying = true;
+  // Flush all held input so stale keys don't corrupt movement on respawn.
+  game.keys = {};
+  game.mouseDown = false;
+  game.mouseClicked = false;
+  game.sprintLocked = false;
+  game.isAiming = false;
   game.audio.death();
   game.socket?.emit("playerDied", {
     mode: "PVP",

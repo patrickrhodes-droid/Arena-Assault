@@ -1,0 +1,2 @@
+when you revive you should spawn with full health 
+the health packs should restore 150 health points

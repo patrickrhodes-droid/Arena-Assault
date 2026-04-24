@@ -382,9 +382,9 @@ function buildArenaOriginal() {
 }
 
 function buildArenaDesert() {
-  game.scene.fog = new THREE.FogExp2(0x9B6030, 0.006);
-  game.scene.background = new THREE.Color(0xB8732A);
-  addSun(0xFFD060, 2.2, 50, 80, 10);
+  game.scene.fog = new THREE.FogExp2(0xdbb07d, 0.004);
+  game.scene.background = new THREE.Color(0xe3c4a1);
+  addSun(0xfffef0, 2.5, 50, 80, 10);
 
   // Warm amber fill lights — scattered lanterns.
   for (let i = 0; i < 14; i += 1) {
@@ -465,35 +465,52 @@ function buildArenaDesert() {
 }
 
 function buildArenaCity() {
-  game.scene.fog = new THREE.FogExp2(0x050a12, 0.007);
-  game.scene.background = new THREE.Color(0x080d18);
-  addSun(0x99BBFF, 0.75, 30, 70, -20);
+  game.scene.fog = new THREE.FogExp2(0xb1c9e8, 0.003);
+  game.scene.background = new THREE.Color(0xc9e4ff);
+  // Bright midday sun.
+  addSun(0xffffff, 2.6, 30, 85, -20);
+  // Second fill from the opposite side so buildings are lit on both faces.
+  addSun(0xddeeff, 1.2, -40, 50, 30);
+  // Extra city-specific ambient hemisphere — well-lit urban sky.
+  const cityHemi = new THREE.HemisphereLight(0xcae4ff, 0x7788aa, 1.4);
+  game.scene.add(cityHemi);
+  game.arenaLights.push(cityHemi);
 
-  // Street-lamp fill lights in blue-white and occasional neon.
-  const lampPositions = [[-30, -30], [30, -30], [-30, 30], [30, 30], [0, -48], [0, 48], [-48, 0], [48, 0]];
+  // Street-lamp fill lights — more of them, higher intensity, bigger range.
+  const lampPositions = [
+    [-30, -30], [30, -30], [-30, 30], [30, 30],
+    [0, -48], [0, 48], [-48, 0], [48, 0],
+    [-15, -15], [15, -15], [-15, 15], [15, 15],
+    [0, 0], [-50, -50], [50, -50], [-50, 50], [50, 50],
+  ];
   for (const [x, z] of lampPositions) {
-    const pl = new THREE.PointLight(0xAADDFF, 2.8, 22);
-    pl.position.set(x, 5, z);
+    const pl = new THREE.PointLight(0xCCEEFF, 4.5, 40);
+    pl.position.set(x, 6, z);
     game.scene.add(pl);
     game.arenaLights.push(pl);
   }
-  // Neon accent lights.
-  for (const [x, z, col] of [[-15, 0, 0x4488ff], [15, 0, 0xff3366], [0, -15, 0x44ffaa], [0, 15, 0xff8800]]) {
-    const nl = new THREE.PointLight(col, 1.2, 15);
-    nl.position.set(x, 1.5, z);
+  // Neon accent lights — brighter and wider range.
+  for (const [x, z, col] of [
+    [-15, 0, 0x4488ff], [15, 0, 0xff3366],
+    [0, -15, 0x44ffaa], [0, 15, 0xff8800],
+    [-40, -40, 0x66aaff], [40, 40, 0xff44aa],
+    [40, -40, 0x44ffcc], [-40, 40, 0xffaa33],
+  ]) {
+    const nl = new THREE.PointLight(col, 2.5, 30);
+    nl.position.set(x, 2, z);
     game.scene.add(nl);
     game.arenaLights.push(nl);
   }
 
-  // Dark asphalt ground with road-line markings.
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.88 });
+  // Brighter asphalt ground.
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.85 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.84 });
-  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.88 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.82 });
+  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x3c3c50, roughness: 0.85 });
   const metalMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.4, metalness: 0.65 });
   const neonMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 1.0 });
   const wallMat = new THREE.MeshStandardMaterial({ color: 0x2c3040, roughness: 0.85 });
@@ -817,6 +834,8 @@ function buildSharedRuntimeAssets() {
   game.shared.characterHeadGltfs = {};
   const characterHeadDefs = {
     patrick: { file: "/assets/models/PatrickHead.glb" },
+    iestyn: { file: "/assets/models/iestynhead.glb" }, // Assuming IestynHead.glb exists
+    will: { file: "/assets/models/WillHead.glb" },     // Assuming WillHead.glb exists
   };
   for (const [characterId, def] of Object.entries(characterHeadDefs)) {
     new GLTFLoader().load(def.file, (gltf) => {

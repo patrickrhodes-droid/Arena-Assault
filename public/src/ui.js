@@ -105,6 +105,11 @@ export function bindMenuControls(actions) {
   // ── Screen navigation ──
   game.dom.btnToMap.addEventListener("click", () => {
     if (!game.myCharacter || !game.dom.playerName.value.trim()) return;
+    // Improvement: If you are not the host, skip past the map selection.
+    if (!game.isHost) {
+      showScreen("screen-lobby");
+      return;
+    }
     showScreen("screen-map");
     // Sync host-selected map highlight.
     syncMapCards(game.selectedMap);
@@ -419,8 +424,8 @@ export function showBossImperviousAlert() {
 
 export function drawMinimap() {
   const context = game.dom.minimapContext;
-  const width = 360;
-  const height = 360;
+  const width = 450; // Improvement: minimap should be bigger
+  const height = 450;
   const scale = width / ARENA_SIZE;
 
   if (game.teammateAlertPulse > 0) {
