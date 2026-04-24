@@ -13,6 +13,7 @@ import {
   usingFirstPersonView,
   usingScopedSniperView,
 } from "./combat.js";
+import { getBossEnemy } from "./enemies.js";
 
 export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
@@ -24,6 +25,15 @@ export function setupInput(actions) {
         game.sprintLocked = true;
       }
       game.wLastTapTime = now;
+    }
+
+    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+      if (game.state === "PLAYING" && game.localPlayerIsAlive && !game.isOnLadder) {
+        game.isCrouching = !game.isCrouching;
+        if (game.isCrouching) {
+          game.sprintLocked = false;
+        }
+      }
     }
 
     if (event.code === "Space") {
@@ -115,11 +125,14 @@ export function tryPointerLock() {
 }
 
 export function tryJump() {
-  if (!game.isGrounded) {
+  if (!game.isGrounded && !game.isOnLadder) {
     return;
   }
 
   game.isGrounded = false;
+  game.isOnLadder = false;
+  game.ladderCooldown = 0.7;
+  game.isCrouching = false;
   game.playerVelY = JUMP_VEL;
 }
 
@@ -135,7 +148,7 @@ export function updatePlayer(actions) {
   if (game.keys.KeyD) moveDirection.add(right);
   if (game.keys.KeyA) moveDirection.sub(right);
 
-  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive;
+  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -144,34 +157,79 @@ export function updatePlayer(actions) {
 
   if (game.isMoving) {
     moveDirection.normalize();
-    const speed = 6 * (game.isSprinting ? 3.1 : 1);
+    const speed = game.isSprinting ? 6 * 3.1 : game.isCrouching ? 2.7 : 6;
     game.visuals.player.playerGroup.position.addScaledVector(moveDirection, speed * game.dt);
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;
     }
   }
 
-  game.playerVelY -= GRAV * game.dt;
-  game.visuals.player.playerGroup.position.y += game.playerVelY * game.dt;
-
-  const supportY = getSupportHeight(
-    prevY,
-    game.visuals.player.playerGroup.position.y,
-    game.visuals.player.playerGroup.position.x,
-    game.visuals.player.playerGroup.position.z,
-  );
-
-  if (game.playerVelY <= 0 && supportY > 0 && game.visuals.player.playerGroup.position.y <= supportY + LAND_SNAP) {
-    game.visuals.player.playerGroup.position.y = supportY;
-    game.playerVelY = 0;
-    game.isGrounded = true;
-  } else if (game.visuals.player.playerGroup.position.y <= 0) {
-    game.visuals.player.playerGroup.position.y = 0;
-    game.playerVelY = 0;
-    game.isGrounded = true;
-  } else {
-    game.isGrounded = false;
+  // ── Ladder cooldown ──
+  if (game.ladderCooldown > 0) {
+    game.ladderCooldown -= game.dt;
   }
+
+  // ── Ladder zone check ──
+  let activeLadder = null;
+  if (game.ladderCooldown <= 0 && game.localPlayerIsAlive) {
+    const pp = game.visuals.player.playerGroup.position;
+    for (const ladder of game.ladders) {
+      if (
+        pp.x >= ladder.xMin && pp.x <= ladder.xMax
+        && pp.z >= ladder.zMin && pp.z <= ladder.zMax
+        && pp.y <= ladder.yMax
+      ) {
+        activeLadder = ladder;
+        break;
+      }
+    }
+  }
+  game.isOnLadder = activeLadder !== null;
+
+  if (game.isOnLadder) {
+    game.isCrouching = false;
+    const pp = game.visuals.player.playerGroup.position;
+
+    // Near the top — exit ladder so the player can step onto the platform
+    if (pp.y >= activeLadder.yMax - 0.3) {
+      game.isOnLadder = false;
+      game.ladderCooldown = 0.4;
+    } else {
+      game.playerVelY = 0;
+      game.isGrounded = false;
+      const climbSpeed = game.keys.KeyW ? 4.5 : game.keys.KeyS ? -4.5 : 0;
+      pp.y = Math.max(0, Math.min(activeLadder.yMax, pp.y + climbSpeed * game.dt));
+    }
+  }
+
+  if (!game.isOnLadder) {
+    game.playerVelY -= GRAV * game.dt;
+    game.visuals.player.playerGroup.position.y += game.playerVelY * game.dt;
+
+    const supportY = getSupportHeight(
+      prevY,
+      game.visuals.player.playerGroup.position.y,
+      game.visuals.player.playerGroup.position.x,
+      game.visuals.player.playerGroup.position.z,
+    );
+
+    if (game.playerVelY <= 0 && supportY > 0 && game.visuals.player.playerGroup.position.y <= supportY + LAND_SNAP) {
+      game.visuals.player.playerGroup.position.y = supportY;
+      game.playerVelY = 0;
+      game.isGrounded = true;
+    } else if (game.visuals.player.playerGroup.position.y <= 0) {
+      game.visuals.player.playerGroup.position.y = 0;
+      game.playerVelY = 0;
+      game.isGrounded = true;
+    } else {
+      game.isGrounded = false;
+    }
+  }
+
+  // ── Crouch visual: smoothly squish/unsquish the player model ──
+  const crouchTargetScale = game.isCrouching ? 0.65 : 1.0;
+  const pv = game.visuals.player;
+  pv.playerGroup.scale.y += (crouchTargetScale - pv.playerGroup.scale.y) * Math.min(1, 14 * game.dt);
 
   for (const obstacle of game.oBs) {
     resolveCircleBox(game.visuals.player.playerGroup.position, P_RAD, obstacle, game.visuals.player.playerGroup.position.y);
@@ -318,6 +376,8 @@ function handleFiring(actions) {
     return;
   }
 
+  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && Boolean(getBossEnemy());
+
   game.fireTmr = weapon.fireRate;
   if (weapon.mode === "pistol") game.mouseClicked = false;
   if (weapon.mode === "sword") {
@@ -327,6 +387,9 @@ function handleFiring(actions) {
   } else {
     game.ammo -= 1;
     game.weaponAmmo[game.currentWeapon] = game.ammo;
+    if (bossIsActive) {
+      actions.showBossImperviousAlert?.();
+    }
     game.audio.playWeapon(weapon);
     addShake(weapon.shake);
     game.fpRecoilZ = weapon.recoilZ;
@@ -430,10 +493,12 @@ export function updateCamera() {
     game.camera.updateProjectionMatrix();
   }
 
+  const eyeH = game.isCrouching ? 1.1 : EYE_H;
+
   let target;
   if (inFirstPerson) {
     target = game.visuals.player.playerGroup.position.clone();
-    target.y += EYE_H;
+    target.y += eyeH;
     if (!game.isFPS) {
       target.x -= Math.sin(game.camTheta) * 0.05;
       target.z -= Math.cos(game.camTheta) * 0.05;

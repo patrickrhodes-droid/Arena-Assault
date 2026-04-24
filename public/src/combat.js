@@ -173,7 +173,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       );
 
       if (distanceSqPointToSegment(playerCenter, previousPosition, position) < 1.1) {
-        if (game.localPlayerIsAlive && !game.localPlayerIsDowned) {
+        if (game.localPlayerIsAlive && !game.localPlayerIsDowned && !game.invincibilityMode) {
           game.hp -= bullet.damage || 10;
           game.audio.damage();
           showDamage?.();
@@ -201,7 +201,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 }
 
 export function processHit(enemy, damage, particlePosition) {
-  if (enemy.type === "boss" && game.currentWeapon !== "sword") {
+  if (enemy.type === "boss" && game.currentWeapon !== "sword" && game.currentWeapon !== "pistol") {
     return;
   }
 
@@ -224,6 +224,9 @@ export function processHit(enemy, damage, particlePosition) {
     } else if (enemy.type === "dog") {
       game.stats.dogKills += 1;
       game.score += 150;
+    } else if (enemy.type === "skeleton") {
+      game.stats.kills += 1;
+      game.score += 25;
     } else {
       game.stats.kills += 1;
       game.score += 100;

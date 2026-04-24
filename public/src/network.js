@@ -3,9 +3,9 @@ import * as THREE from "three";
 import { P_MAX_HP } from "./config.js";
 import { game } from "./state.js";
 import { spawnBullet, spawnHealthPackVisual } from "./combat.js";
-import { createBoss, createDog, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
+import { createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { createRemotePlayer, removeRemotePlayer } from "./scene.js";
-import { updateLobbyUI, showTeammateDownAlert } from "./ui.js";
+import { setJoinLinkState, updateLobbyUI, showTeammateDownAlert } from "./ui.js";
 
 export function initNetworking(actions) {
   if (game.socket) {
@@ -14,6 +14,14 @@ export function initNetworking(actions) {
 
   game.socket = window.io();
   game.socket.emit("playerNameUpdate", { playerName: "" });
+
+  game.socket.on("serverInfo", (info) => {
+    setJoinLinkState({
+      canCopyJoinLink: info?.isServerPc,
+      joinLink: info?.joinLink,
+      clientIp: info?.clientIp,
+    });
+  });
 
   game.socket.on("currentPlayers", (players) => {
     updateLobbyUI(players);
@@ -105,6 +113,7 @@ export function initNetworking(actions) {
       if (!enemy) {
         if (entry.type === "soldier") createSoldier(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "dog") createDog(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
+        else if (entry.type === "skeleton") createSkeleton(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "boss") createBoss(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         enemy = game.enemies[game.enemies.length - 1];
       }

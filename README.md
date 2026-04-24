@@ -1,6 +1,6 @@
 # Arena Assault
 
-Arena Assault is a browser-based wave survival shooter built with `Three.js`, `Express`, and `Socket.IO`. The project is split into smaller frontend modules with a dedicated server entrypoint and a documented folder structure.
+Arena Assault is a browser-based multiplayer wave survival shooter built with `Three.js`, `Express`, and `Socket.IO`. Players fight together against escalating waves of enemies across a large 144×144 unit arena.
 
 ## How to run
 
@@ -22,7 +22,7 @@ npm start
 http://localhost:3000
 ```
 
-4. When you are finished, stop the server by returning to the terminal where `npm start` is running and pressing `Ctrl+C`.
+4. When you are finished, stop the server by pressing `Ctrl+C` in the terminal.
 
 To test multiplayer locally, open multiple browser tabs or windows against the same server.
 
@@ -30,59 +30,135 @@ To test multiplayer locally, open multiple browser tabs or windows against the s
 
 If you want other people on the same home network or LAN to join:
 
-1. Start the server on the host computer:
+1. Start the server on the host computer (`npm start`).
 
-```bash
-npm start
-```
-
-2. Find the host computer's local IP address.
-
-On Windows, you can usually find it with:
+2. Find the host computer's local IP address. On Windows:
 
 ```bash
 ipconfig
 ```
 
-Look for an IPv4 address such as `192.168.1.42` or `10.0.0.15`.
+Look for an IPv4 address such as `192.168.1.42`.
 
-3. On each other device on the same network, open the game using that IP address and port `3000`:
+3. On each other device, open:
 
 ```text
 http://192.168.1.42:3000
 ```
 
-Replace `192.168.1.42` with the actual IP address of the computer running the server.
+The server PC sees a **COPY JOIN LINK** button in the lobby that copies this address automatically.
 
 ### Local network notes
 
-- Everyone must be connected to the same local network.
+- Everyone must be on the same local network.
 - The host computer must keep the server running while others play.
-- If Windows Firewall prompts you, allow Node.js on private networks or other devices may not be able to connect.
-- Some guest Wi-Fi networks block device-to-device traffic, which will prevent local multiplayer from working even if the IP address is correct.
-- `localhost` only works on the same machine that is running the server. Other devices must use the host machine's local IP address.
+- If Windows Firewall prompts you, allow Node.js on private networks.
+- Some guest Wi-Fi networks block device-to-device traffic.
+- `localhost` only works on the machine running the server.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| W A S D | Move |
+| Space | Jump |
+| Shift | Sprint (double-tap W to toggle sprint lock) |
+| 1 / 2 / 3 / 4 / Q | Switch weapon |
+| Mouse | Aim |
+| Left click | Fire |
+| Right click | Aim down sights |
+| R | Reload |
+| E (hold) | Revive downed teammate |
+| Esc | Pause |
+
+## Weapons
+
+| Slot | Name | Notes |
+|---|---|---|
+| 1 | Service Pistol | Semi-auto, fast fire rate, always available |
+| 2 | Assault Rifle | Full-auto, workhorse weapon |
+| 3 | Shotgun | 8 pellets, high close-range damage |
+| 4 | Sniper Rifle | High damage, slow fire, heavy ADS zoom |
+| Q | Tactical Blade (sword) | One-hit kills all non-boss enemies; big damage vs bosses |
+
+All weapons have hip-fire and ADS spread, recoil, and reload animations. GLB models are rendered in first-person and on the third-person player model.
+
+## Enemies
+
+| Type | Appears | Behaviour |
+|---|---|---|
+| Soldier | Wave 1+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
+| Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
+| Skeleton | Wave 6+ | 1 HP, spawns in groups of 5. Wave 6 = 4 groups, +1 group per wave. Uses the Skeleton GLB model at ¼ scale. |
+| Titan Brute (boss) | Every 5th wave | Large melee boss with a club, high HP, and a jump escape. Multiple bosses and multiplied HP on later boss waves. |
+
+## Wave system
+
+- Waves start automatically after a short countdown.
+- Non-boss waves spawn soldiers and dogs (with interleaved skeleton groups from wave 6 onward).
+- Every 5th wave (5, 10, 15 …) spawns one or more Titan Brute bosses. Boss count and HP multiplier grow on each successive boss wave.
+- Wave announcements show the current wave number and enemy type warnings.
+- An enemy ping alert pulses on the minimap after 60 seconds if enemies are still alive.
+
+## Multiplayer
+
+- Up to several players can join the same session via the lobby.
+- The first player to connect becomes the **host** and simulates all game logic. Other players receive synced state.
+- **Revive system**: downed players can be revived by teammates holding `E` nearby. Players fully die after the countdown expires.
+- **Nametags** appear above each remote player's head in-world.
+- **Teammate status panel** (top-left) shows each teammate's HP bar.
+- **Teammate down alert** pops up and pulses on the minimap when a teammate is downed.
+- **Spectator mode**: eliminated players spectate until the next wave.
+- **Rankings screen** shows final score, kills, accuracy, and damage for all players at game over.
+- Player max HP is divided by the number of players to keep the game balanced.
+
+## Arena
+
+- 144 × 144 unit open arena with boundary walls and neon accent strips.
+- Roughly 80 structures placed across the map: staircase pyramids, bunkers (north and south), tall towers (east, west, and four corners), crate clusters, diagonal cover barriers, metal barriers, and outer-wall cover.
+- Exponential fog at density 0.005 for visibility across the larger map.
+- 20 teal point lights spread across the arena floor.
+
+## HUD and minimap
+
+- Health bar, ammo counter, weapon name, score, and wave number displayed at all times.
+- Boss HP bar appears during boss waves.
+- Crosshair with ADS scope overlays for sniper and red-dot for pistol/assault.
+- Inventory hotbar shows all weapon slots and highlights the active weapon.
+- **Minimap** (360 × 360 px, bottom-left): shows obstacles, all enemies (colour-coded by type), remote players, and a directional arrow for the local player.
+
+## Host controls
+
+The server PC sees a **Host Controls** panel in the lobby above the join link button:
+
+- **Start at Wave** — dropdown (1–30) to begin the match at a specific wave instead of wave 1. Useful for testing later content.
+- **Invincibility** — toggle switch that disables all damage to all players for the entire session. Enemies still move and attack but deal no damage.
+
+Both settings persist across replays until changed.
 
 ## Project structure
 
 ```text
 Arena Assault/
 |-- public/
-|   |-- index.html              # Main browser entrypoint
+|   |-- index.html              # Main browser entrypoint and UI markup
 |   |-- styles/
 |   |   `-- main.css            # All UI styling
+|   |-- assets/
+|   |   `-- models/             # GLB weapon and character models
 |   `-- src/
 |       |-- main.js             # App bootstrap and main game loop
 |       |-- config.js           # Shared gameplay constants and weapon definitions
 |       |-- state.js            # Mutable runtime state shared across modules
 |       |-- utils.js            # Small reusable helpers
 |       |-- audio.js            # Web Audio sound effects
-|       |-- scene.js            # Three.js scene, arena, player, and weapon visuals
+|       |-- scene.js            # Three.js scene, arena, player, weapon, and enemy visuals
 |       |-- collision.js        # Collision helpers for movement and bullets
-|       |-- combat.js           # Weapons, bullets, particles, and health packs
-|       |-- enemies.js          # Enemy creation, AI, and wave management
-|       |-- player.js           # Input handling, player movement, and camera control
-|       |-- network.js          # Socket.IO multiplayer event wiring
-|       `-- ui.js               # HUD, lobby, damage overlay, minimap, and rankings UI
+|       |-- combat.js           # Weapons, bullets, particles, and health pack pickups
+|       |-- enemies.js          # Enemy creation, AI, skeleton/boss logic, and wave management
+|       |-- player.js           # Input handling, movement, jump/gravity, and camera control
+|       |-- network.js          # Socket.IO client-side event wiring
+|       `-- ui.js               # HUD, lobby, minimap, damage overlay, and rankings UI
 |-- server.js                   # Express + Socket.IO server
 |-- package.json                # Node package metadata and scripts
 `-- arenatest.html              # Legacy redirect to the new entrypoint
@@ -93,36 +169,22 @@ Arena Assault/
 ### Frontend
 
 - `public/index.html` contains only the page shell and UI markup.
-- `public/styles/main.css` contains all visual styling that used to be inline.
+- `public/styles/main.css` contains all visual styling.
 - `public/src/main.js` boots the game, connects modules together, and owns the animation loop.
-- `public/src/state.js` exposes a shared `game` object so the systems can work together without packing everything into one file.
+- `public/src/state.js` exposes a shared `game` object so systems can communicate without coupling.
 
 ### Rendering and world
 
-- `scene.js` builds the Three.js scene, camera, renderer, arena, local player model, remote player model factory, and weapon visuals.
-- `collision.js` contains reusable helpers for player-vs-obstacle and bullet-vs-world checks.
+- `scene.js` builds the Three.js scene, camera, renderer, arena geometry, local and remote player models, weapon GLB models, and the skeleton GLB loader.
+- `collision.js` contains reusable helpers for player-vs-obstacle and bullet-vs-world intersection checks.
 
 ### Gameplay systems
 
 - `combat.js` handles weapon switching, firing, reloading, projectiles, hit particles, and health pack pickups.
-- `enemies.js` handles enemy spawning, enemy definitions, AI behavior, boss logic, and wave progression.
-- `player.js` handles keyboard and mouse input, movement, jump/gravity, camera positioning, revive interactions, and first-person weapon motion.
+- `enemies.js` handles all four enemy types, AI movement and attacks, wave progression, boss logic, and skeleton group spawning.
+- `player.js` handles keyboard and mouse input, movement, jump/gravity, sprint, camera positioning, revive interactions, and first-person weapon motion.
 
 ### Multiplayer
 
-- `network.js` is responsible for all client-side Socket.IO events.
-- `server.js` tracks players, relays movement and combat events, synchronizes lobby state, and broadcasts revive/game-over updates.
-
-## Gameplay flow
-
-1. Players connect to the lobby and enter a name.
-2. Each player readies up.
-3. The host starts the match once everyone is ready.
-4. The host simulates waves and enemy behavior.
-5. Clients receive synced enemy state, player state, revives, damage, and end-of-match rankings.
-
-## Notes for future work
-
-- The project is now easier to extend because UI, rendering, networking, and gameplay systems are separated.
-- The shared `game` state keeps the refactor approachable, but the next step would be breaking that state into smaller domain-specific stores.
-- There is still room to optimize allocations in hot loops like bullets, particles, and enemy updates if you want a deeper performance pass later.
+- `network.js` handles all client-side Socket.IO events: player join/leave, movement sync, enemy sync, damage, revives, and game over.
+- `server.js` tracks players, relays movement and combat events, synchronises lobby state, and broadcasts revive and end-of-match data.

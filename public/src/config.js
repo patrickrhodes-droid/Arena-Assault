@@ -1,4 +1,4 @@
-export const ARENA_SIZE = 72;
+export const ARENA_SIZE = 144;
 export const HALF = ARENA_SIZE / 2;
 export const WALL_H = 6;
 export const P_RAD = 0.5;
@@ -21,7 +21,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.3,
     reload: 1.2,
     pellets: 1,
-    damage: 34,
+    damage: 102,
     spreadHip: 0.018,
     spreadAim: 0.007,
     bulletSpeed: 96,
@@ -39,7 +39,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.09,
     reload: 1.6,
     pellets: 1,
-    damage: 23,
+    damage: 46,
     spreadHip: 0.022,
     spreadAim: 0.008,
     bulletSpeed: 90,
@@ -57,7 +57,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.72,
     reload: 2.2,
     pellets: 8,
-    damage: 36,
+    damage: 72,
     minDamage: 8,
     falloffStart: 8,
     falloffEnd: 30,

@@ -1,7 +1,7 @@
 import { ARENA_SIZE, HALF, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
 import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
-import { getBossEnemy } from "./enemies.js";
+import { getBossEnemies } from "./enemies.js";
 
 export function cacheDom() {
   game.dom = {
@@ -41,6 +41,11 @@ export function cacheDom() {
     lobbyList: document.getElementById("player-list"),
     playerName: document.getElementById("player-name"),
     deployBtn: document.getElementById("deploy-btn"),
+    joinLinkBox: document.getElementById("join-link-box"),
+    copyJoinLinkBtn: document.getElementById("copy-join-link-btn"),
+    copyJoinLinkStatus: document.getElementById("copy-join-link-status"),
+    skipWaveSelect: document.getElementById("skip-wave-select"),
+    invincibilityToggle: document.getElementById("invincibility-toggle"),
     resumeBtn: document.getElementById("resume-btn"),
     exitBtn: document.getElementById("exit-btn"),
     redeployBtn: document.getElementById("redeploy-btn"),
@@ -58,6 +63,7 @@ export function cacheDom() {
     redDotOverlay: document.getElementById("red-dot-overlay"),
     teammatePanel: document.getElementById("teammate-panel"),
     teammateAlert: document.getElementById("teammate-alert"),
+    bossImperviousAlert: document.getElementById("boss-impervious-alert"),
     inventoryBar: document.getElementById("inventory-bar"),
   };
 
@@ -65,7 +71,7 @@ export function cacheDom() {
 }
 
 export function bindMenuControls(actions) {
-  const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage } = actions;
+  const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage, copyJoinLink } = actions;
 
   game.dom.deployBtn.addEventListener("click", () => {
     const name = game.dom.playerName.value.trim();
@@ -93,6 +99,22 @@ export function bindMenuControls(actions) {
   game.dom.viewBtn.addEventListener("click", toggleView);
   game.dom.sensSlider.addEventListener("input", updateSensitivity);
   game.dom.playerName.addEventListener("input", updatePlayerName);
+  game.dom.copyJoinLinkBtn.addEventListener("click", copyJoinLink);
+
+  for (let w = 1; w <= 30; w += 1) {
+    const opt = document.createElement("option");
+    opt.value = w;
+    opt.textContent = w;
+    game.dom.skipWaveSelect.appendChild(opt);
+  }
+
+  game.dom.skipWaveSelect.addEventListener("change", () => {
+    game.startingWave = Number(game.dom.skipWaveSelect.value);
+  });
+
+  game.dom.invincibilityToggle.addEventListener("change", () => {
+    game.invincibilityMode = game.dom.invincibilityToggle.checked;
+  });
 }
 
 export function updateLobbyUI(players) {
@@ -132,11 +154,31 @@ export function updateLobbyUI(players) {
   game.dom.deployBtn.style.opacity = "1";
   const allReady = Object.values(players).every((player) => player.isReady);
   game.dom.deployBtn.textContent = localPlayer.isHost && allReady ? "START MISSION" : "READY UP";
+  renderJoinLinkControls();
+}
+
+export function setJoinLinkState({ canCopyJoinLink, joinLink, clientIp }) {
+  game.canCopyJoinLink = Boolean(canCopyJoinLink);
+  game.joinLink = joinLink || "";
+  game.clientIp = clientIp || "";
+  renderJoinLinkControls();
+}
+
+export function setCopyJoinLinkStatus(message, isError = false) {
+  game.copyJoinLinkMessage = message || "";
+  game.dom.copyJoinLinkStatus.textContent = game.copyJoinLinkMessage;
+  game.dom.copyJoinLinkStatus.style.color = isError ? "var(--warn)" : "var(--muted)";
+}
+
+export function renderJoinLinkControls() {
+  const shouldShow = game.state === "MENU" && game.canCopyJoinLink && Boolean(game.joinLink);
+  game.dom.joinLinkBox.hidden = !shouldShow;
+  game.dom.copyJoinLinkStatus.textContent = game.copyJoinLinkMessage || "";
 }
 
 export function updateHUD() {
   const weapon = getWeapon();
-  const boss = getBossEnemy();
+  const bosses = getBossEnemies();
   const percent = Math.max(0, game.hp / game.effectiveMaxHP);
   game.dom.hpFill.style.width = `${percent * 100}%`;
   game.dom.hpText.textContent = Math.ceil(game.hp);
@@ -151,11 +193,18 @@ export function updateHUD() {
   game.dom.reloadText.style.display = game.isReloading ? "block" : "none";
   game.dom.scoreValue.textContent = game.score;
   game.dom.waveValue.textContent = game.wave || "-";
-  game.dom.bossWrap.style.display = boss ? "block" : "none";
+  game.dom.bossWrap.style.display = bosses.length > 0 ? "block" : "none";
 
-  if (boss) {
-    game.dom.bossName.textContent = boss.bossName || "BOSS";
-    game.dom.bossFill.style.width = `${Math.max(0, boss.hp / boss.maxHp) * 100}%`;
+  if (bosses.length > 0) {
+    if (bosses.length === 1) {
+      game.dom.bossName.textContent = bosses[0].bossName || "TITAN BRUTE";
+      game.dom.bossFill.style.width = `${Math.max(0, bosses[0].hp / bosses[0].maxHp) * 100}%`;
+    } else {
+      const totalHp = bosses.reduce((sum, b) => sum + b.hp, 0);
+      const totalMaxHp = bosses.reduce((sum, b) => sum + b.maxHp, 0);
+      game.dom.bossName.textContent = "TITAN BOSSES";
+      game.dom.bossFill.style.width = `${Math.max(0, totalHp / totalMaxHp) * 100}%`;
+    }
   }
 
   const remotes = Object.values(game.remotePlayers);
@@ -206,10 +255,18 @@ export function showTeammateDownAlert(name) {
   game.teammateAlertPulse = 4;
 }
 
+export function showBossImperviousAlert() {
+  const el = game.dom.bossImperviousAlert;
+  el.textContent = "ONLY THE PISTOL AND SWORD CAN HURT TITAN BRUTE";
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+}
+
 export function drawMinimap() {
   const context = game.dom.minimapContext;
-  const width = 200;
-  const height = 200;
+  const width = 360;
+  const height = 360;
   const scale = width / ARENA_SIZE;
 
   if (game.teammateAlertPulse > 0) {
@@ -235,8 +292,8 @@ export function drawMinimap() {
     const pulse = pingActive ? 0.5 + 0.5 * Math.sin((4 - game.enemyPingTmr) * 12) : 0;
     const radius = pingActive ? 3.5 + pulse * 2.5 : 3;
     context.fillStyle = pingActive
-      ? (enemy.type === "dog" ? "rgba(255,200,90,0.95)" : "rgba(255,120,120,0.98)")
-      : (enemy.type === "dog" ? "#ff8833" : "#ff3344");
+      ? (enemy.type === "dog" ? "rgba(255,200,90,0.95)" : enemy.type === "skeleton" ? "rgba(220,230,255,0.95)" : "rgba(255,120,120,0.98)")
+      : (enemy.type === "dog" ? "#ff8833" : enemy.type === "skeleton" ? "#c8d4f0" : "#ff3344");
 
     context.beginPath();
     context.arc((enemy.group.position.x + HALF) * scale, (enemy.group.position.z + HALF) * scale, radius, 0, Math.PI * 2);

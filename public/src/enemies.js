@@ -6,6 +6,27 @@ import { resolveCircleBox } from "./collision.js";
 import { processHit, spawnBullet, spawnParticles } from "./combat.js";
 import { disposeObject3D } from "./utils.js";
 
+function cloneSkinnedScene(source) {
+  const cloned = source.clone(true);
+
+  const srcBones = [];
+  const dstBones = [];
+  source.traverse((n) => { if (n.isBone) srcBones.push(n); });
+  cloned.traverse((n) => { if (n.isBone) dstBones.push(n); });
+
+  cloned.traverse((node) => {
+    if (!node.isSkinnedMesh) return;
+    const sk = node.skeleton;
+    const newBones = sk.bones.map((bone) => {
+      const i = srcBones.indexOf(bone);
+      return i !== -1 ? dstBones[i] : bone;
+    });
+    node.bind(new THREE.Skeleton(newBones, sk.boneInverses.slice()), node.bindMatrix);
+  });
+
+  return cloned;
+}
+
 const enemyMaterials = {
   body: new THREE.MeshStandardMaterial({ color: 0x3a2222, roughness: 0.8 }),
   head: new THREE.MeshStandardMaterial({ color: 0x443333, roughness: 0.7 }),
@@ -19,8 +40,38 @@ const enemyMaterials = {
   bossEye: new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xff8833, emissiveIntensity: 2.5 }),
 };
 
+const BOSS_ESCAPE_HEIGHT = 50 / 6;
+const MAX_LIVE_ENEMIES = 60;
+const MAX_SKELETON_CORPSES = 5;
+
+let syncEnemiesTmr = 0;
+const BOSS_ESCAPE_GRAVITY = 180;
+const BOSS_ESCAPE_JUMP_VELOCITY = Math.sqrt(2 * BOSS_ESCAPE_GRAVITY * BOSS_ESCAPE_HEIGHT);
+const BOSS_ESCAPE_FORWARD_SPEED = 14;
+const BOSS_AIR_ACCEL = 22;
+
 export function getBossEnemy() {
   return game.enemies.find((enemy) => enemy.type === "boss") || null;
+}
+
+export function getBossEnemies() {
+  return game.enemies.filter((enemy) => enemy.type === "boss");
+}
+
+function getBossWaveNumber() {
+  return Math.floor(game.wave / 5);
+}
+
+function getBossWaveConfig() {
+  const bossWaveNumber = getBossWaveNumber();
+  if (bossWaveNumber <= 1) {
+    return { bossCount: 1, hpMultiplier: 1 };
+  }
+
+  return {
+    bossCount: Math.floor((bossWaveNumber + 2) / 2),
+    hpMultiplier: 2 ** Math.floor((bossWaveNumber - 1) / 2),
+  };
 }
 
 function createHealthBar(colorMaterial) {
@@ -176,7 +227,7 @@ export function createDog(position, id = Math.random()) {
   });
 }
 
-export function createBoss(position, id = Math.random()) {
+export function createBoss(position, id = Math.random(), options = {}) {
   const group = new THREE.Group();
   const torso = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 1.2), enemyMaterials.bossBody);
   torso.position.y = 2.35;
@@ -230,7 +281,8 @@ export function createBoss(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = Math.round(3600 * Math.pow(1.1, game.wave));
+  const hpMultiplier = options.hpMultiplier ?? 1;
+  const hpMax = Math.round(3600 * Math.pow(1.1, game.wave) * hpMultiplier);
   const hpBar = new THREE.Group();
   const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
   const hpFill = new THREE.Mesh(
@@ -259,22 +311,111 @@ export function createBoss(position, id = Math.random()) {
     hp: hpMax,
     maxHp: hpMax,
     spd: 12,
-    atkDmg: 28,
+    atkDmg: 56,
     atkTmr: 0,
     swingTmr: 0,
     windupTmr: 0,
     flashTmr: 0,
     walkT: 0,
+    velX: 0,
+    velZ: 0,
+    velY: 0,
+    stuckTmr: 0,
+    lastTrackedX: position.x,
+    lastTrackedZ: position.z,
     hpBar,
     hpFg: hpFill,
-    bossName: "TITAN BRUTE",
+    bossName: hpMultiplier > 1 ? "TITAN BRUTE ELITE" : "TITAN BRUTE",
   });
+}
+
+export function createSkeleton(position, id = Math.random()) {
+  const group = new THREE.Group();
+  let mixer = null;
+
+  const gltf = game.shared.skeletonGltf;
+  if (gltf) {
+    const model = cloneSkinnedScene(gltf.scene);
+    model.scale.setScalar(0.75);
+    model.rotation.y = Math.PI;
+    group.add(model);
+
+    mixer = new THREE.AnimationMixer(model);
+    if (gltf.animations && gltf.animations.length > 0) {
+      const walkClip = gltf.animations[gltf.animations.length - 1];
+      const walkAction = mixer.clipAction(walkClip);
+      walkAction.play();
+    }
+  } else {
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 1.1, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0xe8e0d0, roughness: 0.9 }),
+    );
+    body.position.y = 0.8;
+    group.add(body);
+  }
+
+  group.position.copy(position);
+  game.scene.add(group);
+
+  // Skeletons have 1 HP — no health bar shown
+  const hpBar = new THREE.Group();
+  const hpFill = new THREE.Mesh(game.shared.hpFgGeo, game.shared.hpFgMatSkeleton);
+  hpBar.add(hpFill);
+
+  game.enemies.push({
+    id,
+    type: "skeleton",
+    group,
+    mixer,
+    flashPart: null,
+    radius: 0.4,
+    hp: 1,
+    maxHp: 1,
+    spd: 9 + Math.random() * 2.5,
+    atkDmg: 8 + game.wave,
+    atkTmr: 0,
+    flashTmr: 0,
+    walkT: Math.random() * 6,
+    hpBar,
+    hpFg: hpFill,
+  });
+}
+
+function playSkeletonDeathEffect(position, rotationY) {
+  const gltf = game.shared.skeletonGltf;
+  if (!gltf || !gltf.animations || gltf.animations.length < 2) {
+    return;
+  }
+  if (game.skeletonCorpses.length >= MAX_SKELETON_CORPSES) {
+    return;
+  }
+
+  const model = cloneSkinnedScene(gltf.scene);
+  model.scale.setScalar(0.75);
+  model.position.copy(position);
+  model.rotation.y = rotationY + Math.PI;
+  game.scene.add(model);
+
+  const deathClip = gltf.animations[1];
+  const mixer = new THREE.AnimationMixer(model);
+  const action = mixer.clipAction(deathClip);
+  action.setLoop(THREE.LoopOnce);
+  action.clampWhenFinished = true;
+  action.play();
+
+  game.skeletonCorpses.push({ model, mixer, elapsed: 0, duration: deathClip.duration + 0.4 });
 }
 
 export function removeEnemy(index) {
   const enemy = game.enemies[index];
   if (!enemy) {
     return;
+  }
+
+  if (enemy.type === "skeleton" && enemy.mixer) {
+    playSkeletonDeathEffect(enemy.group.position, enemy.group.rotation.y);
+    enemy.mixer.stopAllAction();
   }
 
   game.scene.remove(enemy.group);
@@ -303,7 +444,17 @@ export function finishWave() {
 
 export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal } = {}) {
   if (!game.isHost) {
-    game.enemies.forEach((enemy) => updateHealthBar(enemy));
+    game.enemies.forEach((enemy) => {
+      updateHealthBar(enemy);
+      if (enemy.mixer) {
+        const camDx = enemy.group.position.x - game.camera.position.x;
+        const camDz = enemy.group.position.z - game.camera.position.z;
+        if (camDx * camDx + camDz * camDz < 65 * 65) {
+          enemy.mixer.update(game.dt);
+        }
+      }
+    });
+    updateSkeletonCorpses();
     return;
   }
 
@@ -348,6 +499,10 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
     const isLocalTarget = closestTarget.socketId === game.socket?.id;
 
     const applyMeleeDamage = (damage) => {
+      if (game.invincibilityMode) {
+        return;
+      }
+
       if (isLocalTarget) {
         if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
           return;
@@ -361,7 +516,7 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
 
         if (enemy.type === "boss") {
           const knockDir = new THREE.Vector3(dx, 0, dz).normalize();
-          const speed = 6 * 3.1 * 3;
+          const speed = 6 * 3.1 * 10;
           game.knockbackX = knockDir.x * speed;
           game.knockbackZ = knockDir.z * speed;
         }
@@ -467,12 +622,51 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
       } else {
         enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
       }
+    } else if (enemy.type === "skeleton") {
+      if (enemy.mixer) {
+        const camDx = enemy.group.position.x - game.camera.position.x;
+        const camDz = enemy.group.position.z - game.camera.position.z;
+        if (camDx * camDx + camDz * camDz < 65 * 65) {
+          enemy.mixer.update(game.dt);
+        }
+      }
+
+      const ndx = distance > EPS ? dx / distance : 0;
+      const ndz = distance > EPS ? dz / distance : 0;
+      enemyPosition.x += ndx * enemy.spd * game.dt;
+      enemyPosition.z += ndz * enemy.spd * game.dt;
+
+      enemy.walkT += game.dt * 10;
+      enemy.group.position.y = Math.abs(Math.sin(enemy.walkT * 2)) * 0.06;
+
+      const skelVerticalGap = Math.abs((playerPosition.y + 0.9) - (enemyPosition.y + 0.7));
+      if (distance < 2.0 && skelVerticalGap < 1.4) {
+        enemy.atkTmr -= game.dt;
+        if (enemy.atkTmr <= 0) {
+          enemy.atkTmr = 0.8;
+          applyMeleeDamage(enemy.atkDmg);
+        }
+      } else {
+        enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
+      }
     } else {
       const ndx = distance > EPS ? dx / distance : 0;
       const ndz = distance > EPS ? dz / distance : 0;
-      const moveSpeed = distance > 4.4 ? enemy.spd : enemy.spd * 0.25;
-      enemyPosition.x += ndx * moveSpeed * game.dt;
-      enemyPosition.z += ndz * moveSpeed * game.dt;
+      let moveSpeed = 0;
+      if (distance > 5.5) {
+        moveSpeed = enemy.spd;
+      } else if (distance < 3.5) {
+        moveSpeed = -enemy.spd * 0.5;
+      }
+      if (enemyPosition.y <= 0.001) {
+        enemyPosition.x += ndx * moveSpeed * game.dt;
+        enemyPosition.z += ndz * moveSpeed * game.dt;
+        enemy.velX = ndx * moveSpeed;
+        enemy.velZ = ndz * moveSpeed;
+      } else {
+        enemy.velX += ndx * BOSS_AIR_ACCEL * game.dt;
+        enemy.velZ += ndz * BOSS_AIR_ACCEL * game.dt;
+      }
 
       enemy.walkT += game.dt * 4.2;
       const swing = Math.sin(enemy.walkT) * 0.35;
@@ -510,9 +704,63 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
           applyMeleeDamage(enemy.atkDmg);
         }
       }
+
+      if (enemy.velY !== 0 || enemyPosition.y > 0) {
+        enemyPosition.x += enemy.velX * game.dt;
+        enemyPosition.z += enemy.velZ * game.dt;
+        enemyPosition.y += enemy.velY * game.dt;
+        enemy.velY -= BOSS_ESCAPE_GRAVITY * game.dt;
+        const airSpeed = Math.hypot(enemy.velX, enemy.velZ);
+        const maxAirSpeed = Math.max(BOSS_ESCAPE_FORWARD_SPEED * 1.7, enemy.spd * 1.35);
+        if (airSpeed > maxAirSpeed) {
+          const clamp = maxAirSpeed / airSpeed;
+          enemy.velX *= clamp;
+          enemy.velZ *= clamp;
+        }
+        enemy.velX *= Math.pow(0.82, game.dt);
+        enemy.velZ *= Math.pow(0.82, game.dt);
+        if (enemyPosition.y <= 0) {
+          enemyPosition.y = 0;
+          enemy.velX = 0;
+          enemy.velZ = 0;
+          enemy.velY = 0;
+        }
+      }
+
+      if (enemyPosition.y <= 0.001 && enemy.velY === 0) {
+        if (enemy.stuckTmr <= 0) {
+          enemy.lastTrackedX = enemyPosition.x;
+          enemy.lastTrackedZ = enemyPosition.z;
+        }
+
+        enemy.stuckTmr += game.dt;
+        if (enemy.stuckTmr >= 1) {
+          const movedDistance = Math.hypot(enemyPosition.x - enemy.lastTrackedX, enemyPosition.z - enemy.lastTrackedZ);
+          enemy.stuckTmr = 0;
+          enemy.lastTrackedX = enemyPosition.x;
+          enemy.lastTrackedZ = enemyPosition.z;
+
+          if (movedDistance < 0.5) {
+            const launchSpeed = Math.max(BOSS_ESCAPE_FORWARD_SPEED, moveSpeed);
+            enemy.velX = ndx * launchSpeed;
+            enemy.velZ = ndz * launchSpeed;
+            enemy.velY = BOSS_ESCAPE_JUMP_VELOCITY;
+            enemy.windupTmr = 0;
+            enemy.swingTmr = 0;
+            enemy.atkTmr = Math.max(enemy.atkTmr, 0.9);
+          }
+        }
+      } else {
+        enemy.stuckTmr = 0;
+        enemy.lastTrackedX = enemyPosition.x;
+        enemy.lastTrackedZ = enemyPosition.z;
+      }
     }
 
     for (const obstacle of game.oBs) {
+      if (enemy.type === "boss" && enemyPosition.y > 0.001) {
+        continue;
+      }
       resolveCircleBox(enemyPosition, enemy.radius || P_RAD, obstacle);
     }
 
@@ -523,7 +771,9 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
     updateHealthBar(enemy);
   }
 
-  if (game.socket) {
+  syncEnemiesTmr -= game.dt;
+  if (game.socket && syncEnemiesTmr <= 0) {
+    syncEnemiesTmr = 0.1;
     game.socket.emit(
       "syncEnemies",
       game.enemies.map((enemy) => ({
@@ -540,14 +790,23 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
   }
 
   for (let first = 0; first < game.enemies.length; first += 1) {
+    const ea = game.enemies[first];
     for (let second = first + 1; second < game.enemies.length; second += 1) {
-      const a = game.enemies[first].group.position;
-      const b = game.enemies[second].group.position;
+      const eb = game.enemies[second];
+      // Skeletons are tiny and numerous — skip skel-skel separation entirely
+      if (ea.type === "skeleton" && eb.type === "skeleton") {
+        continue;
+      }
+      const a = ea.group.position;
+      const b = eb.group.position;
       const dx = b.x - a.x;
       const dz = b.z - a.z;
+      const minDistance = (ea.radius || 0.6) + (eb.radius || 0.6);
+      // Cheap axis-aligned early-out avoids sqrt for most pairs
+      if (Math.abs(dx) >= minDistance || Math.abs(dz) >= minDistance) {
+        continue;
+      }
       const distance = Math.sqrt(dx * dx + dz * dz);
-      const minDistance = (game.enemies[first].radius || 0.6) + (game.enemies[second].radius || 0.6);
-
       if (distance < minDistance && distance > EPS) {
         const push = (minDistance - distance) * 0.5;
         const nx = dx / distance;
@@ -559,9 +818,27 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
       }
     }
   }
+
+  updateSkeletonCorpses();
+}
+
+function updateSkeletonCorpses() {
+  for (let i = game.skeletonCorpses.length - 1; i >= 0; i -= 1) {
+    const corpse = game.skeletonCorpses[i];
+    corpse.mixer.update(game.dt);
+    corpse.elapsed += game.dt;
+    if (corpse.elapsed >= corpse.duration) {
+      game.scene.remove(corpse.model);
+      disposeObject3D(corpse.model);
+      game.skeletonCorpses.splice(i, 1);
+    }
+  }
 }
 
 function updateHealthBar(enemy) {
+  if (enemy.type === "skeleton") {
+    return;
+  }
   const hpY = enemy.type === "soldier" ? 2.3 : enemy.type === "dog" ? 1.3 : 5.3;
   enemy.hpBar.position.copy(enemy.group.position).setY(enemy.group.position.y + hpY);
   enemy.hpBar.lookAt(game.camera.position);
@@ -597,13 +874,15 @@ export function updateWaves() {
       game.nextEnemyPing = 60;
       game.enemyPingTmr = 0;
 
-      if (game.wave === 5) {
+      if (game.wave % 5 === 0) {
         game.enemiesToSpawn = 0;
+        game.skeletonGroupsToSpawn = 0;
         game.spawnTmr = 0;
         game.waveState = "ACTIVE";
         spawnBoss();
       } else {
-        game.enemiesToSpawn = 2 + game.wave * 2;
+        game.enemiesToSpawn = Math.min(2 + game.wave * 2, 30);
+        game.skeletonGroupsToSpawn = game.wave >= 6 ? Math.min(4 + (game.wave - 6), 8) : 0;
         game.spawnTmr = 0;
         game.waveState = "SPAWNING";
       }
@@ -613,13 +892,19 @@ export function updateWaves() {
     }
   } else if (game.waveState === "SPAWNING") {
     game.spawnTmr -= game.dt;
-    if (game.spawnTmr <= 0 && game.enemiesToSpawn > 0) {
-      spawnEnemy();
-      game.enemiesToSpawn -= 1;
-      game.spawnTmr = 0.5;
+    if (game.spawnTmr <= 0 && (game.enemiesToSpawn > 0 || game.skeletonGroupsToSpawn > 0)) {
+      if (game.skeletonGroupsToSpawn > 0 && (game.enemiesToSpawn === 0 || Math.random() < 0.35)) {
+        spawnSkeletonGroup();
+        game.skeletonGroupsToSpawn -= 1;
+        game.spawnTmr = 1.2;
+      } else if (game.enemiesToSpawn > 0) {
+        spawnEnemy();
+        game.enemiesToSpawn -= 1;
+        game.spawnTmr = 0.5;
+      }
     }
 
-    if (game.enemiesToSpawn <= 0) {
+    if (game.enemiesToSpawn <= 0 && game.skeletonGroupsToSpawn <= 0) {
       game.waveState = "ACTIVE";
     }
 
@@ -630,34 +915,83 @@ export function updateWaves() {
 }
 
 export function spawnBoss() {
-  let x = 0;
-  let z = -(HALF - 6);
-  let attempts = 0;
   const playerGroup = game.visuals.player.playerGroup;
+  const { bossCount, hpMultiplier } = getBossWaveConfig();
+
+  for (let bossIndex = 0; bossIndex < bossCount; bossIndex += 1) {
+    let x = 0;
+    let z = -(HALF - 6);
+    let attempts = 0;
+
+    do {
+      const side = Math.floor(Math.random() * 4);
+      const offset = (Math.random() - 0.5) * (ARENA_SIZE - 14);
+      if (side === 0) {
+        x = offset;
+        z = -(HALF - 6);
+      } else if (side === 1) {
+        x = offset;
+        z = HALF - 6;
+      } else if (side === 2) {
+        x = -(HALF - 6);
+        z = offset;
+      } else {
+        x = HALF - 6;
+        z = offset;
+      }
+      attempts += 1;
+    } while (
+      (
+        Math.hypot(x - playerGroup.position.x, z - playerGroup.position.z) < 22
+        || game.enemies.some((enemy) => enemy.type === "boss" && Math.hypot(x - enemy.group.position.x, z - enemy.group.position.z) < 12)
+      )
+      && attempts < 30
+    );
+
+    createBoss(new THREE.Vector3(x, 0, z), Math.random(), { hpMultiplier });
+  }
+}
+
+export function spawnSkeletonGroup() {
+  if (game.enemies.length >= MAX_LIVE_ENEMIES) {
+    return;
+  }
+  const playerGroup = game.visuals.player.playerGroup;
+  let cx;
+  let cz;
+  let attempts = 0;
 
   do {
     const side = Math.floor(Math.random() * 4);
-    const offset = (Math.random() - 0.5) * (ARENA_SIZE - 14);
+    const offset = (Math.random() - 0.5) * (ARENA_SIZE - 6);
     if (side === 0) {
-      x = offset;
-      z = -(HALF - 6);
+      cx = offset;
+      cz = -(HALF - 2);
     } else if (side === 1) {
-      x = offset;
-      z = HALF - 6;
+      cx = offset;
+      cz = HALF - 2;
     } else if (side === 2) {
-      x = -(HALF - 6);
-      z = offset;
+      cx = -(HALF - 2);
+      cz = offset;
     } else {
-      x = HALF - 6;
-      z = offset;
+      cx = HALF - 2;
+      cz = offset;
     }
     attempts += 1;
-  } while (Math.hypot(x - playerGroup.position.x, z - playerGroup.position.z) < 22 && attempts < 20);
+  } while (Math.hypot(cx - playerGroup.position.x, cz - playerGroup.position.z) < 15 && attempts < 20);
 
-  createBoss(new THREE.Vector3(x, 0, z));
+  for (let index = 0; index < 5; index += 1) {
+    const angle = (index / 5) * Math.PI * 2;
+    const x = cx + Math.cos(angle) * 1.8;
+    const z = cz + Math.sin(angle) * 1.8;
+    createSkeleton(new THREE.Vector3(x, 0, z));
+  }
 }
 
 export function spawnEnemy() {
+  if (game.enemies.length >= MAX_LIVE_ENEMIES) {
+    return;
+  }
   const playerGroup = game.visuals.player.playerGroup;
   let x;
   let z;
@@ -693,9 +1027,29 @@ export function spawnEnemy() {
 export function announceWave() {
   const title = game.dom.waveAnnounce.querySelector(".wa-title");
   const subtitle = game.dom.waveAnnounce.querySelector(".wa-sub");
+  const bossWave = game.wave % 5 === 0;
+  const { bossCount, hpMultiplier } = bossWave ? getBossWaveConfig() : { bossCount: 0, hpMultiplier: 1 };
   title.textContent = `WAVE ${game.wave}`;
-  subtitle.textContent = game.wave === 5 ? "BOSS INCOMING" : game.wave >= 3 ? "DOGS INCOMING" : "";
-  subtitle.style.display = game.wave >= 3 || game.wave === 5 ? "block" : "none";
+  if (bossWave) {
+    if (bossCount > 1 && hpMultiplier > 1) {
+      subtitle.textContent = `${bossCount}x ${hpMultiplier}HP BOSSES INCOMING`;
+    } else if (bossCount > 1) {
+      subtitle.textContent = `${bossCount} BOSSES INCOMING`;
+    } else if (hpMultiplier > 1) {
+      subtitle.textContent = `${hpMultiplier}X HP BOSS INCOMING`;
+    } else {
+      subtitle.textContent = "BOSS INCOMING";
+    }
+  } else {
+    if (game.wave >= 6) {
+      subtitle.textContent = "DOGS & SKELETONS INCOMING";
+    } else if (game.wave >= 3) {
+      subtitle.textContent = "DOGS INCOMING";
+    } else {
+      subtitle.textContent = "";
+    }
+  }
+  subtitle.style.display = game.wave >= 3 || bossWave ? "block" : "none";
   game.dom.waveAnnounce.classList.remove("show");
   void game.dom.waveAnnounce.offsetWidth;
   game.dom.waveAnnounce.classList.add("show");

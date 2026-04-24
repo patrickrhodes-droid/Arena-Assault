@@ -6,7 +6,18 @@ import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
 import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState } from "./player.js";
 import { applyWeaponModel, initScene } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
-import { cacheDom, bindMenuControls, drawMinimap, hideRankings, showDamage, showRankings, updateHUD } from "./ui.js";
+import {
+  cacheDom,
+  bindMenuControls,
+  drawMinimap,
+  hideRankings,
+  renderJoinLinkControls,
+  setCopyJoinLinkStatus,
+  showBossImperviousAlert,
+  showDamage,
+  showRankings,
+  updateHUD,
+} from "./ui.js";
 import { disposeObject3D } from "./utils.js";
 
 cacheDom();
@@ -17,6 +28,24 @@ applyWeaponModel();
 const actions = {
   addShake,
   audioInit: () => game.audio.init(),
+  copyJoinLink: async () => {
+    if (!game.joinLink) {
+      setCopyJoinLinkStatus("Join link unavailable.", true);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(game.joinLink);
+      setCopyJoinLinkStatus(`Copied: ${game.joinLink}`);
+    } catch {
+      setCopyJoinLinkStatus("Clipboard access failed.", true);
+    }
+
+    window.clearTimeout(game.copyJoinLinkTimeout);
+    game.copyJoinLinkTimeout = window.setTimeout(() => {
+      setCopyJoinLinkStatus("");
+    }, 2500);
+  },
   gameOver,
   handleSwordAttack: () => trySwordHit(),
   playerDiedLocal,
@@ -43,6 +72,7 @@ const actions = {
       updateHUD();
     }
   },
+  showBossImperviousAlert,
   showDamage,
   startGame,
   startMatch: () => {
@@ -168,6 +198,11 @@ function startGame() {
   resetSessionState();
   game.hp = game.effectiveMaxHP;
   cleanupGame();
+
+  if (game.isHost && game.startingWave > 1) {
+    game.wave = game.startingWave - 1;
+    game.waveTmr = 0.1;
+  }
   hideRankings();
   resetCombatState();
   resetViewState();
@@ -181,6 +216,7 @@ function startGame() {
   game.dom.reviveProgressBg.style.display = "none";
   game.dom.reviveProgressFill.style.width = "0%";
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
+  renderJoinLinkControls();
   updateHUD();
   drawMinimap();
   game.lastTime = performance.now();
@@ -205,12 +241,18 @@ function cleanupGame() {
     disposeObject3D(enemy.group);
     game.scene.remove(enemy.hpBar);
     game.scene.remove(enemy.hpFg);
-    enemy.hpBar.geometry.dispose();
-    enemy.hpBar.material.dispose();
-    enemy.hpFg.geometry.dispose();
-    enemy.hpFg.material.dispose();
+    enemy.hpBar.geometry?.dispose();
+    enemy.hpBar.material?.dispose();
+    enemy.hpFg.geometry?.dispose();
+    enemy.hpFg.material?.dispose();
   });
   game.enemies.length = 0;
+
+  game.skeletonCorpses.forEach((corpse) => {
+    game.scene.remove(corpse.model);
+    disposeObject3D(corpse.model);
+  });
+  game.skeletonCorpses.length = 0;
 
   game.healthPacks.forEach((pack) => {
     game.scene.remove(pack.mesh);

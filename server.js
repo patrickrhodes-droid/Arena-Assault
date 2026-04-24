@@ -3,8 +3,59 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
+const os = require('os');
+
+const PORT = 3000;
 
 const publicDir = path.join(__dirname, 'public');
+
+function normalizeIpAddress(address) {
+    if (!address) {
+        return '';
+    }
+
+    if (address.startsWith('::ffff:')) {
+        return address.slice(7);
+    }
+
+    if (address === '::1') {
+        return '127.0.0.1';
+    }
+
+    return address;
+}
+
+function getServerIpv4Addresses() {
+    const interfaces = os.networkInterfaces();
+    const addresses = [];
+
+    Object.values(interfaces).forEach((entries) => {
+        (entries || []).forEach((entry) => {
+            const family = typeof entry.family === 'string' ? entry.family : String(entry.family);
+            if (family !== 'IPv4' || entry.internal) {
+                return;
+            }
+            addresses.push(entry.address);
+        });
+    });
+
+    return [...new Set(addresses)];
+}
+
+function createConnectionInfo(address) {
+    const serverIps = getServerIpv4Addresses();
+    const normalizedAddress = normalizeIpAddress(address);
+    const isLoopback = normalizedAddress === '127.0.0.1';
+    const isServerPc = isLoopback || serverIps.includes(normalizedAddress);
+    const preferredHost = serverIps[0] || 'localhost';
+
+    return {
+        clientIp: normalizedAddress,
+        isServerPc,
+        joinLink: `http://${preferredHost}:${PORT}`,
+        serverIps,
+    };
+}
 
 app.use(express.static(publicDir));
 
@@ -22,6 +73,7 @@ let currentWave = 0;
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
     const isFirst = Object.keys(players).length === 0;
+    const connectionInfo = createConnectionInfo(socket.handshake.address);
 
     players[socket.id] = {
         rotation: 0,
@@ -43,6 +95,7 @@ io.on('connection', (socket) => {
         stats: {}
     };
 
+    socket.emit('serverInfo', connectionInfo);
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('newPlayer', players[socket.id]);
     io.emit('updateLobby', players);
@@ -249,4 +302,4 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => { console.log('Server running on http://localhost:3000'); });
+http.listen(PORT, () => { console.log(`Server running on http://localhost:${PORT}`); });

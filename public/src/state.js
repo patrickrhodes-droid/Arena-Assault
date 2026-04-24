@@ -16,6 +16,10 @@ export const game = {
   ammo: createWeaponAmmo()[DEFAULT_WEAPON],
   stats: createStats(),
   isHost: false,
+  canCopyJoinLink: false,
+  joinLink: "",
+  clientIp: "",
+  copyJoinLinkMessage: "",
   playerName: "Soldier",
   isReloading: false,
   reloadTmr: 0,
@@ -34,7 +38,14 @@ export const game = {
   isGrounded: true,
   waveState: "WAIT",
   waveTmr: 2.5,
+  startingWave: 1,
+  invincibilityMode: false,
+  isCrouching: false,
+  isOnLadder: false,
+  ladderCooldown: 0,
+  ladders: [],
   enemiesToSpawn: 0,
+  skeletonGroupsToSpawn: 0,
   spawnTmr: 0,
   localPlayerIsAlive: true,
   localPlayerIsDowned: false,
@@ -50,11 +61,14 @@ export const game = {
   mouseDown: false,
   mouseClicked: false,
   damageTimeout: null,
+  copyJoinLinkTimeout: null,
+  bossImperviousTimeout: null,
   fpRecoilZ: 0,
   fpRecoilRX: 0,
   currentWeapon: DEFAULT_WEAPON,
   weaponAmmo: createWeaponAmmo(),
   enemies: [],
+  skeletonCorpses: [],
   bullets: [],
   particles: [],
   oBs: [],
@@ -110,7 +124,11 @@ export function resetSessionState() {
   game.localPlayerIsSpectating = false;
   game.waveState = "WAIT";
   game.waveTmr = 2.5;
+  game.isCrouching = false;
+  game.isOnLadder = false;
+  game.ladderCooldown = 0;
   game.enemiesToSpawn = 0;
+  game.skeletonGroupsToSpawn = 0;
   game.spawnTmr = 0;
   game.waveElapsed = 0;
   game.nextEnemyPing = 60;

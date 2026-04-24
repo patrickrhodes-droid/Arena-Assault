@@ -6,7 +6,7 @@ import { game } from "./state.js";
 
 export function initScene() {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x1b2734, 0.008);
+  scene.fog = new THREE.FogExp2(0x1b2734, 0.005);
   scene.background = new THREE.Color(0x1b2734);
 
   const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -35,24 +35,24 @@ export function initScene() {
 
 function addLighting() {
   const dirLight = new THREE.DirectionalLight(0xfff5e0, 1.65);
-  dirLight.position.set(20, 30, 10);
+  dirLight.position.set(40, 60, 20);
   dirLight.castShadow = true;
   dirLight.shadow.mapSize.set(2048, 2048);
-  dirLight.shadow.camera.left = -40;
-  dirLight.shadow.camera.right = 40;
-  dirLight.shadow.camera.top = 40;
-  dirLight.shadow.camera.bottom = -40;
+  dirLight.shadow.camera.left = -80;
+  dirLight.shadow.camera.right = 80;
+  dirLight.shadow.camera.top = 80;
+  dirLight.shadow.camera.bottom = -80;
   dirLight.shadow.camera.near = 1;
-  dirLight.shadow.camera.far = 80;
+  dirLight.shadow.camera.far = 160;
   dirLight.shadow.bias = -0.001;
   game.scene.add(dirLight);
 
   game.scene.add(new THREE.HemisphereLight(0x8fb7ff, 0x24303c, 0.8));
 
-  for (let index = 0; index < 9; index += 1) {
-    const x = (Math.random() - 0.5) * 60;
-    const z = (Math.random() - 0.5) * 60;
-    const pointLight = new THREE.PointLight(0x55e6cc, 1.15, 18);
+  for (let index = 0; index < 20; index += 1) {
+    const x = (Math.random() - 0.5) * 120;
+    const z = (Math.random() - 0.5) * 120;
+    const pointLight = new THREE.PointLight(0x55e6cc, 1.15, 30);
     pointLight.position.set(x, 0.3, z);
     game.scene.add(pointLight);
 
@@ -149,46 +149,160 @@ function buildArena() {
 
   game.shared.worldMaterials = { crateMat, metalMat, darkMat };
 
-  addWorldBox(-15, 0.75, -15, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(-13.5, 0.75, -15, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(-15, 0.75, -13.5, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(15, 0.75, 10, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(16.5, 0.75, 10, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(-10, 0.75, 20, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(-8.5, 0.75, 20, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(-10, 0.75, 21.5, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(20, 0.75, -20, 1.5, 1.5, 1.5, crateMat);
-  addWorldBox(21.5, 0.75, -20, 1.5, 1.5, 1.5, crateMat);
+  // ─── Center hub — 4 metal barriers in a cross ───
+  addWorldBox(0, 1.0, -14, 5, 2, 0.4, metalMat);
+  addWorldBox(0, 1.0, 14, 5, 2, 0.4, metalMat);
+  addWorldBox(-14, 1.0, 0, 0.4, 2, 5, metalMat);
+  addWorldBox(14, 1.0, 0, 0.4, 2, 5, metalMat);
 
-  addWorldBox(0, 0.6, -12, 3, 1.2, 0.3, metalMat);
-  addWorldBox(8, 0.6, 5, 3, 1.2, 0.3, metalMat);
-  addWorldBox(-18, 0.6, 0, 0.3, 1.2, 3, metalMat);
-  addWorldBox(5, 0.6, -25, 3, 1.2, 0.3, metalMat);
-  addWorldBox(-5, 0.6, 15, 0.3, 1.2, 3, metalMat);
-  addWorldBox(12, 0.6, -8, 3, 1.2, 0.3, metalMat);
+  // ─── Inner metal staircase (center-right) ───
+  addWorldBox(-11, 0.55, 16, 3.2, 1.1, 3.2, metalMat);
+  addWorldBox(-3, 1.05, 16, 3.2, 2.1, 3.2, metalMat);
+  addWorldBox(5, 1.55, 16, 3.2, 3.1, 3.2, metalMat);
 
-  addWorldBox(-6, 0.55, 8, 3.2, 1.1, 3.2, metalMat);
-  addWorldBox(-1.5, 1.05, 8, 3.2, 2.1, 3.2, metalMat);
-  addWorldBox(3, 1.55, 8, 3.2, 3.1, 3.2, metalMat);
-  addWorldBox(9, 0.7, 18, 3.6, 1.4, 3.6, darkMat);
-  addWorldBox(14, 1.15, 18, 3.6, 2.3, 3.6, darkMat);
-  addWorldBox(19, 1.55, 18, 3.6, 3.1, 3.6, darkMat);
-  addWorldBox(-22, 0.5, -6, 2.6, 1.0, 2.6, crateMat);
-  addWorldBox(-18.5, 0.95, -6, 2.6, 1.9, 2.6, crateMat);
-  addWorldBox(-15, 1.35, -6, 2.6, 2.7, 2.6, crateMat);
+  // ─── Inner dark staircase (center-left) ───
+  addWorldBox(-5, 0.55, -16, 3.2, 1.1, 3.2, darkMat);
+  addWorldBox(3, 1.05, -16, 3.2, 2.1, 3.2, darkMat);
+  addWorldBox(11, 1.55, -16, 3.2, 3.1, 3.2, darkMat);
+
+  // ─── Inner crate cluster NW ───
+  addWorldBox(-27, 0.75, -27, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-25.5, 0.75, -27, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-27, 0.75, -25.5, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-27, 1.5, -27, 1.5, 1.5, 1.5, crateMat);
+
+  // ─── Inner crate cluster SE ───
+  addWorldBox(27, 0.75, 27, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(25.5, 0.75, 27, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(27, 0.75, 25.5, 1.5, 1.5, 1.5, crateMat);
+
+  // ─── Mid barriers (cover at range) ───
+  addWorldBox(0, 0.6, -22, 3, 1.2, 0.4, metalMat);
+  addWorldBox(14, 0.6, 9, 3, 1.2, 0.4, metalMat);
+  addWorldBox(-32, 0.6, 0, 0.4, 1.2, 3, metalMat);
+  addWorldBox(9, 0.6, -46, 3, 1.2, 0.4, metalMat);
+  addWorldBox(-9, 0.6, 28, 0.4, 1.2, 3, metalMat);
+  addWorldBox(22, 0.6, -14, 3, 1.2, 0.4, metalMat);
+  addWorldBox(-15, 0.6, -36, 3, 1.2, 0.4, metalMat);
+  addWorldBox(15, 0.6, 36, 3, 1.2, 0.4, metalMat);
+  addWorldBox(-36, 0.6, 15, 0.4, 1.2, 3, metalMat);
+  addWorldBox(36, 0.6, -15, 0.4, 1.2, 3, metalMat);
+
+  // ─── North bunker (open toward player spawn area) ───
+  addWorldBox(-6, 1.2, -50, 0.4, 2.4, 9, metalMat);
+  addWorldBox(6, 1.2, -50, 0.4, 2.4, 9, metalMat);
+  addWorldBox(0, 1.2, -54, 12, 2.4, 0.4, metalMat);
+  addWorldBox(0, 0.75, -48, 1.5, 1.5, 1.5, crateMat);
+
+  // ─── South bunker ───
+  addWorldBox(-6, 1.2, 50, 0.4, 2.4, 9, metalMat);
+  addWorldBox(6, 1.2, 50, 0.4, 2.4, 9, metalMat);
+  addWorldBox(0, 1.2, 54, 12, 2.4, 0.4, metalMat);
+
+  // ─── East tower (3-tiered dark pillar) ───
+  addWorldBox(50, 0.7, 0, 4.5, 1.4, 4.5, darkMat);
+  addWorldBox(50, 2.3, 0, 3.2, 4.6, 3.2, darkMat);
+  addWorldBox(50, 5.5, 0, 2.2, 11.0, 2.2, darkMat);
+
+  // ─── West tower ───
+  addWorldBox(-50, 0.7, 0, 4.5, 1.4, 4.5, darkMat);
+  addWorldBox(-50, 2.3, 0, 3.2, 4.6, 3.2, darkMat);
+  addWorldBox(-50, 5.5, 0, 2.2, 11.0, 2.2, darkMat);
+
+  // ─── NE dark staircase ───
+  addWorldBox(36, 0.7, -36, 3.6, 1.4, 3.6, darkMat);
+  addWorldBox(44, 1.15, -36, 3.6, 2.3, 3.6, darkMat);
+  addWorldBox(52, 1.55, -36, 3.6, 3.1, 3.6, darkMat);
+
+  // ─── SW crate staircase ───
+  addWorldBox(-40, 0.5, 36, 2.6, 1.0, 2.6, crateMat);
+  addWorldBox(-33, 0.95, 36, 2.6, 1.9, 2.6, crateMat);
+  addWorldBox(-27, 1.35, 36, 2.6, 2.7, 2.6, crateMat);
+
+  // ─── NW crate staircase ───
+  addWorldBox(-40, 0.5, -12, 2.6, 1.0, 2.6, crateMat);
+  addWorldBox(-33, 0.95, -12, 2.6, 1.9, 2.6, crateMat);
+  addWorldBox(-27, 1.35, -12, 2.6, 2.7, 2.6, crateMat);
+
+  // ─── SE metal staircase ───
+  addWorldBox(28, 0.55, 38, 3.2, 1.1, 3.2, metalMat);
+  addWorldBox(36, 1.05, 38, 3.2, 2.1, 3.2, metalMat);
+  addWorldBox(44, 1.55, 38, 3.2, 3.1, 3.2, metalMat);
+
+  // ─── Outer diagonal cover (mid-outer ring) ───
+  addWorldBox(-28, 0.6, 28, 4, 1.2, 0.4, metalMat);
+  addWorldBox(28, 0.6, -28, 4, 1.2, 0.4, metalMat);
+  addWorldBox(-28, 0.6, -28, 0.4, 1.2, 4, metalMat);
+  addWorldBox(28, 0.6, 28, 0.4, 1.2, 4, metalMat);
+
+  // ─── Outer wall barriers ───
+  addWorldBox(60, 0.6, -24, 0.4, 1.2, 10, metalMat);
+  addWorldBox(-60, 0.6, 24, 0.4, 1.2, 10, metalMat);
+  addWorldBox(24, 0.6, 62, 10, 1.2, 0.4, metalMat);
+  addWorldBox(-24, 0.6, -62, 10, 1.2, 0.4, metalMat);
+  addWorldBox(-62, 0.6, -24, 0.4, 1.2, 10, metalMat);
+  addWorldBox(62, 0.6, 24, 0.4, 1.2, 10, metalMat);
+
+  // ─── Sniper perch pillars in far corners ───
+  addWorldBox(58, 2.5, -58, 2.5, 5.0, 2.5, darkMat);
+  addWorldBox(-58, 2.5, 58, 2.5, 5.0, 2.5, darkMat);
+  addWorldBox(58, 2.5, 58, 2.5, 5.0, 2.5, darkMat);
+  addWorldBox(-58, 2.5, -58, 2.5, 5.0, 2.5, darkMat);
+
+  // ─── Ladders on sniper towers ───
+  // Each tower is 2.5×5.0×2.5. Ladder is placed on the inner Z-face (toward arena centre).
+  // resolveCircleBox skips when baseY >= obstacle.h - LEDGE_GRACE = 4.65, so the player can
+  // walk onto the tower top once they climb past that height.
+  function addTowerLadder(tx, tz, faceSign) {
+    // faceSign +1 = ladder on +z face (towers at z<0), -1 = ladder on -z face (towers at z>0)
+    const faceZ = tz + faceSign * 1.25;
+    const lz = faceZ + faceSign * 0.07; // slightly proud of the face
+
+    // Two vertical rails
+    addWorldBox(tx - 0.72, 2.5, lz, 0.09, 5.0, 0.09, metalMat, false, false);
+    addWorldBox(tx + 0.72, 2.5, lz, 0.09, 5.0, 0.09, metalMat, false, false);
+
+    // Eight rungs
+    for (let i = 0; i < 8; i += 1) {
+      addWorldBox(tx, 0.4 + i * 0.6, lz, 1.44, 0.07, 0.09, metalMat, false, false);
+    }
+
+    // Ladder interaction zone: narrow strip in front of the face, full tower height + a little
+    const zMin = faceSign > 0 ? faceZ - 0.3 : faceZ - 1.8;
+    const zMax = faceSign > 0 ? faceZ + 1.8 : faceZ + 0.3;
+    game.ladders.push({ xMin: tx - 1.4, xMax: tx + 1.4, zMin, zMax, yMax: 5.3 });
+  }
+
+  addTowerLadder(58, -58, 1);
+  addTowerLadder(-58, -58, 1);
+  addTowerLadder(58, 58, -1);
+  addTowerLadder(-58, 58, -1);
+
+  // ─── Scattered mid-field crates ───
+  addWorldBox(-35, 0.75, 20, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-33.5, 0.75, 20, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-35, 1.5, 20, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(35, 0.75, -20, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(33.5, 0.75, -20, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(20, 0.75, 38, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(21.5, 0.75, 38, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-20, 0.75, -38, 1.5, 1.5, 1.5, crateMat);
+  addWorldBox(-21.5, 0.75, -38, 1.5, 1.5, 1.5, crateMat);
 }
 
-function addWorldBox(x, y, z, width, height, depth, material, castShadow = true) {
+function addWorldBox(x, y, z, width, height, depth, material, castShadow = true, collidable = true) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
   mesh.position.set(x, y, z);
   mesh.castShadow = castShadow;
   mesh.receiveShadow = true;
   game.scene.add(mesh);
-  game.oBs.push({
-    min: { x: x - width / 2, z: z - depth / 2 },
-    max: { x: x + width / 2, z: z + depth / 2 },
-    h: height,
-  });
+  if (collidable) {
+    game.oBs.push({
+      min: { x: x - width / 2, z: z - depth / 2 },
+      max: { x: x + width / 2, z: z + depth / 2 },
+      h: height,
+    });
+  }
   return mesh;
 }
 
@@ -379,6 +493,11 @@ function buildWeaponVisuals() {
 }
 
 function buildSharedRuntimeAssets() {
+  game.shared.skeletonGltf = null;
+  new GLTFLoader().load("/assets/models/Skeleton.glb", (gltf) => {
+    game.shared.skeletonGltf = gltf;
+  });
+
   game.shared.bulletGeo = new THREE.SphereGeometry(0.06, 6, 6);
   game.shared.trailGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4);
   game.shared.trailGeo.rotateX(Math.PI / 2);
@@ -391,6 +510,7 @@ function buildSharedRuntimeAssets() {
   game.shared.hpBgMat = new THREE.MeshBasicMaterial({ color: 0x331111, side: THREE.DoubleSide });
   game.shared.hpFgMatSoldier = new THREE.MeshBasicMaterial({ color: 0xff2244, side: THREE.DoubleSide });
   game.shared.hpFgMatDog = new THREE.MeshBasicMaterial({ color: 0xff8833, side: THREE.DoubleSide });
+  game.shared.hpFgMatSkeleton = new THREE.MeshBasicMaterial({ color: 0xc0ccff, side: THREE.DoubleSide });
 }
 
 function createNametag(name) {

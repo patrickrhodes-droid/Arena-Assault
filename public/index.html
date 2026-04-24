@@ -37,10 +37,29 @@
 
     <button class="deploy-btn" id="deploy-btn">READY UP</button>
 
+    <div id="join-link-box" hidden>
+      <div id="host-controls">
+        <div class="host-controls-title">HOST CONTROLS</div>
+        <div class="host-control-row">
+          <label for="skip-wave-select">START AT WAVE</label>
+          <select id="skip-wave-select"></select>
+        </div>
+        <div class="host-control-row">
+          <label for="invincibility-toggle">INVINCIBILITY</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="invincibility-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
+      <div id="copy-join-link-status" aria-live="polite"></div>
+    </div>
+
     <div class="controls-box">
       <span class="key">W A S D</span><span>Move</span>
       <span class="key">SPACE</span><span>Jump</span>
-      <span class="key">SHIFT</span><span>Sprint</span>
+      <span class="key">SHIFT</span><span>Crouch (toggle)</span>
       <span class="key">1 2 3 4 / Q</span><span>Switch Weapon</span>
       <span class="key">MOUSE</span><span>Aim</span>
       <span class="key">CLICK</span><span>Fire</span>
@@ -109,10 +128,11 @@
     <div id="teammate-panel"></div>
 
     <div id="teammate-alert"></div>
+    <div id="boss-impervious-alert"></div>
 
     <div id="inventory-bar"></div>
 
-    <canvas id="minimap" width="200" height="200"></canvas>
+    <canvas id="minimap" width="360" height="360"></canvas>
   </div>
 
   <div id="pause-menu">
