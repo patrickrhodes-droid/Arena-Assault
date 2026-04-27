@@ -208,7 +208,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       }
     }
 
-    if (!shouldRemove && !bullet.isPlayer) {
+    if (!shouldRemove && !bullet.isPlayer && !bullet.fromRemote) {
       const playerGroup = game.visuals.player.playerGroup;
       const playerCenter = new THREE.Vector3(
         playerGroup.position.x,
@@ -284,8 +284,11 @@ export function processHit(enemy, damage, particlePosition) {
   }
 }
 
+const MAX_PARTICLES = 400;
+
 export function spawnParticles(position, count, color, speed) {
-  for (let index = 0; index < count; index += 1) {
+  const allowed = Math.min(count, Math.max(0, MAX_PARTICLES - game.particles.length));
+  for (let index = 0; index < allowed; index += 1) {
     const mesh = new THREE.Mesh(
       game.shared.partGeo,
       new THREE.MeshBasicMaterial({ color, transparent: true }),
@@ -399,7 +402,7 @@ export function updateHealthPacks(updateHUD) {
       const index = game.healthPacks.indexOf(pack);
       game.scene.remove(pack.mesh);
       game.healthPacks.splice(index, 1);
-      game.hp = Math.min(P_MAX_HP, game.hp + 30);
+      game.hp = Math.min(P_MAX_HP, game.hp + 150);
       game.audio.reviveComplete();
       updateHUD?.();
       game.socket?.emit("healthPackPickedUp", { packId: pack.id, playerId: game.socket.id });

@@ -232,6 +232,7 @@ function startGame() {
   game.dom.reviveProgressFill.style.width = "0%";
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
   renderJoinLinkControls();
+  game.snapCamera = true;
   updateHUD();
   drawMinimap();
   game.lastTime = performance.now();
@@ -281,6 +282,7 @@ function startPvPGame() {
   game.dom.reviveProgressFill.style.width = "0%";
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
   renderJoinLinkControls();
+  game.snapCamera = true;
   updateHUD();
   drawMinimap();
   game.lastTime = performance.now();
@@ -503,6 +505,7 @@ function playerDiedLocalPvP() {
     game.visuals.player.playerGroup.position.set(cx, 0, cz);
     game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
     game.camTheta = Math.atan2(-cx, -cz);
+    game.snapCamera = true;
     game.visuals.player.playerGroup.visible = !game.isFPS;
     game.visuals.weapon.firstPersonGun.visible = game.isFPS;
     game.dom.crosshair.classList.remove("hidden");
@@ -569,7 +572,7 @@ function revivePlayerLocal(emitToServer = true) {
   game.dom.revivePromptHud.style.display = "none";
   game.dom.reviveProgressBg.style.display = "none";
   game.dom.reviveProgressFill.style.width = "0%";
-  game.hp = Math.max(1, Math.floor(game.effectiveMaxHP * 0.3));
+  game.hp = game.effectiveMaxHP;
   game.netSyncTmr = 0;
   window.clearTimeout(game.reviveTimeout);
   if (emitToServer) {

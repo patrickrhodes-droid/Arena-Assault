@@ -15,6 +15,25 @@ export function initNetworking(actions) {
   game.socket = window.io();
   game.socket.emit("playerNameUpdate", { playerName: "" });
 
+  let wasInGame = false;
+
+  game.socket.on("disconnect", () => {
+    wasInGame = game.state === "PLAYING" || game.state === "DOWNED" || game.state === "SPECTATING";
+  });
+
+  game.socket.on("connect", () => {
+    if (wasInGame && game.playerName) {
+      wasInGame = false;
+      game.socket.emit("requestRejoin", { playerName: game.playerName });
+    }
+  });
+
+  game.socket.on("rejoinResult", (data) => {
+    if (!data?.success) return;
+    if (typeof data.state?.isHost === "boolean") game.isHost = data.state.isHost;
+    actions.updateHUD?.();
+  });
+
   game.socket.on("serverInfo", (info) => {
     setJoinLinkState({
       canCopyJoinLink: info?.isServerPc,
@@ -373,7 +392,7 @@ export function initNetworking(actions) {
     }
 
     if (data.playerId === game.socket.id) {
-      game.hp = Math.min(game.effectiveMaxHP ?? P_MAX_HP, game.hp + 30);
+      game.hp = Math.min(game.effectiveMaxHP ?? P_MAX_HP, game.hp + 150);
       game.audio.reviveComplete();
       actions.updateHUD();
     }

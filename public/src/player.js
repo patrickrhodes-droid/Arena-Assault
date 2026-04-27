@@ -534,7 +534,12 @@ export function updateCamera() {
     target.y = Math.max(1.6, target.y);
   }
 
-  game.camera.position.lerp(target, Math.min(1, 12 * game.dt));
+  if (game.snapCamera) {
+    game.camera.position.copy(target);
+    game.snapCamera = false;
+  } else {
+    game.camera.position.lerp(target, Math.min(1, 12 * game.dt));
+  }
 
   if (game.shakeAmt > 0.001) {
     game.camera.position.x += (Math.random() - 0.5) * game.shakeAmt * 2;

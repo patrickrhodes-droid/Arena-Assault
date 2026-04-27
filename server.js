@@ -72,11 +72,10 @@ let currentWave = 0;
 let currentMode = 'COOP';
 let selectedMap = 'arena';
 
-const PVP_WIN_KILLS = 13;
-const PVP_KILLS_PER_WEAPON = 2;
-const PVP_SWORD_KILLS_TO_WIN = 5;
-const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword'];
-const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
+const { PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON, PVP_SWORD_KILLS_TO_WIN, WEAPON_ORDER, PVP_CORNERS } = require('./public/shared-constants.json');
+
+// Temporarily disconnected players (keyed by playerName) — expires after 30 s.
+const disconnectedPlayers = {};
 
 function computeWeaponForKills(kills) {
     const idx = Math.min(Math.floor(kills / PVP_KILLS_PER_WEAPON), WEAPON_ORDER.length - 1);
@@ -135,6 +134,16 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        const player = players[socket.id];
+        if (player && player.playerName && (currentMode === 'COOP' || currentMode === 'PVP')) {
+            // Cache state so the player can rejoin without losing progress.
+            const name = player.playerName;
+            if (disconnectedPlayers[name]) clearTimeout(disconnectedPlayers[name].timer);
+            disconnectedPlayers[name] = {
+                state: { ...player },
+                timer: setTimeout(() => { delete disconnectedPlayers[name]; }, 30000),
+            };
+        }
         delete players[socket.id];
         if (Object.keys(players).length > 0) {
             const newHostId = Object.keys(players)[0];
@@ -143,6 +152,29 @@ io.on('connection', (socket) => {
         }
         io.emit('updateLobby', players);
         io.emit('playerDisconnected', socket.id);
+    });
+
+    socket.on('requestRejoin', (data) => {
+        const name = (data?.playerName || '').trim();
+        const entry = name && disconnectedPlayers[name];
+        if (!entry) {
+            socket.emit('rejoinResult', { success: false });
+            return;
+        }
+        clearTimeout(entry.timer);
+        delete disconnectedPlayers[name];
+
+        // Merge saved state into the new socket's player, preserving new host assignment.
+        if (players[socket.id]) {
+            const currentIsHost = players[socket.id].isHost;
+            Object.assign(players[socket.id], entry.state, {
+                playerId: socket.id,
+                isHost: currentIsHost || entry.state.isHost,
+            });
+        }
+        socket.emit('rejoinResult', { success: true, state: players[socket.id], mode: currentMode, wave: currentWave });
+        io.emit('updateLobby', players);
+        console.log(`Player "${name}" rejoined as ${socket.id}`);
     });
 
     socket.on('playerMovement', (movementData) => {

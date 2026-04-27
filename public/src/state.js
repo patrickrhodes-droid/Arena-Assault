@@ -90,6 +90,7 @@ export const game = {
   reviveTimeout: null,
   downedTime: 0,
   netSyncTmr: 0,
+  snapCamera: false,
   swordSwingProgress: 0,
   muzzleTmr: 0,
   knockbackX: 0,
@@ -147,6 +148,7 @@ export function resetSessionState() {
   game.wLastTapTime = 0;
   game.downedTime = 0;
   game.netSyncTmr = 0;
+  game.snapCamera = false;
   game.reviveHoldTime = 0;
   game.swordSwingProgress = 0;
   game.muzzleTmr = 0;

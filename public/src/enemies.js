@@ -452,7 +452,7 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
       if (enemy.mixer) {
         const camDx = enemy.group.position.x - game.camera.position.x;
         const camDz = enemy.group.position.z - game.camera.position.z;
-        if (camDx * camDx + camDz * camDz < 65 * 65) {
+        if (camDx * camDx + camDz * camDz < 30 * 30) {
           enemy.mixer.update(game.dt);
         }
       }
@@ -629,7 +629,7 @@ export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal
       if (enemy.mixer) {
         const camDx = enemy.group.position.x - game.camera.position.x;
         const camDz = enemy.group.position.z - game.camera.position.z;
-        if (camDx * camDx + camDz * camDz < 65 * 65) {
+        if (camDx * camDx + camDz * camDz < 30 * 30) {
           enemy.mixer.update(game.dt);
         }
       }
@@ -984,7 +984,13 @@ export function spawnSkeletonGroup() {
       cz = offset;
     }
     attempts += 1;
-  } while (Math.hypot(cx - playerGroup.position.x, cz - playerGroup.position.z) < 15 && attempts < 20);
+  } while (
+    (
+      Math.hypot(cx - playerGroup.position.x, cz - playerGroup.position.z) < 15
+      || game.enemies.some((e) => e.type === "skeleton" && Math.hypot(cx - e.group.position.x, cz - e.group.position.z) < 4)
+    )
+    && attempts < 20
+  );
 
   for (let index = 0; index < 5; index += 1) {
     const angle = (index / 5) * Math.PI * 2;

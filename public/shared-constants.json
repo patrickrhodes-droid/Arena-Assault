@@ -1,0 +1,7 @@
+{
+  "PVP_WIN_KILLS": 13,
+  "PVP_KILLS_PER_WEAPON": 2,
+  "PVP_SWORD_KILLS_TO_WIN": 5,
+  "WEAPON_ORDER": ["pistol", "assault", "shotgun", "sniper", "sword"],
+  "PVP_CORNERS": [[-60, -60], [60, -60], [-60, 60], [60, 60]]
+}

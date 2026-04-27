@@ -1,3 +1,5 @@
+import _shared from '../shared-constants.json' with { type: 'json' };
+
 export const ARENA_SIZE = 144;
 export const HALF = ARENA_SIZE / 2;
 export const WALL_H = 6;
@@ -12,7 +14,13 @@ export const LAND_SNAP = 0.35;
 export const LEDGE_GRACE = 0.35;
 export const EPS = 0.0001;
 export const DEFAULT_WEAPON = "pistol";
-export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword"];
+
+const { PVP_WIN_KILLS: _PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON: _PVP_KILLS_PER_WEAPON, PVP_SWORD_KILLS_TO_WIN: _PVP_SWORD_KILLS_TO_WIN, WEAPON_ORDER: _WEAPON_ORDER, PVP_CORNERS: _PVP_CORNERS } = _shared;
+export const WEAPON_ORDER = _WEAPON_ORDER;
+export const PVP_WIN_KILLS = _PVP_WIN_KILLS;
+export const PVP_KILLS_PER_WEAPON = _PVP_KILLS_PER_WEAPON;
+export const PVP_SWORD_KILLS_TO_WIN = _PVP_SWORD_KILLS_TO_WIN;
+export const PVP_CORNERS = _PVP_CORNERS;
 
 export const WEAPON_DEFS = {
   pistol: {
@@ -116,15 +124,6 @@ export const CHARACTERS = {
 
 export const CHARACTER_ORDER = ["iestyn", "patrick", "will", "matt"];
 
-export const PVP_WIN_KILLS = 13;
-export const PVP_KILLS_PER_WEAPON = 2;
-export const PVP_SWORD_KILLS_TO_WIN = 5;
-export const PVP_CORNERS = [
-  [-60, -60],
-  [60, -60],
-  [-60, 60],
-  [60, 60],
-];
 
 export const MAP_DEFS = {
   arena: {

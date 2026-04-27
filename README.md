@@ -118,6 +118,11 @@ Characters are rendered on both the local and remote player models. GLB face mod
 
 Heads use a layer-isolated point-light fill so they appear bright without any emissive glow bleeding onto the rest of the scene.
 
+## Health and reviving
+
+- **Health packs** spawn on enemy death (10% chance) and restore **150 HP**.
+- Being **revived** by a teammate restores you to **full health** — no more getting up at 30%.
+
 ## Multiplayer
 
 - The first player to connect becomes the **host** and simulates all game logic.
@@ -129,6 +134,7 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 - **Remote animations**: other players' walk cycles, crouch squish, sword swings, and weapon changes are all synced in real-time.
 - **Bullet visibility**: shots fired by remote players are visible as tracers on all clients.
 - **Rankings screen** shows final stats for all players at game over.
+- **Reconnection**: if a player drops mid-game, their score, kills, and alive status are preserved for 30 seconds so they can rejoin seamlessly.
 
 ## HUD
 
@@ -150,6 +156,7 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 Arena Assault/
 |-- public/
 |   |-- index.html              # Three-screen lobby UI and game markup
+|   |-- shared-constants.json   # Single source of truth for PVP/weapon constants (server + client)
 |   |-- styles/
 |   |   `-- main.css            # All UI styling
 |   |-- assets/
