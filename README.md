@@ -57,7 +57,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | Double-tap W | Sprint (alt) |
 | Ctrl | Crouch (toggle) |
 | W / S on a ladder | Climb up / down |
-| 1 / 2 / 3 / 4 / 5 | Select weapon slot (co-op) |
+| 1 / 2 / 3 / 4 / 5 / 6 | Select weapon slot (co-op) |
 | Q | Cycle weapon (co-op) |
 | Mouse | Aim |
 | Left click | Fire |
@@ -76,11 +76,12 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
 | 4 | Sniper Rifle | 500 | Slow fire, heavy ADS zoom |
 | 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: 250 per swing |
+| 6 | Grapple Hook | 80 | Hits enemies for 80 damage; pulls non-boss enemies until they are 8 units away |
 
 ## PvP Gun Game mode
 
 - Starts with only the **pistol**; every **2 kills** automatically advances you to the next weapon.
-- Progression: Pistol → Assault Rifle → Shotgun → Sniper → Sword.
+- Progression: Pistol → Assault Rifle → Shotgun → Sniper → Sword → Grapple.
 - Manual weapon switching is **locked** — the game decides your loadout.
 - First player to reach **13 total kills** (final 5 must be sword kills) wins.
 - On death: the player falls over with an animation, the screen fades to black, then fades back in at the corner **furthest from any living player**.
@@ -147,6 +148,175 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 
 - **Start at Wave** — begin co-op at any wave 1–30.
 - **Invincibility** — all players take no damage for the session.
+
+## Gameplay tuning reference
+
+Use this section when you want to rebalance movement, health, weapons, PvP progression, or enemies.
+
+### Important note about shared constants
+
+Some values exist in both the client and the server:
+
+- `public/src/gameConstants.js` is the shared client-side source of truth.
+- `server.js` still duplicates some of those same values for the authoritative simulation.
+
+If you change one of these and gameplay depends on the server too, update both files.
+
+### Player stats and movement
+
+| What | Current value | Where to change it |
+|---|---:|---|
+| Base player max HP | 1000 | `public/src/gameConstants.js` -> `P_MAX_HP`, and `server.js` -> `P_MAX_HP` |
+| Co-op HP scaling per player | `round(P_MAX_HP / playerCount)` | `server.js` inside `socket.on('startMatch')` |
+| Base walk speed | 6 | `public/src/player.js` in `updatePlayer()` |
+| Sprint multiplier | `6 * 1.55` | `public/src/player.js` in `updatePlayer()` |
+| Crouch speed | 2.7 | `public/src/player.js` in `updatePlayer()` |
+| Jump velocity | 11.2 | `public/src/gameConstants.js` -> `JUMP_VEL` |
+| Gravity | 20 | `public/src/gameConstants.js` -> `GRAV` |
+| Grapple pull speed | 18 | `public/src/player.js` in `updateGrapple()` |
+| Grapple max attach distance | 45 | `public/src/player.js` in `fireGrapple()` (`raycaster.far = 45`) |
+| Grapple cooldown after release | 0.8 s | `public/src/player.js` in `releaseGrapple()` |
+| Grapple cooldown after jump-release | 0.5 s | `public/src/player.js` in `tryJump()` |
+| Revive range | 2.8 | `public/src/player.js` -> `reviveRange` |
+| Revive hold time | 3.0 s | `public/src/player.js` -> `reviveTime` |
+| Downed bleed-out timer | 45 s | `public/src/main.js` where `game.downedTime / 45` is used |
+| Health pack heal amount | 150 | `public/src/network.js` in `healthPackRemoved` |
+
+### Weapon stats
+
+All player weapon stats live in `public/src/config.js` under `WEAPON_DEFS`.
+
+| Weapon | Key stats to edit |
+|---|---|
+| Pistol | `mag`, `fireRate`, `reload`, `damage`, `spreadHip`, `spreadAim`, `bulletSpeed`, `bulletLife`, `aimFov` |
+| Assault rifle | `mag`, `fireRate`, `reload`, `damage`, `spreadHip`, `spreadAim`, `bulletSpeed`, `bulletLife`, `aimFov` |
+| Shotgun | `mag`, `fireRate`, `reload`, `damage`, `minDamage`, `falloffStart`, `falloffEnd`, `pellets`, spreads |
+| Sniper | `mag`, `fireRate`, `reload`, `damage`, `spreadHip`, `spreadAim`, `bulletSpeed`, `bulletLife`, `aimFov` |
+| Sword | `fireRate`, `damage`, `range`, `arc` |
+
+Current default weapon values:
+
+| Weapon | Mag | Fire rate | Reload | Damage | Extra notes |
+|---|---:|---:|---:|---:|---|
+| Pistol | 14 | 0.3 s | 1.2 s | 102 | Bullet speed 96 |
+| Assault rifle | 30 | 0.09 s | 1.6 s | 46 | Bullet speed 90 |
+| Shotgun | 8 | 0.72 s | 2.2 s | 72 per pellet | 8 pellets, falls to 8 min damage |
+| Sniper | 5 | 1.15 s | 2.6 s | 500 | Bullet speed 160 |
+| Sword | 1 | 0.4 s | 0.1 s | 500 | Range 4.5, arc 1.2 |
+| Grapple | - | 0.9 s | - | 80 | No ammo; hits enemies and brings them to 8 units away |
+
+Related weapon logic:
+
+- Weapon order / unlock order: `public/src/gameConstants.js` and `public/src/config.js` -> `WEAPON_ORDER`
+- PvP weapon progression: `public/src/config.js` -> `PVP_KILLS_PER_WEAPON`
+- Boss damage restriction (only pistol and sword hurt Titan Brute): `server.js` inside `socket.on('bulletHit')`
+
+### PvP settings
+
+| What | Current value | Where to change it |
+|---|---:|---|
+| Kills needed to unlock next weapon | 2 | `public/src/config.js` and `server.js` -> `PVP_KILLS_PER_WEAPON` |
+| Total kills to win | 13 | `public/src/config.js` -> `PVP_WIN_KILLS`, `server.js` -> `PVP_WIN_KILLS` |
+| Sword kills required at the end | 5 | `public/src/config.js` -> `PVP_SWORD_KILLS_TO_WIN`, `server.js` -> `PVP_SWORD_KILLS_TO_WIN` |
+| PvP spawn corners | 4 fixed corners | `public/src/config.js` and `server.js` -> `PVP_CORNERS` |
+
+### Enemy stats
+
+The server-side values in `server.js` are the ones that actually matter for gameplay. Matching constructors also exist in `public/src/enemies.js` so spawned visuals start with the same stats.
+
+#### Skeleton
+
+- Spawned by `makeSkeleton()` in `server.js`
+- Mirrored visually in `createSkeleton()` in `public/src/enemies.js`
+
+| Stat | Current value |
+|---|---:|
+| HP | 1 |
+| Speed | `(9 + random * 2.5) * 0.7` |
+| Melee damage | `8 + wave` |
+| Attack timer seed | `random * 0.4` |
+
+#### Dog
+
+- Spawned by `makeDog()` in `server.js`
+- Mirrored visually in `createDog()` in `public/src/enemies.js`
+
+| Stat | Current value |
+|---|---:|
+| HP | `round((46 + wave * 10) * 1.1^wave)` |
+| Speed | `8 + random * 2 + wave * 0.3` |
+| Melee damage | `12 + wave * 2` |
+| Attack timer seed | `random * 0.5` |
+
+#### Soldier
+
+- Spawned by `makeSoldier()` in `server.js`
+- Mirrored visually in `createSoldier()` in `public/src/enemies.js`
+
+| Stat | Current value |
+|---|---:|
+| HP | `round((58 + wave * 12) * 1.1^wave)` |
+| Speed | `3.5 + random * 1.5 + wave * 0.2` |
+| Fire interval | `max(0.8, 2.2 - wave * 0.1) + random * 0.4` |
+| Bullet damage | 25 |
+| Bullet speed | 28 |
+| Bullet life | 4 s |
+
+Soldier bullet damage/speed are defined in:
+
+- `server.js` in `tickEnemies()`
+- `public/src/enemies.js` -> `ENEMY_BULLET_DMG` and `ENEMY_BULLET_SPD`
+
+#### Titan Brute (boss)
+
+- Spawned by `makeBoss()` in `server.js`
+- Mirrored visually in `createBoss()` in `public/src/enemies.js`
+
+| Stat | Current value |
+|---|---:|
+| HP | `round(3600 * 1.1^wave * hpMult)` |
+| Move speed | 12 |
+| Melee damage | `100 + wave * 10` |
+| Attack reach | 7.8 |
+| Attack frequency | 1.1 s |
+| Windup | 0.2 s |
+| Swing window | 0.22 s |
+| Escape jump gravity | 180 |
+| Escape jump height | `50 / 6` |
+| Escape forward speed | 14 |
+
+Boss tuning locations:
+
+- `server.js` top-level constants: `BOSS_ATTACK_REACH`, `BOSS_ATTACK_FREQ`, `BOSS_WINDUP`, `BOSS_SWING`, `BOSS_ESCAPE_GRAV`, `BOSS_ESCAPE_HEIGHT`, `BOSS_ESCAPE_FWD_SPD`
+- `public/src/enemies.js` top-level constants for the visual/client-owned mirror
+
+### Wave and spawn pacing
+
+Most co-op wave pacing is handled in `server.js` inside `tickWave()`.
+
+| What | Current value | Where to change it |
+|---|---:|---|
+| Inter-wave wait time | 2.5 s | `server.js` in `finishWave()` and initial `waveTmr` setup |
+| Standard enemies per wave | `min(1 + wave, 12)` | `server.js` in `tickWave()` |
+| Skeleton groups from wave 6+ | starts at 2 groups | `server.js` in `tickWave()` |
+| Max live enemies | 60 | `server.js` -> `MAX_LIVE_ENEMIES`, `public/src/enemies.js` mirror |
+| Enemy ping warning delay | 60 s | `public/src/state.js` -> `nextEnemyPing` reset value |
+
+Boss-wave scaling lives in:
+
+- `server.js` -> `spawnBoss()`
+- `public/src/enemies.js` -> `getBossWaveConfig()`
+
+### Health pack and score values
+
+| What | Current value | Where to change it |
+|---|---:|---|
+| Health pack drop chance | 10% | `server.js` in `killEnemy()` |
+| Health restored per pack | 150 | `public/src/network.js` in `healthPackRemoved` |
+| Skeleton score | 25 | `server.js` in `killEnemy()` |
+| Dog score | 150 | `server.js` in `killEnemy()` |
+| Soldier score | 100 | `server.js` in `killEnemy()` |
+| Boss score | 2500 | `server.js` in `killEnemy()` |
 
 ## Project structure
 

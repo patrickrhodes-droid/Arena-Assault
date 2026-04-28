@@ -122,8 +122,24 @@ export function initNetworking(actions) {
     actions.updateHUD();
   });
 
+  game.socket.on("pauseState", (data) => {
+    game.worldPaused = !!data?.paused;
+  });
+
   game.socket.on("enemyDamaged", (data) => {
     handleEnemyDamaged(data);
+  });
+
+  game.socket.on("enemyPulled", (data) => {
+    if (!data || typeof data.id !== "string") return;
+    const enemy = game.enemies.find((entry) => entry.id === data.id);
+    if (!enemy) return;
+    if (typeof data.x === "number") enemy.group.position.x = data.x;
+    if (typeof data.y === "number") enemy.group.position.y = data.y;
+    if (typeof data.z === "number") enemy.group.position.z = data.z;
+    enemy.serverX = data.x;
+    enemy.serverY = data.y;
+    enemy.serverZ = data.z;
   });
 
   game.socket.on("playerDamaged", (data) => {

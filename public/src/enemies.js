@@ -165,6 +165,10 @@ export function createSoldier(position, id = Math.random()) {
     spd: speed,
     fireInt: fireInterval,
     fireTmr: fireInterval * 0.5 + Math.random() * fireInterval * 0.5,
+    avoidCheckTmr: 2.0,
+    avoidTmr: 0,
+    avoidDirX: 0,
+    avoidDirZ: 0,
     flashTmr: 0,
     walkT: Math.random() * 6,
     hpBar,
@@ -260,6 +264,10 @@ export function createDog(position, id = Math.random()) {
     spd: speed,
     atkDmg: 12 + game.wave * 2,
     atkTmr: 0,
+    avoidCheckTmr: 2.0,
+    avoidTmr: 0,
+    avoidDirX: 0,
+    avoidDirZ: 0,
     flashTmr: 0,
     walkT: Math.random() * 6,
     hpBar,
@@ -361,8 +369,8 @@ export function createBoss(position, id = Math.random(), options = {}) {
     velZ: 0,
     velY: 0,
     stuckTmr: 0,
-    lastTrackedX: position.x,
-    lastTrackedZ: position.z,
+    lastTrackX: position.x,
+    lastTrackZ: position.z,
     hpBar,
     hpFg: hpFill,
     bossName: hpMultiplier > 1 ? "TITAN BRUTE ELITE" : "TITAN BRUTE",
@@ -415,6 +423,10 @@ export function createSkeleton(position, id = Math.random()) {
     spd: 9 + Math.random() * 2.5,
     atkDmg: 8 + game.wave,
     atkTmr: 0,
+    avoidCheckTmr: 2.0,
+    avoidTmr: 0,
+    avoidDirX: 0,
+    avoidDirZ: 0,
     flashTmr: 0,
     walkT: Math.random() * 6,
     hpBar,
@@ -542,6 +554,115 @@ function moveEnemyWithCollision(pos, ndx, ndz, spd) {
   for (const obs of game.oBs) resolveCircleBox(pos, 0.7, obs, 0);
 }
 
+function segmentIntersectsExpandedBox(startX, startZ, endX, endZ, obs, pad = 0) {
+  const minX = obs.xMin - pad;
+  const maxX = obs.xMax + pad;
+  const minZ = obs.zMin - pad;
+  const maxZ = obs.zMax + pad;
+  const dx = endX - startX;
+  const dz = endZ - startZ;
+  let tmin = 0;
+  let tmax = 1;
+
+  if (Math.abs(dx) > 1e-9) {
+    const t1 = (minX - startX) / dx;
+    const t2 = (maxX - startX) / dx;
+    tmin = Math.max(tmin, Math.min(t1, t2));
+    tmax = Math.min(tmax, Math.max(t1, t2));
+  } else if (startX < minX || startX > maxX) {
+    return false;
+  }
+
+  if (Math.abs(dz) > 1e-9) {
+    const t1 = (minZ - startZ) / dz;
+    const t2 = (maxZ - startZ) / dz;
+    tmin = Math.max(tmin, Math.min(t1, t2));
+    tmax = Math.min(tmax, Math.max(t1, t2));
+  } else if (startZ < minZ || startZ > maxZ) {
+    return false;
+  }
+
+  return tmin <= tmax;
+}
+
+function hasBlockingObstacle(startX, startZ, endX, endZ, pad = 0) {
+  return game.oBs.some((obs) => segmentIntersectsExpandedBox(startX, startZ, endX, endZ, obs, pad));
+}
+
+function getDetourDirection(pos, targetPos) {
+  const clearance = 1.5;
+  let blockingObs = null;
+  let bestDistSq = Infinity;
+
+  for (const obs of game.oBs) {
+    if (!segmentIntersectsExpandedBox(pos.x, pos.z, targetPos.x, targetPos.z, obs, clearance)) continue;
+    const centerX = (obs.xMin + obs.xMax) * 0.5;
+    const centerZ = (obs.zMin + obs.zMax) * 0.5;
+    const dx = centerX - pos.x;
+    const dz = centerZ - pos.z;
+    const distSq = dx * dx + dz * dz;
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      blockingObs = obs;
+    }
+  }
+
+  if (!blockingObs) return null;
+
+  const points = [
+    { x: blockingObs.xMin - clearance, z: blockingObs.zMin - clearance },
+    { x: blockingObs.xMin - clearance, z: blockingObs.zMax + clearance },
+    { x: blockingObs.xMax + clearance, z: blockingObs.zMin - clearance },
+    { x: blockingObs.xMax + clearance, z: blockingObs.zMax + clearance },
+  ];
+
+  let bestPoint = null;
+  let bestScore = Infinity;
+  for (const point of points) {
+    const d1 = (point.x - pos.x) ** 2 + (point.z - pos.z) ** 2;
+    const d2 = (targetPos.x - point.x) ** 2 + (targetPos.z - point.z) ** 2;
+    const score = d1 + d2;
+    if (score < bestScore) {
+      bestScore = score;
+      bestPoint = point;
+    }
+  }
+
+  if (!bestPoint) return null;
+  const dx = bestPoint.x - pos.x;
+  const dz = bestPoint.z - pos.z;
+  const len = Math.hypot(dx, dz) || 1;
+  return { x: dx / len, z: dz / len };
+}
+
+function updateDetourState(enemy, pos, targetPos, movedDistSq, attackRange) {
+  enemy.avoidCheckTmr = (enemy.avoidCheckTmr || 0) - game.dt;
+  enemy.avoidTmr = Math.max(0, (enemy.avoidTmr || 0) - game.dt);
+
+  if (enemy.avoidCheckTmr > 0) return;
+  enemy.avoidCheckTmr = 2.0;
+
+  const distSq = (targetPos.x - pos.x) ** 2 + (targetPos.z - pos.z) ** 2;
+  if (distSq <= attackRange * attackRange) {
+    enemy.avoidTmr = 0;
+    return;
+  }
+
+  const movedEnough = movedDistSq > 0.09;
+  const blocked = hasBlockingObstacle(pos.x, pos.z, targetPos.x, targetPos.z, 0.2);
+  if (movedEnough || !blocked) {
+    enemy.avoidTmr = 0;
+    return;
+  }
+
+  const detour = getDetourDirection(pos, targetPos);
+  if (detour) {
+    enemy.avoidDirX = detour.x;
+    enemy.avoidDirZ = detour.z;
+    enemy.avoidTmr = 2.0;
+  }
+}
+
 function applyMeleeDamage(enemy, target, damage) {
   if (target.isLocal) game.audio.damage();
   const pos = enemy.group.position;
@@ -550,7 +671,7 @@ function applyMeleeDamage(enemy, target, damage) {
   const isBoss = enemy.type === "boss";
   game.socket?.emit("enemyMeleeHit", {
     enemyId: enemy.id, targetId: target.id, damage,
-    ex: pos.x, ez: pos.z,
+    ex: pos.x, ey: pos.y, ez: pos.z,
     knockbackX: isBoss ? (dx / len) * 185 : 0,
     knockbackZ: isBoss ? (dz / len) * 185 : 0,
   });
@@ -582,12 +703,17 @@ function runOwnedEnemyAI(enemy) {
   if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
   else if (enemy.type === "dog")      ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.5, 1.0, 12);
   else if (enemy.type === "skeleton") ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.0, 0.8, 12);
-  else if (enemy.type === "boss")     ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets);
+  else if (enemy.type === "boss")     ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
 }
 
 function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
   const moveSpd = dist > 14 ? enemy.spd : dist < 7 ? -enemy.spd * 0.4 : 0;
-  moveEnemyWithCollision(pos, ndx, ndz, moveSpd);
+  const prevX = pos.x;
+  const prevZ = pos.z;
+  const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+  const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+  moveEnemyWithCollision(pos, dirX, dirZ, moveSpd);
+  updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, 7);
   enemy.walkT = (enemy.walkT || 0) + game.dt * 8;
 
   // Tick shoot animation timer; blend back to run when it expires
@@ -621,7 +747,12 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
 }
 
 function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult) {
-  moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  const prevX = pos.x;
+  const prevZ = pos.z;
+  const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+  const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+  moveEnemyWithCollision(pos, dirX, dirZ, enemy.spd);
+  updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, range);
   enemy.walkT = (enemy.walkT || 0) + game.dt * walkMult;
   enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
 
@@ -637,7 +768,7 @@ function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult
   }
 }
 
-function ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets) {
+function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   if (enemy.escaping) {
     enemy.bossVelY = (enemy.bossVelY || 0) - BOSS_ESCAPE_GRAVITY * game.dt;
     pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
@@ -646,7 +777,13 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets) {
     if (pos.y <= 0) { pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false; }
     return;
   }
-  moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  const prevX = pos.x;
+  const prevZ = pos.z;
+  const inAttackRange = dist < 7.8;
+  if (!inAttackRange) {
+    moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  }
+  const movedDistSq = (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2;
   enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
   if ((enemy.windupTmr || 0) > 0) {
     enemy.windupTmr -= game.dt;
@@ -658,12 +795,16 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets) {
     if (enemy.swingTmr <= 0) enemy.swingTmr = 0;
   } else {
     enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
-    if (enemy.atkTmr <= 0 && dist < 7.8) { enemy.atkTmr = 1.1; enemy.windupTmr = 0.2; }
+    if (enemy.atkTmr <= 0 && inAttackRange) { enemy.atkTmr = 1.1; enemy.windupTmr = 0.2; }
   }
-  const nearCount = targets.filter((t) => { const ddx = t.pos.x - pos.x, ddz = t.pos.z - pos.z; return ddx*ddx+ddz*ddz < 36; }).length;
-  if (!enemy.escaping && pos.y === 0 && nearCount >= 1) {
-    enemy.bossEfx = -ndx; enemy.bossEfz = -ndz;
+
+  if (!inAttackRange && movedDistSq < 0.04) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
+  else enemy.stuckTmr = 0;
+
+  if (!enemy.escaping && pos.y === 0 && !inAttackRange && (enemy.stuckTmr || 0) >= 0.9) {
+    enemy.bossEfx = ndx; enemy.bossEfz = ndz;
     enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
+    enemy.stuckTmr = 0;
   }
 }
 

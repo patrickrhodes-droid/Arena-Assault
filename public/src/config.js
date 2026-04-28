@@ -104,6 +104,24 @@ export const WEAPON_DEFS = {
     aimCamDist: 5.5,
     mode: "sword",
   },
+  grapple: {
+    label: "GRAPPLE HOOK",
+    mag: 0,
+    fireRate: 0.9,
+    reload: 0,
+    pellets: 0,
+    damage: 80,
+    spreadHip: 0,
+    spreadAim: 0,
+    bulletSpeed: 0,
+    bulletLife: 0,
+    aimFov: 55,
+    aimCamDist: 5.5,
+    recoilZ: 0.06,
+    recoilRX: 0.04,
+    shake: 0.05,
+    mode: "grapple",
+  },
 };
 
 export const CHARACTERS = {
@@ -129,8 +147,8 @@ export const MAP_DEFS = {
   arena: {
     name: "COMBAT ARENA",
     subtitle: "Industrial Training Facility",
-    accentColor: "#3ce6cb",
-    previewGradient: "linear-gradient(135deg,#1b2734 0%,#2a3c4e 50%,#152030 100%)",
+    accentColor: "#2de1d0",
+    previewGradient: "linear-gradient(135deg,#10242c 0%,#1f4048 52%,#0d171c 100%)",
   },
   desert: {
     name: "DUST BOWL",
@@ -141,8 +159,8 @@ export const MAP_DEFS = {
   city: {
     name: "DOWNTOWN",
     subtitle: "Urban Combat Zone",
-    accentColor: "#4488ff",
-    previewGradient: "linear-gradient(135deg,#0a0f1a 0%,#1a2040 50%,#080c14 100%)",
+    accentColor: "#ff4fa3",
+    previewGradient: "linear-gradient(135deg,#140f24 0%,#2b1f48 50%,#0b0914 100%)",
   },
 };
 

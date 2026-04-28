@@ -47,7 +47,7 @@ export function cycleWeapon() {
 
 export function startReload() {
   const weapon = getWeapon();
-  if (game.isReloading || game.ammo === weapon.mag || weapon.mode === "sword") {
+  if (game.isReloading || game.ammo === weapon.mag || weapon.mode === "sword" || weapon.mode === "grapple") {
     return;
   }
 

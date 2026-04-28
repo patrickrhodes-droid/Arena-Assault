@@ -48,7 +48,7 @@ app.get('/arenatest.html', (req, res) => res.redirect('/'));
 const PVP_WIN_KILLS = 13;
 const PVP_KILLS_PER_WEAPON = 2;
 const PVP_SWORD_KILLS_TO_WIN = 5;
-const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword'];
+const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'grapple'];
 const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
 
 // ── Game simulation constants ─────────────────────────────────────────────────
@@ -192,6 +192,107 @@ function hasLineOfSight(ox, oz, tx, tz, obstacles) {
     return true;
 }
 
+function segmentIntersectsExpandedBox(ox, oz, tx, tz, obs, pad = 0) {
+    const minX = obs.min.x - pad;
+    const maxX = obs.max.x + pad;
+    const minZ = obs.min.z - pad;
+    const maxZ = obs.max.z + pad;
+    const dx = tx - ox;
+    const dz = tz - oz;
+    let tmin = 0;
+    let tmax = 1;
+
+    if (Math.abs(dx) > 1e-9) {
+        const t1 = (minX - ox) / dx;
+        const t2 = (maxX - ox) / dx;
+        tmin = Math.max(tmin, Math.min(t1, t2));
+        tmax = Math.min(tmax, Math.max(t1, t2));
+    } else if (ox < minX || ox > maxX) {
+        return false;
+    }
+
+    if (Math.abs(dz) > 1e-9) {
+        const t1 = (minZ - oz) / dz;
+        const t2 = (maxZ - oz) / dz;
+        tmin = Math.max(tmin, Math.min(t1, t2));
+        tmax = Math.min(tmax, Math.max(t1, t2));
+    } else if (oz < minZ || oz > maxZ) {
+        return false;
+    }
+
+    return tmin <= tmax;
+}
+
+function getDetourDirection(enemy, target, obstacles) {
+    const clearance = 1.5;
+    let blockingObs = null;
+    let bestDistSq = Infinity;
+
+    for (const obs of obstacles) {
+        if (!segmentIntersectsExpandedBox(enemy.x, enemy.z, target.x, target.z, obs, clearance)) continue;
+        const centerX = (obs.min.x + obs.max.x) * 0.5;
+        const centerZ = (obs.min.z + obs.max.z) * 0.5;
+        const dx = centerX - enemy.x;
+        const dz = centerZ - enemy.z;
+        const distSq = dx * dx + dz * dz;
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            blockingObs = obs;
+        }
+    }
+
+    if (!blockingObs) return null;
+
+    const points = [
+        { x: blockingObs.min.x - clearance, z: blockingObs.min.z - clearance },
+        { x: blockingObs.min.x - clearance, z: blockingObs.max.z + clearance },
+        { x: blockingObs.max.x + clearance, z: blockingObs.min.z - clearance },
+        { x: blockingObs.max.x + clearance, z: blockingObs.max.z + clearance },
+    ];
+
+    let bestPoint = null;
+    let bestScore = Infinity;
+    for (const point of points) {
+        const d1 = dist2(enemy.x, enemy.z, point.x, point.z);
+        const d2 = dist2(point.x, point.z, target.x, target.z);
+        const score = d1 + d2;
+        if (score < bestScore) {
+            bestScore = score;
+            bestPoint = point;
+        }
+    }
+
+    if (!bestPoint) return null;
+    const [adx, adz] = norm2(bestPoint.x - enemy.x, bestPoint.z - enemy.z);
+    return { x: adx, z: adz };
+}
+
+function updateEnemyDetour(enemy, target, obstacles, movedDistSq, chaseRange, dt) {
+    enemy.avoidCheckTmr = (enemy.avoidCheckTmr || 0) - dt;
+    enemy.avoidTmr = Math.max(0, (enemy.avoidTmr || 0) - dt);
+
+    if (enemy.avoidCheckTmr > 0) return;
+    enemy.avoidCheckTmr = 2.0;
+    if (dist2(enemy.x, enemy.z, target.x, target.z) <= chaseRange * chaseRange) {
+        enemy.avoidTmr = 0;
+        return;
+    }
+
+    const movedEnough = movedDistSq > 0.09;
+    const canSeeTarget = hasLineOfSight(enemy.x, enemy.z, target.x, target.z, obstacles);
+    if (movedEnough || canSeeTarget) {
+        enemy.avoidTmr = 0;
+        return;
+    }
+
+    const detour = getDetourDirection(enemy, target, obstacles);
+    if (detour) {
+        enemy.avoidDirX = detour.x;
+        enemy.avoidDirZ = detour.z;
+        enemy.avoidTmr = 2.0;
+    }
+}
+
 // ── Player registry ───────────────────────────────────────────────────────────
 
 let players = {};
@@ -204,6 +305,17 @@ const recentlyDisconnected = {};
 
 function getAlivePlayers() {
     return Object.values(players).filter(p => p.isAlive && !p.isDowned && !p.isSpectating);
+}
+
+function isGamePausedForAlivePlayers() {
+    const alivePlayers = getAlivePlayers();
+    if (alivePlayers.length === 0) return false;
+    if (alivePlayers.length === 1) return !!alivePlayers[0].isPaused;
+    return alivePlayers.every(p => p.isPaused);
+}
+
+function broadcastPauseState() {
+    io.emit('pauseState', { paused: isGamePausedForAlivePlayers() });
 }
 
 // ── Server-side game state ────────────────────────────────────────────────────
@@ -277,6 +389,8 @@ function baseEnemy(type, x, z) {
         velY: 0, escaping: false,
         escapeFwdX: 0, escapeFwdZ: 0,
         lastEscapeTime: 0,
+        stuckTmr: 0, lastTrackX: x, lastTrackZ: z,
+        avoidCheckTmr: 2.0, avoidTmr: 0, avoidDirX: 0, avoidDirZ: 0,
         ownerId: null,
     };
 }
@@ -478,6 +592,18 @@ function applyEnemyDamage(targetId, damage, enemyId, knockbackX = 0, knockbackZ 
     }
 }
 
+function canEnemyMeleeTarget(enemy, target, ex, ey, ez) {
+    const reach = enemy.type === 'boss' ? BOSS_ATTACK_REACH : enemy.type === 'dog' ? 2.5 : 2.0;
+    const dx = ex - target.x;
+    const dz = ez - target.z;
+    if (dx * dx + dz * dz > reach * reach) return false;
+
+    const enemyY = typeof ey === 'number' ? ey : enemy.y;
+    const targetY = typeof target.y === 'number' ? target.y : 0;
+    const maxVerticalDelta = enemy.type === 'boss' ? 4.8 : 1.35;
+    return Math.abs(enemyY - targetY) <= maxVerticalDelta;
+}
+
 function killEnemy(enemy, killerId) {
     const idx = gameState.enemies.indexOf(enemy);
     if (idx === -1) return;
@@ -541,11 +667,16 @@ function tickEnemies(dt) {
         enemy.rot = Math.atan2(ndx, ndz) + Math.PI;
 
         if (enemy.type === 'soldier') {
+            const prevX = enemy.x;
+            const prevZ = enemy.z;
             // Kite: advance if > 14, retreat if < 7
             const moveSpd = targetDist > 14 ? enemy.spd : targetDist < 7 ? -enemy.spd * 0.4 : 0;
-            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + ndx * moveSpd * dt));
-            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + ndz * moveSpd * dt));
+            const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+            const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + dirX * moveSpd * dt));
+            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + dirZ * moveSpd * dt));
             resolveEnemyObstacles(enemy, obstacles);
+            updateEnemyDetour(enemy, target, obstacles, dist2(prevX, prevZ, enemy.x, enemy.z), 7, dt);
             enemy.walkT += dt * 8;
 
             if (targetDist < 50) {
@@ -588,33 +719,49 @@ function tickEnemies(dt) {
             }
 
         } else if (enemy.type === 'dog') {
-            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + ndx * enemy.spd * dt));
-            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + ndz * enemy.spd * dt));
+            const prevX = enemy.x;
+            const prevZ = enemy.z;
+            const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+            const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + dirX * enemy.spd * dt));
+            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + dirZ * enemy.spd * dt));
             resolveEnemyObstacles(enemy, obstacles);
+            updateEnemyDetour(enemy, target, obstacles, dist2(prevX, prevZ, enemy.x, enemy.z), 2.5, dt);
             enemy.walkT += dt * 12;
             enemy.atkTmr -= dt;
-            if (targetDist < 2.5 && enemy.atkTmr <= 0) {
+            if (targetDist < 2.5 && enemy.atkTmr <= 0 && canEnemyMeleeTarget(enemy, target, enemy.x, enemy.y, enemy.z)) {
                 enemy.atkTmr = 1.0;
                 applyEnemyDamage(target.playerId, enemy.atkDmg, enemy.id);
             }
             if (targetDist >= 2.5) enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
 
         } else if (enemy.type === 'skeleton') {
-            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + ndx * enemy.spd * dt));
-            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + ndz * enemy.spd * dt));
+            const prevX = enemy.x;
+            const prevZ = enemy.z;
+            const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+            const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + dirX * enemy.spd * dt));
+            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + dirZ * enemy.spd * dt));
             resolveEnemyObstacles(enemy, obstacles);
+            updateEnemyDetour(enemy, target, obstacles, dist2(prevX, prevZ, enemy.x, enemy.z), 2.0, dt);
             enemy.walkT += dt * 12;
             enemy.atkTmr -= dt;
-            if (targetDist < 2.0 && enemy.atkTmr <= 0) {
+            if (targetDist < 2.0 && enemy.atkTmr <= 0 && canEnemyMeleeTarget(enemy, target, enemy.x, enemy.y, enemy.z)) {
                 enemy.atkTmr = 0.8;
                 applyEnemyDamage(target.playerId, enemy.atkDmg, enemy.id);
             }
             if (targetDist >= 2.0) enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
 
         } else if (enemy.type === 'boss') {
-            enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + ndx * enemy.spd * dt));
-            enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + ndz * enemy.spd * dt));
+            const prevX = enemy.x;
+            const prevZ = enemy.z;
+            const inAttackRange = targetDist < BOSS_ATTACK_REACH;
+            if (!inAttackRange) {
+                enemy.x = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.x + ndx * enemy.spd * dt));
+                enemy.z = Math.max(-(HALF - 1), Math.min(HALF - 1, enemy.z + ndz * enemy.spd * dt));
+            }
             resolveEnemyObstacles(enemy, obstacles);
+            const movedDistSq = dist2(prevX, prevZ, enemy.x, enemy.z);
             enemy.walkT += dt * 6;
 
             // Windup → swing attack sequence
@@ -625,29 +772,35 @@ function tickEnemies(dt) {
                 const prevSwing = enemy.swingTmr;
                 enemy.swingTmr -= dt;
                 // Damage fires when swing timer crosses the 0.09 threshold
-                if (prevSwing > 0.09 && enemy.swingTmr <= 0.09 && targetDist < BOSS_ATTACK_REACH) {
+                if (prevSwing > 0.09 && enemy.swingTmr <= 0.09
+                    && targetDist < BOSS_ATTACK_REACH
+                    && canEnemyMeleeTarget(enemy, target, enemy.x, enemy.y, enemy.z)) {
                     applyEnemyDamage(target.playerId, enemy.atkDmg, enemy.id);
                 }
                 if (enemy.swingTmr <= 0) enemy.swingTmr = 0;
             } else {
                 // Ready: check attack cooldown
                 enemy.atkTmr -= dt;
-                if (enemy.atkTmr <= 0 && targetDist < BOSS_ATTACK_REACH) {
+                if (enemy.atkTmr <= 0 && inAttackRange) {
                     enemy.atkTmr = BOSS_ATTACK_FREQ;
                     enemy.windupTmr = BOSS_WINDUP;
                 }
             }
 
-            // Escape jump when cornered by 2+ players
+            // Escape jump only when genuinely stuck and outside melee range.
             const now = Date.now();
+            if (!inAttackRange && movedDistSq < 0.04) enemy.stuckTmr += dt;
+            else enemy.stuckTmr = 0;
             if (!enemy.escaping && enemy.y === 0
-                && alive.filter(p => dist2(enemy.x, enemy.z, p.x, p.z) < 6).length >= 2
+                && !inAttackRange
+                && enemy.stuckTmr >= 0.9
                 && now - enemy.lastEscapeTime > 8000) {
-                const [efx, efz] = norm2(-ndx, -ndz);
+                const [efx, efz] = norm2(ndx, ndz);
                 enemy.escapeFwdX = efx;
                 enemy.escapeFwdZ = efz;
                 enemy.velY = BOSS_ESCAPE_JUMP_VEL;
                 enemy.escaping = true;
+                enemy.stuckTmr = 0;
                 enemy.lastEscapeTime = now;
             }
         }
@@ -666,9 +819,8 @@ function startGameLoop() {
         lastTick = now;
 
         // Wave management stays server-side; AI is now client-side (owned enemies).
-        const alivePlayers = getAlivePlayers();
-        const allPaused = alivePlayers.length > 0 && alivePlayers.every(p => p.isPaused);
-        if (!allPaused) {
+        const isPaused = isGamePausedForAlivePlayers();
+        if (!isPaused) {
             tickWave(dt);
         }
 
@@ -765,6 +917,7 @@ io.on('connection', (socket) => {
         }
         io.emit('updateLobby', players);
         io.emit('playerDisconnected', socket.id);
+        broadcastPauseState();
     });
 
     socket.on('playerMovement', (movementData) => {
@@ -837,6 +990,7 @@ io.on('connection', (socket) => {
             p.isAlive = true;
             p.isDowned = false;
             p.isSpectating = false;
+            p.isPaused = false;
             p.mode = 'COOP';
             p.pvpKills = 0;
             p.pvpSwordKills = 0;
@@ -848,6 +1002,7 @@ io.on('connection', (socket) => {
         io.emit('matchStarted', { mode: 'COOP', map: selectedMap });
         // Send initial wave state immediately so clients don't show "Wave 0".
         io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr });
+        broadcastPauseState();
     });
 
     socket.on('startPvPMatch', () => {
@@ -864,6 +1019,7 @@ io.on('connection', (socket) => {
             p.isAlive = true;
             p.isDowned = false;
             p.isSpectating = false;
+            p.isPaused = false;
             p.mode = 'PVP';
             p.pvpKills = 0;
             p.pvpSwordKills = 0;
@@ -873,6 +1029,7 @@ io.on('connection', (socket) => {
         });
         resetGameState('PVP', 1); // clears any leftover COOP state
         io.emit('matchStarted', { mode: 'PVP', map: selectedMap, spawnAssignments });
+        broadcastPauseState();
     });
 
     // Client reports their bullet hit an enemy — server is now authoritative
@@ -885,10 +1042,24 @@ io.on('connection', (socket) => {
         damage = Math.min(damage, 10000);           // clamp runaway values
         const enemy = gameState.enemies.find(e => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
-        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol') return;
+        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple') return;
         enemy.hp = Math.max(0, enemy.hp - damage);
         io.emit('enemyDamaged', { id: enemyId, damage });
         if (enemy.hp <= 0) killEnemy(enemy, socket.id);
+    });
+
+    socket.on('grappleEnemy', (data) => {
+        if (gameState.mode !== 'COOP') return;
+        const { enemyId, x, y, z, weapon } = data || {};
+        if (!enemyId || typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') return;
+        if (!WEAPON_ORDER.includes(weapon)) return;
+        const enemy = gameState.enemies.find((e) => e.id === enemyId);
+        if (!enemy || enemy.hp <= 0) return;
+        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple') return;
+        enemy.x = Math.max(-HALF + 1, Math.min(HALF - 1, x));
+        enemy.y = Math.max(0, y);
+        enemy.z = Math.max(-HALF + 1, Math.min(HALF - 1, z));
+        io.emit('enemyPulled', { id: enemyId, x: enemy.x, y: enemy.y, z: enemy.z });
     });
 
     // Health pack pickup — server validates directly (no host relay)
@@ -954,6 +1125,7 @@ io.on('connection', (socket) => {
         players[data.targetId].isDowned = false;
         players[data.targetId].isSpectating = false;
         io.emit('playerRevived', { playerId: data.targetId });
+        broadcastPauseState();
     });
 
     socket.on('playerDied', (data) => {
@@ -976,6 +1148,7 @@ io.on('connection', (socket) => {
             mode: isPvP ? 'PVP' : 'COOP',
             killerId: data?.killerId || null,
         });
+        broadcastPauseState();
 
         // Transfer this player's owned enemies to the next closest player.
         reassignEnemyOwnership();
@@ -1021,6 +1194,7 @@ io.on('connection', (socket) => {
         p.totalKills = data?.stats?.totalKills || p.totalKills;
         p.wave = data?.stats?.wave || p.wave;
         io.emit('playerSpectating', { playerId: socket.id, stats: p.stats });
+        broadcastPauseState();
     });
 
     socket.on('playerRevived', (data) => {
@@ -1030,6 +1204,7 @@ io.on('connection', (socket) => {
             players[socket.id].isSpectating = false;
         }
         io.emit('playerRevived', { playerId: socket.id });
+        broadcastPauseState();
     });
 
     // Reconnection: client sends their name so we can restore their mid-game state.
@@ -1053,6 +1228,7 @@ io.on('connection', (socket) => {
     // Client notifies server when the local player pauses or resumes.
     socket.on('playerPaused', (data) => {
         if (players[socket.id]) players[socket.id].isPaused = !!data.paused;
+        broadcastPauseState();
     });
 
     // ── Distributed enemy ownership ──────────────────────────────────────────
@@ -1082,11 +1258,10 @@ io.on('connection', (socket) => {
         if (!target || !target.isAlive || target.isDowned) return;
         // Sanity check: use the client-reported enemy position (ex/ez) rather than
         // the server's stored position, which may be up to 50 ms stale.
-        const reach = enemy.type === 'boss' ? 12 : 6;
         const ex = typeof data.ex === 'number' ? data.ex : enemy.x;
+        const ey = typeof data.ey === 'number' ? data.ey : enemy.y;
         const ez = typeof data.ez === 'number' ? data.ez : enemy.z;
-        const dx = ex - target.x, dz = ez - target.z;
-        if (dx * dx + dz * dz > reach * reach) return;
+        if (!canEnemyMeleeTarget(enemy, target, ex, ey, ez)) return;
         applyEnemyDamage(data.targetId, data.damage, data.enemyId, data.knockbackX || 0, data.knockbackZ || 0);
     });
 

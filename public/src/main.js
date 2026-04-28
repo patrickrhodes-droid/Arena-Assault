@@ -200,6 +200,7 @@ function hideAllLobbyScreens() {
 function startGame() {
   game.mode = "COOP";
   game.state = "PLAYING";
+  game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -233,12 +234,14 @@ function startGame() {
   renderJoinLinkControls();
   updateHUD();
   drawMinimap();
+  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
   game.lastTime = performance.now();
 }
 
 function startPvPGame() {
   game.mode = "PVP";
   game.state = "PLAYING";
+  game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
   rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
@@ -282,6 +285,7 @@ function startPvPGame() {
   renderJoinLinkControls();
   updateHUD();
   drawMinimap();
+  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
   game.lastTime = performance.now();
 }
 
@@ -313,6 +317,7 @@ function pickFurthestCorner() {
 function pvpMatchOver(data) {
   game.mode = "COOP";
   game.state = "GAMEOVER";
+  game.audio.stopBackgroundMusic();
   game.isAiming = false;
   game.isReloading = false;
   game.reloadTmr = 0;
@@ -624,6 +629,7 @@ function respawnPlayerLocal(emitToServer = true) {
 
 function gameOver(rankings = null) {
   game.state = "GAMEOVER";
+  game.audio.stopBackgroundMusic();
   game.isAiming = false;
   game.isReloading = false;
   game.reloadTmr = 0;
@@ -680,11 +686,13 @@ function animate(time) {
     updateHUD();
     drawMinimap();
   } else if (game.state === "PAUSED") {
-    updateEnemies(actions);
-    updateBullets({ ...actions, processHit });
-    updateParticles();
-    updateHealthPacks(updateHUD);
-    updateWaves();
+    if (!game.worldPaused) {
+      updateEnemies(actions);
+      updateBullets({ ...actions, processHit });
+      updateParticles();
+      updateHealthPacks(updateHUD);
+      updateWaves();
+    }
     updateRemotePlayerVisuals();
     updateCamera();
     updateHUD();

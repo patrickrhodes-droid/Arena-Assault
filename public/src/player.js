@@ -8,6 +8,7 @@ import {
   applySpread,
   cycleWeapon,
   getWeapon,
+  processHit,
   spawnBullet,
   startReload,
   usingFirstPersonView,
@@ -16,6 +17,16 @@ import {
 import { getBossEnemy } from "./enemies.js";
 
 let bossAlertCooldown = 0;
+
+function findEnemyFromHit(object) {
+  let current = object;
+  while (current) {
+    const enemy = game.enemies.find((candidate) => candidate.group === current);
+    if (enemy) return enemy;
+    current = current.parent;
+  }
+  return null;
+}
 
 // ── Grappling hook ────────────────────────────────────────────────────────────
 
@@ -30,7 +41,39 @@ export function fireGrapple() {
 
   if (game.grappleCooldown > 0) return;
 
-  // Raycast from camera centre into the scene, hit only static arena geometry.
+  if (game.currentWeapon === "grapple") {
+    const enemyGroups = game.enemies.map((enemy) => enemy.group);
+    const enemyRaycaster = new THREE.Raycaster();
+    enemyRaycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
+    enemyRaycaster.far = 45;
+    const enemyHits = enemyRaycaster.intersectObjects(enemyGroups, true);
+    if (enemyHits.length > 0) {
+      const enemy = findEnemyFromHit(enemyHits[0].object);
+      if (enemy) {
+        const playerPos = game.visuals.player.playerGroup.position;
+        const enemyPos = enemy.group.position.clone();
+        const hitPoint = enemyHits[0].point.clone();
+        processHit(enemy, 80, hitPoint);
+        if (enemy.type !== "boss") {
+          const distance = playerPos.distanceTo(enemyPos);
+          if (distance > 8) {
+            const direction = enemyPos.clone().sub(playerPos).normalize();
+            const targetPos = playerPos.clone().addScaledVector(direction, 8);
+            enemy.group.position.copy(targetPos);
+            game.socket?.emit("grappleEnemy", {
+              enemyId: enemy.id,
+              x: enemy.group.position.x,
+              y: enemy.group.position.y,
+              z: enemy.group.position.z,
+              weapon: game.currentWeapon,
+            });
+          }
+        }
+        return;
+      }
+    }
+  }
+
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
   raycaster.far = 45;
@@ -48,7 +91,7 @@ export function fireGrapple() {
     const orig = raycaster.ray.origin;
     if (dir.y < -0.01) {
       const t = -orig.y / dir.y;
-      if (t > 0 && t < 45) {
+      if (t > 0 && t < 250) {
         attachPoint = orig.clone().addScaledVector(dir, t);
       }
     }
@@ -103,8 +146,8 @@ export function updateGrapple() {
     return;
   }
 
-  // Pull player toward attach point at 18 u/s
-  const speed = 18;
+  // Pull player toward attach point at 60 u/s
+  const speed = 60;
   const ndx = dx / dist, ndy = dy / dist, ndz = dz / dist;
   playerPos.x += ndx * speed * game.dt;
   playerPos.y = Math.max(0, playerPos.y + ndy * speed * game.dt);
@@ -128,7 +171,7 @@ export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
     game.keys[event.code] = true;
 
-    if (event.code === "KeyW" && game.state === "PLAYING") {
+    if (event.code === "KeyW" && game.state === "PLAYING" && !event.repeat) {
       const now = performance.now();
       if (now - game.wLastTapTime < 300) {
         game.sprintLocked = true;
@@ -160,12 +203,13 @@ export function setupInput(actions) {
       if (event.code === "Digit3") actions.setWeapon("shotgun");
       if (event.code === "Digit4") actions.setWeapon("sniper");
       if (event.code === "Digit5") actions.setWeapon("sword");
+      if (event.code === "Digit6") actions.setWeapon("grapple");
       if (event.code === "KeyQ") {
         cycleWeapon();
         actions.updateHUD();
       }
     }
-    if (event.code === "KeyR" && game.state === "PLAYING" && !game.isReloading && game.ammo < getWeapon().mag) {
+    if (event.code === "KeyR" && game.state === "PLAYING" && !game.isReloading && game.currentWeapon !== "grapple" && game.ammo < getWeapon().mag) {
       startReload();
       actions.updateHUD();
     }
@@ -258,18 +302,34 @@ export function tryJump() {
 
 export function updatePlayer(actions) {
   const prevY = game.visuals.player.playerGroup.position.y;
+  const prevX = game.visuals.player.playerGroup.position.x;
+  const prevZ = game.visuals.player.playerGroup.position.z;
   const inFirstPerson = usingFirstPersonView();
+  let ladderBeforeMove = null;
+  if (game.ladderCooldown <= 0 && game.localPlayerIsAlive) {
+    for (const ladder of game.ladders) {
+      if (
+        prevX >= ladder.xMin && prevX <= ladder.xMax
+        && prevZ >= ladder.zMin && prevZ <= ladder.zMax
+        && prevY <= ladder.yMax
+      ) {
+        ladderBeforeMove = ladder;
+        break;
+      }
+    }
+  }
   const forward = new THREE.Vector3(-Math.sin(game.camTheta), 0, -Math.cos(game.camTheta));
   const right = new THREE.Vector3(-forward.z, 0, forward.x);
   const moveDirection = new THREE.Vector3();
 
-  if (game.keys.KeyW) moveDirection.add(forward);
-  if (game.keys.KeyS) moveDirection.sub(forward);
-  if (game.keys.KeyD) moveDirection.add(right);
-  if (game.keys.KeyA) moveDirection.sub(right);
+  if (!ladderBeforeMove) {
+    if (game.keys.KeyW) moveDirection.add(forward);
+    if (game.keys.KeyS) moveDirection.sub(forward);
+    if (game.keys.KeyD) moveDirection.add(right);
+    if (game.keys.KeyA) moveDirection.sub(right);
+  }
 
-  const sprintInput = game.keys.ShiftLeft || game.keys.ShiftRight || game.sprintLocked;
-  game.isSprinting = sprintInput && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
+  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -278,7 +338,7 @@ export function updatePlayer(actions) {
 
   if (game.isMoving) {
     moveDirection.normalize();
-    const speed = game.isSprinting ? 6 * 1.55 : game.isCrouching ? 2.7 : 6;
+    const speed = game.isSprinting ? 6 * 2.9 : game.isCrouching ? 2.7 : 6;
     game.visuals.player.playerGroup.position.addScaledVector(moveDirection, speed * game.dt);
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;
@@ -308,6 +368,8 @@ export function updatePlayer(actions) {
   game.isOnLadder = activeLadder !== null;
 
   if (game.isOnLadder) {
+    game.visuals.player.playerGroup.position.x = prevX;
+    game.visuals.player.playerGroup.position.z = prevZ;
     game.isCrouching = false;
     const pp = game.visuals.player.playerGroup.position;
 
@@ -485,27 +547,32 @@ function handleFiring(actions) {
   const weapon = getWeapon();
   game.fireTmr -= game.dt;
 
-  const triggerDown = weapon.mode === "pistol" ? game.mouseClicked : game.mouseDown;
+  const triggerDown = weapon.mode === "pistol" || weapon.mode === "grapple"
+    ? game.mouseClicked
+    : game.mouseDown;
   if (
     !triggerDown
     || !game.localPlayerIsAlive
     || game.fireTmr > 0
     || game.isReloading
-    || (game.ammo <= 0 && weapon.mode !== "sword")
+    || (game.ammo <= 0 && weapon.mode !== "sword" && weapon.mode !== "grapple")
     || document.pointerLockElement !== game.renderer.domElement
   ) {
     updateWeaponVisuals();
     return;
   }
 
-  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && Boolean(getBossEnemy());
+  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && game.currentWeapon !== "grapple" && Boolean(getBossEnemy());
 
   game.fireTmr = weapon.fireRate;
-  if (weapon.mode === "pistol") game.mouseClicked = false;
+  if (weapon.mode === "pistol" || weapon.mode === "grapple") game.mouseClicked = false;
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
     actions.handleSwordAttack();
+  } else if (weapon.mode === "grapple") {
+    game.audio.playWeapon(weapon);
+    actions.fireGrapple();
   } else {
     game.ammo -= 1;
     game.weaponAmmo[game.currentWeapon] = game.ammo;

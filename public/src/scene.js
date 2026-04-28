@@ -189,22 +189,22 @@ function addSun(color, intensity, px, py, pz) {
 }
 
 function buildArenaOriginal() {
-  game.scene.fog = new THREE.FogExp2(0x1b2734, 0.005);
-  game.scene.background = new THREE.Color(0x1b2734);
-  addSun(0xfff5e0, 1.65, 40, 60, 20);
+  game.scene.fog = new THREE.FogExp2(0x10242c, 0.0054);
+  game.scene.background = new THREE.Color(0x10242c);
+  addSun(0xdff7ff, 1.8, 36, 64, 18);
 
-  // Cyan accent floor lights.
+  // Teal reactor accent floor lights.
   for (let index = 0; index < 20; index += 1) {
     const x = (Math.random() - 0.5) * 120;
     const z = (Math.random() - 0.5) * 120;
-    const pointLight = new THREE.PointLight(0x55e6cc, 1.15, 30);
+    const pointLight = new THREE.PointLight(0x2de1d0, 1.3, 30);
     pointLight.position.set(x, 0.3, z);
     game.scene.add(pointLight);
     game.arenaLights.push(pointLight);
 
     const decal = new THREE.Mesh(
       new THREE.CircleGeometry(0.3, 12),
-      new THREE.MeshStandardMaterial({ color: 0x00ccaa, emissive: 0x00ccaa, emissiveIntensity: 0.5 }),
+      new THREE.MeshStandardMaterial({ color: 0x12cdb6, emissive: 0x12cdb6, emissiveIntensity: 0.75 }),
     );
     decal.rotation.x = -Math.PI / 2;
     decal.position.set(x, 0.01, z);
@@ -215,9 +215,9 @@ function buildArenaOriginal() {
   groundCanvas.width = 512;
   groundCanvas.height = 512;
   const groundContext = groundCanvas.getContext("2d");
-  groundContext.fillStyle = "#313a44";
+  groundContext.fillStyle = "#243640";
   groundContext.fillRect(0, 0, 512, 512);
-  groundContext.strokeStyle = "#465463";
+  groundContext.strokeStyle = "#35515f";
   groundContext.lineWidth = 1;
 
   for (let index = 0; index <= 8; index += 1) {
@@ -248,24 +248,24 @@ function buildArenaOriginal() {
 
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
-    new THREE.MeshStandardMaterial({ map: groundTexture, color: 0xc8d2db, roughness: 0.92 }),
+    new THREE.MeshStandardMaterial({ map: groundTexture, color: 0xaec8cf, roughness: 0.92 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x46515d, roughness: 0.82 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x314650, roughness: 0.82 });
   const stripMat = new THREE.MeshStandardMaterial({
-    color: 0x3ce6cb,
-    emissive: 0x3ce6cb,
-    emissiveIntensity: 1.15,
+    color: 0x2de1d0,
+    emissive: 0x2de1d0,
+    emissiveIntensity: 1.2,
   });
 
   buildWalls(wallMat, stripMat);
 
-  const crateMat = new THREE.MeshStandardMaterial({ color: 0x8b6b47, roughness: 0.92 });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x7c90a3, roughness: 0.35, metalness: 0.62 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x3a424d, roughness: 0.58, metalness: 0.22 });
+  const crateMat = new THREE.MeshStandardMaterial({ color: 0x86664a, roughness: 0.92 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x7ba1ac, roughness: 0.34, metalness: 0.66 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x22343d, roughness: 0.56, metalness: 0.24 });
 
   game.shared.worldMaterials = { crateMat, metalMat, darkMat };
 
@@ -488,18 +488,15 @@ function buildArenaDesert() {
 }
 
 function buildArenaCity() {
-  game.scene.fog = new THREE.FogExp2(0xb1c9e8, 0.003);
-  game.scene.background = new THREE.Color(0xc9e4ff);
-  // Bright midday sun.
-  addSun(0xffffff, 2.6, 30, 85, -20);
-  // Second fill from the opposite side so buildings are lit on both faces.
-  addSun(0xddeeff, 1.2, -40, 50, 30);
-  // Extra city-specific ambient hemisphere — well-lit urban sky.
-  const cityHemi = new THREE.HemisphereLight(0xcae4ff, 0x7788aa, 1.4);
+  game.scene.fog = new THREE.FogExp2(0x140f24, 0.0042);
+  game.scene.background = new THREE.Color(0x140f24);
+  addSun(0xc8b7ff, 1.1, 20, 70, -30);
+  addSun(0xff6db2, 0.55, -38, 42, 24);
+  const cityHemi = new THREE.HemisphereLight(0x756dff, 0x1c1330, 0.65);
   game.scene.add(cityHemi);
   game.arenaLights.push(cityHemi);
 
-  // Street-lamp fill lights — more of them, higher intensity, bigger range.
+  // Street-lamp pools.
   const lampPositions = [
     [-30, -30], [30, -30], [-30, 30], [30, 30],
     [0, -48], [0, 48], [-48, 0], [48, 0],
@@ -507,36 +504,35 @@ function buildArenaCity() {
     [0, 0], [-50, -50], [50, -50], [-50, 50], [50, 50],
   ];
   for (const [x, z] of lampPositions) {
-    const pl = new THREE.PointLight(0xCCEEFF, 4.5, 40);
+    const pl = new THREE.PointLight(0xffc278, 2.4, 34);
     pl.position.set(x, 6, z);
     game.scene.add(pl);
     game.arenaLights.push(pl);
   }
-  // Neon accent lights — brighter and wider range.
+  // Neon accent lights.
   for (const [x, z, col] of [
-    [-15, 0, 0x4488ff], [15, 0, 0xff3366],
-    [0, -15, 0x44ffaa], [0, 15, 0xff8800],
-    [-40, -40, 0x66aaff], [40, 40, 0xff44aa],
-    [40, -40, 0x44ffcc], [-40, 40, 0xffaa33],
+    [-15, 0, 0x6d7cff], [15, 0, 0xff4fa3],
+    [0, -15, 0x27d3ff], [0, 15, 0xa855ff],
+    [-40, -40, 0x7b8cff], [40, 40, 0xff5db1],
+    [40, -40, 0x37d7ff], [-40, 40, 0xc86bff],
   ]) {
-    const nl = new THREE.PointLight(col, 2.5, 30);
+    const nl = new THREE.PointLight(col, 2.8, 30);
     nl.position.set(x, 2, z);
     game.scene.add(nl);
     game.arenaLights.push(nl);
   }
 
-  // Brighter asphalt ground.
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.85 });
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x1c1a2a, roughness: 0.86 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.82 });
-  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x3c3c50, roughness: 0.85 });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.4, metalness: 0.65 });
-  const neonMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 1.0 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x2c3040, roughness: 0.85 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x4e4663, roughness: 0.82 });
+  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x241d38, roughness: 0.86 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x586078, roughness: 0.4, metalness: 0.65 });
+  const neonMat = new THREE.MeshStandardMaterial({ color: 0xff4fa3, emissive: 0xff4fa3, emissiveIntensity: 1.2 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1830, roughness: 0.86 });
 
   buildWalls(wallMat, neonMat);
 
@@ -626,7 +622,7 @@ function buildWalls(wallMat, accentMat) {
     game.oBs.push({
       min: { x: wall.position[0] - wall.size[0] / 2, z: wall.position[2] - wall.size[2] / 2 },
       max: { x: wall.position[0] + wall.size[0] / 2, z: wall.position[2] + wall.size[2] / 2 },
-      h: wall.size[1],
+      h: wall.position[1] + wall.size[1] / 2,
     });
 
     const strip = new THREE.Mesh(
@@ -652,7 +648,7 @@ function addWorldBox(x, y, z, width, height, depth, material, castShadow = true,
     game.oBs.push({
       min: { x: x - width / 2, z: z - depth / 2 },
       max: { x: x + width / 2, z: z + depth / 2 },
-      h: height,
+      h: y + height / 2,
     });
   }
   return mesh;

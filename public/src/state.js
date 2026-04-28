@@ -48,6 +48,7 @@ export const game = {
   isGrounded: true,
   waveState: "WAIT",
   waveTmr: 2.5,
+  worldPaused: false,
   startingWave: 1,
   invincibilityMode: false,
   isCrouching: false,
@@ -140,6 +141,7 @@ export function resetSessionState() {
   game.grappleCooldown = 0;
   game.waveState = "WAIT";
   game.waveTmr = 2.5;
+  game.worldPaused = false;
   game.isCrouching = false;
   game.isOnLadder = false;
   game.ladderCooldown = 0;

@@ -1,5 +1,13 @@
 export function createAudioController() {
   let context = null;
+  let musicIntro = null;
+  let musicLoop = null;
+  let musicResumeTarget = null;
+  let musicToken = 0;
+
+  const MUSIC_VOLUME = 0.12;
+  const MUSIC_DIR = "/assets/Background%20music";
+  const MULTIPLAYER_MODE_ALIASES = ["multiplayer", "multiplyer"];
 
   function init() {
     if (!context) {
@@ -9,6 +17,95 @@ export function createAudioController() {
     if (context.state === "suspended") {
       context.resume();
     }
+  }
+
+  function stopElement(element) {
+    if (!element) return;
+    element.pause();
+    element.currentTime = 0;
+    element.onended = null;
+  }
+
+  function stopBackgroundMusic() {
+    musicToken += 1;
+    stopElement(musicIntro);
+    stopElement(musicLoop);
+    musicIntro = null;
+    musicLoop = null;
+    musicResumeTarget = null;
+  }
+
+  function pauseBackgroundMusic() {
+    if (musicIntro && !musicIntro.paused) {
+      musicIntro.pause();
+      musicResumeTarget = musicIntro;
+      return;
+    }
+
+    if (musicLoop && !musicLoop.paused) {
+      musicLoop.pause();
+      musicResumeTarget = musicLoop;
+    }
+  }
+
+  function resumeBackgroundMusic() {
+    if (!musicResumeTarget) return;
+    musicResumeTarget.play().catch(() => {});
+    musicResumeTarget = null;
+  }
+
+  function createMusicElement(src, loop = false) {
+    const audio = new window.Audio(src);
+    audio.preload = "auto";
+    audio.loop = loop;
+    audio.volume = MUSIC_VOLUME;
+    return audio;
+  }
+
+  function buildMusicCandidates(mapId, mode, type) {
+    const modeAliases = mode === "multiplayer" ? MULTIPLAYER_MODE_ALIASES : [mode];
+    return modeAliases.map((modeName) => `${MUSIC_DIR}/${mapId}${modeName}${type}.mp3`);
+  }
+
+  function playMusicCandidate(audio, candidates, token, index = 0, onExhausted = null) {
+    if (token !== musicToken) return;
+    if (index >= candidates.length) {
+      onExhausted?.();
+      return;
+    }
+
+    audio.onerror = () => {
+      playMusicCandidate(audio, candidates, token, index + 1, onExhausted);
+    };
+    audio.src = candidates[index];
+    audio.play().catch(() => {
+      playMusicCandidate(audio, candidates, token, index + 1, onExhausted);
+    });
+  }
+
+  function startBackgroundMusic(mapId, gameMode) {
+    if (!mapId || !gameMode) return;
+
+    const mode = gameMode === "PVP" ? "multiplayer" : "wave";
+    const introCandidates = buildMusicCandidates(mapId, mode, "intro");
+    const loopCandidates = buildMusicCandidates(mapId, mode, "loop");
+
+    stopBackgroundMusic();
+    const token = ++musicToken;
+
+    musicLoop = createMusicElement(loopCandidates[0], true);
+    musicIntro = createMusicElement(introCandidates[0], false);
+
+    musicIntro.onended = () => {
+      if (token !== musicToken || !musicLoop) return;
+      musicResumeTarget = null;
+      playMusicCandidate(musicLoop, loopCandidates, token);
+    };
+
+    playMusicCandidate(musicIntro, introCandidates, token, 0, () => {
+      if (token !== musicToken || !musicLoop) return;
+      playMusicCandidate(musicLoop, loopCandidates, token);
+    });
   }
 
   function noiseBuffer(duration, decay) {
@@ -140,6 +237,10 @@ export function createAudioController() {
 
   return {
     init,
+    startBackgroundMusic,
+    stopBackgroundMusic,
+    pauseBackgroundMusic,
+    resumeBackgroundMusic,
     playWeapon,
     hit,
     death,
