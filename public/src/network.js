@@ -16,6 +16,22 @@ export function initNetworking(actions) {
   game.socket = window.io();
   game.socket.emit("playerNameUpdate", { playerName: "" });
 
+  // On reconnect (e.g. tab briefly loses connection), try to restore mid-game state.
+  game.socket.on("connect", () => {
+    if (game.state === "PLAYING" && game.playerName) {
+      game.socket.emit("rejoin", { playerName: game.playerName });
+    }
+  });
+
+  game.socket.on("stateRestored", (data) => {
+    if (typeof data.wave === "number") game.wave = data.wave;
+    if (typeof data.hp === "number") game.hp = data.hp;
+    if (typeof data.isAlive === "boolean") game.localPlayerIsAlive = data.isAlive;
+    if (typeof data.isDowned === "boolean") game.localPlayerIsDowned = data.isDowned;
+    if (data.currentWeapon) setWeapon(data.currentWeapon);
+    actions.updateHUD();
+  });
+
   game.socket.on("serverInfo", (info) => {
     setJoinLinkState({
       canCopyJoinLink: info?.isServerPc,
@@ -118,6 +134,10 @@ export function initNetworking(actions) {
     game.audio.damage();
     actions.showDamage();
     actions.addShake(0.15);
+    if (data.knockbackX || data.knockbackZ) {
+      game.knockbackX = data.knockbackX;
+      game.knockbackZ = data.knockbackZ;
+    }
     if (data.shooterId) {
       game.lastDamageShooter = data.shooterId;
       game.lastDamageWeapon = data.weapon || null;
@@ -385,13 +405,15 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("enemyBulletFired", (data) => {
-    // All clients (including former host) receive visual-only enemy bullets.
+    // Spawn with real damage and NOT fromRemote so each client runs its own
+    // hit detection against their local player — visual and damage are then
+    // perfectly in sync on every machine.
     spawnBullet(
       new THREE.Vector3(data.x, data.y, data.z),
       new THREE.Vector3(data.dx, data.dy, data.dz).normalize(),
       false,
-      { damage: 0, spd: data.spd, life: data.life },
-      true,
+      { damage: data.damage || 25, spd: data.spd, life: data.life },
+      false,
     );
   });
 

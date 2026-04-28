@@ -3,35 +3,50 @@
 - Health packs should restore 150 health points (done)
 - Fix stale enemy reference in soldier bullet setTimeout (done)
 - Boss impervious alert now has a 2.5s cooldown (done)
-- announceWave now null-guards game.dom.waveAnnounce (done)
+- announceWave null-guards game.dom.waveAnnounce (done)
 - bulletHit handler validates weapon string and clamps damage to 10000 (done)
 - Deleted dead _removedHostAI code stub from enemies.js (done)
-- Skeleton spawn count reduced from 5 to 2 per group (done)
-- Bots now run full Three.js AI on the closest client — wall collision, LOS, and hit detection
-  all handled by the actual game engine rather than server approximations (done)
-- Minimap now covers the full arena — fixed 450px draw into 360px canvas (done)
-- Damage dealt stat now tracks actual HP removed not overkill value, for all weapons (done)
-- Pause menu freezes bots when all alive players are paused (done)
-- Skeleton groups no longer spawn on top of each other — minimum gap enforced (done)
-- fromRemote enemy bullets skip all damage checks — no wasted collision cycles (done)
-- Skeleton animation mixers culled at 30 units instead of 65 (done)
-- Object.entries → Object.values in handleRevive hot path (done)
-- Particle system capped at 200 — oldest dropped on overflow to prevent frame spikes (done)
-- HUD shows correct wave number immediately at match start via instant syncWave (done)
-- PvP respawn camera snaps to spawn position instead of lerping from old location (done)
+- Skeleton spawn count and speed reduced; hitbox enlarged (done)
+- Bots run Three.js AI on host client — wall collision, LOS, hit detection (done)
+- Minimap fixed: 450px draw into 360px canvas (done)
+- Damage dealt stat tracks actual HP removed for all weapons (done)
+- Pause freezes bots when all alive players are paused (done)
+- Skeleton groups no longer spawn stacked (done)
+- fromRemote enemy bullets skip all damage checks (done)
+- Skeleton animation mixers culled at 30 units (done)
+- Object.values in handleRevive hot path (done)
+- Particle system capped at 200 (done)
+- HUD shows correct wave immediately on match start (done)
+- PvP respawn camera snaps to spawn position (done)
+- Sprint speed reduced 50%; sword and sniper deal 500 dmg; sword deals 250 vs boss (done)
+- Boss knockback restored through server (done)
+- Boss jump works in solo play (>= 1 nearby player, was >= 2) (done)
+- Bullet timing fixed: each client runs its own hit detection for enemy bullets (done)
+- Item 10: Shared constants extracted to gameConstants.js; config.js re-exports from it (done)
+- Item 18: PvP respawn camera snapped on respawn (done)
+- Item 20: Basic reconnection — name-based state restore within 30 s of disconnect (done)
+- Grappling hook added (G key): raycast to attach point, pulls player at 18 u/s;
+  jump to release mid-swing; lure + rope visuals (done)
 
 -- TO DO --
 
-10. Constants duplicated between server.js and config.js
-    HALF, ARENA_SIZE, P_MAX_HP, B_SPD_E, WEAPON_ORDER, PVP_CORNERS and boss escape values
-    are all defined in both places. If one changes the other becomes stale and gameplay diverges.
-    Fix: extract shared values into a JSON constants file imported by both.
+Soldier and dog 3D GLB models:
+  Code is ready to add models — place soldier.glb and dog.glb in
+  public/assets/models/ and wire up loading in createSoldier/createDog
+  (mirror the existing createSkeleton GLB loading pattern).
 
-18. (partial) PvP respawn camera — camera rotation order may still cause a brief wrong-angle
-    frame before the first updateCamera() call corrects the quaternion.
+10. (residual) server.js still duplicates constants from gameConstants.js.
+    server.js is CommonJS so it cannot import the ES module directly.
+    Fix: add a build step (esbuild/rollup) or convert server.js to ESM.
 
-20. No reconnection handling
-    If a player's tab briefly loses connection, Socket.IO reconnects and they rejoin as a
-    brand-new player with fresh state (isAlive=false, wave=0, no HP sync).
-    Fix: server should detect reconnects and restore wave/HP state. Client should emit a
-    "rejoin" event on reconnect so the server can send a full state snapshot.
+20. (residual) Reconnection uses playerName as identity key which is not
+    unique. A proper fix requires a persistent session token (cookie/localStorage).
+
+nice features to add:
+grappling hook weapon use the lure as the model , and create three.js model for rope that pulls you towards things (DONE)
+change soldier enemies and dog enemies to use glb models with animations (NEEDS ASSET FILES)
+
+
+
+there are too many enemies on screen at once 
+add assets from asset packs to the maps

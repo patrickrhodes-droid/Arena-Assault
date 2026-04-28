@@ -154,7 +154,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       for (let enemyIndex = game.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
         const enemy = game.enemies[enemyIndex];
         const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
-        const hitRadiusSq = enemy.type === "boss" ? 5.2 : 1.0;
+        const hitRadiusSq = enemy.type === "boss" ? 5.2 : enemy.type === "skeleton" ? 2.2 : 1.0;
         const enemyCenter = new THREE.Vector3(
           enemy.group.position.x,
           enemy.group.position.y + enemyHeight,
@@ -236,27 +236,6 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
         shouldRemove = true;
       }
 
-      // If this bullet was fired by an owned enemy (not fromRemote), also check
-      // remote players and tell the server to apply damage to them.
-      if (!shouldRemove && !bullet.fromRemote) {
-        for (const [remoteId, remote] of Object.entries(game.remotePlayers)) {
-          if (!remote.isAlive || remote.isDowned || remote.isSpectating) continue;
-          const remoteCenter = new THREE.Vector3(
-            remote.group.position.x,
-            remote.group.position.y + 1.2,
-            remote.group.position.z,
-          );
-          if (distanceSqPointToSegment(remoteCenter, previousPosition, position) < 1.1) {
-            spawnParticles(position.clone(), 4, 0xff4422, 3);
-            game.socket?.emit("enemyHitRemotePlayer", {
-              targetId: remoteId,
-              damage: bullet.damage || 10,
-            });
-            shouldRemove = true;
-            break;
-          }
-        }
-      }
     }
 
     if (shouldRemove) {

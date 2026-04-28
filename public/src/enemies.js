@@ -91,37 +91,55 @@ function createHealthBar(colorMaterial) {
 
 export function createSoldier(position, id = Math.random()) {
   const group = new THREE.Group();
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.35), enemyMaterials.body);
-  torso.position.y = 1.15;
-  group.add(torso);
+  let mixer = null;
+  let flashPart = null;
+  let walkAction = null;   // CharacterArmature|Run
+  let shootAction = null;  // CharacterArmature|Gun_Shoot
+  let currentAction = null;
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), enemyMaterials.head);
-  head.position.y = 1.8;
-  group.add(head);
-
-  const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.02), enemyMaterials.eye);
-  eyes.position.set(0, 1.82, -0.18);
-  group.add(eyes);
-
-  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.55, 0.15), enemyMaterials.body);
-  leftArm.position.set(-0.45, 1.2, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.55, 0.15), enemyMaterials.body);
-  rightArm.position.set(0.45, 1.2, 0);
-  group.add(rightArm);
-
-  const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.18), enemyMaterials.body);
-  leftLeg.position.set(-0.15, 0.35, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.18), enemyMaterials.body);
-  rightLeg.position.set(0.15, 0.35, 0);
-  group.add(rightLeg);
-
-  const gun = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.35), enemyMaterials.gun);
-  gun.position.set(0.45, 1.2, -0.25);
-  group.add(gun);
+  const swatGltf = game.shared.swatGltf;
+  if (swatGltf) {
+    const model = cloneSkinnedScene(swatGltf.scene);
+    model.scale.setScalar(1.7);
+    model.rotation.y = Math.PI;
+    model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+    group.add(model);
+    mixer = new THREE.AnimationMixer(model);
+    const anims = swatGltf.animations ?? [];
+    const runClip   = anims.find((a) => a.name === "CharacterArmature|Run")
+                   ?? anims.find((a) => /run|walk/i.test(a.name));
+    const shootClip = anims.find((a) => a.name === "CharacterArmature|Gun_Shoot")
+                   ?? anims.find((a) => /shoot|gun/i.test(a.name));
+    if (runClip)   { walkAction  = mixer.clipAction(runClip);   walkAction.play();  currentAction = walkAction; }
+    if (shootClip) { shootAction = mixer.clipAction(shootClip); }
+  } else {
+    // Placeholder box model — replaced automatically when SWAT.glb finishes loading
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.35), enemyMaterials.body);
+    torso.position.y = 1.15;
+    group.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), enemyMaterials.head);
+    head.position.y = 1.8;
+    group.add(head);
+    const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.02), enemyMaterials.eye);
+    eyes.position.set(0, 1.82, -0.18);
+    group.add(eyes);
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.55, 0.15), enemyMaterials.body);
+    leftArm.position.set(-0.45, 1.2, 0);
+    group.add(leftArm);
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.55, 0.15), enemyMaterials.body);
+    rightArm.position.set(0.45, 1.2, 0);
+    group.add(rightArm);
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.18), enemyMaterials.body);
+    leftLeg.position.set(-0.15, 0.35, 0);
+    group.add(leftLeg);
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 0.18), enemyMaterials.body);
+    rightLeg.position.set(0.15, 0.35, 0);
+    group.add(rightLeg);
+    const gun = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.35), enemyMaterials.gun);
+    gun.position.set(0.45, 1.2, -0.25);
+    group.add(gun);
+    flashPart = torso;
+  }
 
   group.position.copy(position);
   game.scene.add(group);
@@ -135,12 +153,12 @@ export function createSoldier(position, id = Math.random()) {
     id,
     type: "soldier",
     group,
-    torso,
-    leftArm,
-    rightArm,
-    leftLeg,
-    rightLeg,
-    flashPart: torso,
+    mixer,
+    flashPart,
+    walkAction,
+    shootAction,
+    currentAction,
+    shootAnimTmr: 0,
     radius: 0.6,
     hp: hpMax,
     maxHp: hpMax,
@@ -156,49 +174,68 @@ export function createSoldier(position, id = Math.random()) {
 
 export function createDog(position, id = Math.random()) {
   const group = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.2), enemyMaterials.dogBody);
-  body.position.y = 0.6;
-  group.add(body);
+  let mixer = null;
+  let flashPart = null;
+  let walkAction   = null;  // Walk  — used when idle / close
+  let gallopAction = null;  // Gallop — used when charging
+  let attackAction = null;  // Attack — used on bite
+  let currentAction = null;
 
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, 0.4), enemyMaterials.dogBody);
-  head.position.set(0, 0.8, -0.8);
-  group.add(head);
-
-  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.2), enemyMaterials.dogBody);
-  snout.position.set(0, 0.73, -1.1);
-  group.add(snout);
-
-  const leftEar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.06), enemyMaterials.dogBody);
-  leftEar.position.set(-0.12, 1.0, -0.85);
-  group.add(leftEar);
-
-  const rightEar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.06), enemyMaterials.dogBody);
-  rightEar.position.set(0.12, 1.0, -0.85);
-  group.add(rightEar);
-
-  const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.02), enemyMaterials.dogEye);
-  eyes.position.set(0, 0.85, -1.0);
-  group.add(eyes);
-
-  const leftFrontLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
-  leftFrontLeg.position.set(-0.25, 0.2, -0.4);
-  group.add(leftFrontLeg);
-
-  const rightFrontLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
-  rightFrontLeg.position.set(0.25, 0.2, -0.4);
-  group.add(rightFrontLeg);
-
-  const leftBackLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
-  leftBackLeg.position.set(-0.25, 0.2, 0.4);
-  group.add(leftBackLeg);
-
-  const rightBackLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
-  rightBackLeg.position.set(0.25, 0.2, 0.4);
-  group.add(rightBackLeg);
-
-  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.3), enemyMaterials.dogBody);
-  tail.position.set(0, 0.7, 0.75);
-  group.add(tail);
+  const wolfGltf = game.shared.wolfGltf;
+  if (wolfGltf) {
+    const model = cloneSkinnedScene(wolfGltf.scene);
+    model.scale.setScalar(0.55);
+    model.rotation.y = Math.PI;
+    model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+    group.add(model);
+    mixer = new THREE.AnimationMixer(model);
+    const anims = wolfGltf.animations ?? [];
+    const walkClip   = anims.find((a) => a.name === "Walk");
+    const gallopClip = anims.find((a) => a.name === "Gallop");
+    const attackClip = anims.find((a) => a.name === "Attack");
+    if (walkClip)   walkAction   = mixer.clipAction(walkClip);
+    if (gallopClip) gallopAction = mixer.clipAction(gallopClip);
+    if (attackClip) attackAction = mixer.clipAction(attackClip);
+    // Start with gallop since dogs always charge
+    const startAction = gallopAction ?? walkAction;
+    if (startAction) { startAction.play(); currentAction = startAction; }
+  } else {
+    // Placeholder box model — replaced automatically when Wolf.glb finishes loading
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.2), enemyMaterials.dogBody);
+    body.position.y = 0.6;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, 0.4), enemyMaterials.dogBody);
+    head.position.set(0, 0.8, -0.8);
+    group.add(head);
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.2), enemyMaterials.dogBody);
+    snout.position.set(0, 0.73, -1.1);
+    group.add(snout);
+    const leftEar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.06), enemyMaterials.dogBody);
+    leftEar.position.set(-0.12, 1.0, -0.85);
+    group.add(leftEar);
+    const rightEar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.06), enemyMaterials.dogBody);
+    rightEar.position.set(0.12, 1.0, -0.85);
+    group.add(rightEar);
+    const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.02), enemyMaterials.dogEye);
+    eyes.position.set(0, 0.85, -1.0);
+    group.add(eyes);
+    const leftFrontLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
+    leftFrontLeg.position.set(-0.25, 0.2, -0.4);
+    group.add(leftFrontLeg);
+    const rightFrontLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
+    rightFrontLeg.position.set(0.25, 0.2, -0.4);
+    group.add(rightFrontLeg);
+    const leftBackLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
+    leftBackLeg.position.set(-0.25, 0.2, 0.4);
+    group.add(leftBackLeg);
+    const rightBackLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), enemyMaterials.dogBody);
+    rightBackLeg.position.set(0.25, 0.2, 0.4);
+    group.add(rightBackLeg);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.3), enemyMaterials.dogBody);
+    tail.position.set(0, 0.7, 0.75);
+    group.add(tail);
+    flashPart = body;
+  }
 
   group.position.copy(position);
   game.scene.add(group);
@@ -211,13 +248,12 @@ export function createDog(position, id = Math.random()) {
     id,
     type: "dog",
     group,
-    body,
-    leftFrontLeg,
-    rightFrontLeg,
-    leftBackLeg,
-    rightBackLeg,
-    tail,
-    flashPart: body,
+    mixer,
+    flashPart,
+    walkAction,
+    gallopAction,
+    attackAction,
+    currentAction,
     radius: 0.7,
     hp: hpMax,
     maxHp: hpMax,
@@ -447,30 +483,188 @@ export function finishWave() {
 }
 
 export function updateEnemies() {
-  if (game.mode === "PVP") {
-    return;
-  }
+  if (game.mode === "PVP") return;
 
-  // All clients are now thin renderers â€” server owns all AI and position authority.
+  // Host client runs Three.js AI for all enemies (wall collision, targeting, firing).
+  // Non-host clients lerp toward server-broadcast positions.
+  const runAI = game.isHost;
+  ownedSyncTmr -= game.dt;
+  const doSync = runAI && ownedSyncTmr <= 0;
+  if (doSync) ownedSyncTmr = OWNED_SYNC_RATE;
+  const syncBatch = [];
+
   game.enemies.forEach((enemy) => {
-    // Lerp toward server-authoritative position (serverX/serverZ set by network.js)
-    if (enemy.serverX !== undefined) {
-      enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, 15 * game.dt);
-      enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, 15 * game.dt);
-    }
-    if (enemy.serverY !== undefined) {
-      enemy.group.position.y += (enemy.serverY - enemy.group.position.y) * Math.min(1, 12 * game.dt);
+    if (runAI) {
+      runOwnedEnemyAI(enemy);
+      if (doSync) {
+        const p = enemy.group.position;
+        syncBatch.push({ id: enemy.id, x: p.x, y: p.y, z: p.z, rot: enemy.group.rotation.y, walkT: enemy.walkT || 0 });
+      }
+    } else {
+      if (enemy.serverX !== undefined) {
+        enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, 15 * game.dt);
+        enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, 15 * game.dt);
+      }
+      if (enemy.serverY !== undefined) {
+        enemy.group.position.y += (enemy.serverY - enemy.group.position.y) * Math.min(1, 12 * game.dt);
+      }
     }
     updateHealthBar(enemy);
     if (enemy.mixer) {
       const camDx = enemy.group.position.x - game.camera.position.x;
       const camDz = enemy.group.position.z - game.camera.position.z;
-      if (camDx * camDx + camDz * camDz < 65 * 65) {
-        enemy.mixer.update(game.dt);
-      }
+      if (camDx * camDx + camDz * camDz < 30 * 30) enemy.mixer.update(game.dt);
     }
   });
+
+  if (syncBatch.length > 0) game.socket?.emit("ownedEnemiesSync", syncBatch);
   updateSkeletonCorpses();
+}
+
+// ── Enemy AI helpers (host-client Three.js simulation) ────────────────────────
+
+function getTargets() {
+  const targets = [];
+  if (game.localPlayerIsAlive && !game.localPlayerIsDowned) {
+    targets.push({ pos: game.visuals.player.playerGroup.position, id: game.socket?.id, isLocal: true });
+  }
+  for (const [id, remote] of Object.entries(game.remotePlayers)) {
+    if (remote.isAlive && !remote.isDowned && !remote.isSpectating) {
+      targets.push({ pos: remote.group.position, id, isLocal: false });
+    }
+  }
+  return targets;
+}
+
+function moveEnemyWithCollision(pos, ndx, ndz, spd) {
+  pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + ndx * spd * game.dt));
+  pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + ndz * spd * game.dt));
+  for (const obs of game.oBs) resolveCircleBox(pos, 0.7, obs, 0);
+}
+
+function applyMeleeDamage(enemy, target, damage) {
+  if (target.isLocal) game.audio.damage();
+  const pos = enemy.group.position;
+  const dx = target.pos.x - pos.x, dz = target.pos.z - pos.z;
+  const len = Math.sqrt(dx * dx + dz * dz) || 1;
+  const isBoss = enemy.type === "boss";
+  game.socket?.emit("enemyMeleeHit", {
+    enemyId: enemy.id, targetId: target.id, damage,
+    ex: pos.x, ez: pos.z,
+    knockbackX: isBoss ? (dx / len) * 185 : 0,
+    knockbackZ: isBoss ? (dz / len) * 185 : 0,
+  });
+}
+
+// Smoothly crossfade an enemy's animation to a new action.
+function crossfadeToAction(enemy, toAction, duration) {
+  if (!toAction || !enemy.mixer || enemy.currentAction === toAction) return;
+  if (enemy.currentAction) enemy.currentAction.crossFadeTo(toAction, duration, false);
+  else toAction.reset().play();
+  enemy.currentAction = toAction;
+}
+
+function runOwnedEnemyAI(enemy) {
+  const pos = enemy.group.position;
+  const targets = getTargets();
+  if (targets.length === 0) return;
+  let closest = null, closestDist = Infinity;
+  for (const t of targets) {
+    const ddx = t.pos.x - pos.x, ddz = t.pos.z - pos.z;
+    const d = Math.sqrt(ddx * ddx + ddz * ddz);
+    if (d < closestDist) { closestDist = d; closest = t; }
+  }
+  if (!closest) return;
+  const dx = closest.pos.x - pos.x, dz = closest.pos.z - pos.z;
+  const dist = Math.max(closestDist, 0.001);
+  const ndx = dx / dist, ndz = dz / dist;
+  enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
+  if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
+  else if (enemy.type === "dog")      ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.5, 1.0, 12);
+  else if (enemy.type === "skeleton") ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.0, 0.8, 12);
+  else if (enemy.type === "boss")     ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets);
+}
+
+function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
+  const moveSpd = dist > 14 ? enemy.spd : dist < 7 ? -enemy.spd * 0.4 : 0;
+  moveEnemyWithCollision(pos, ndx, ndz, moveSpd);
+  enemy.walkT = (enemy.walkT || 0) + game.dt * 8;
+
+  // Tick shoot animation timer; blend back to run when it expires
+  if ((enemy.shootAnimTmr || 0) > 0) {
+    enemy.shootAnimTmr -= game.dt;
+  } else if (enemy.walkAction && enemy.currentAction === enemy.shootAction) {
+    crossfadeToAction(enemy, enemy.walkAction, 0.2);
+  }
+
+  if (dist < 50) {
+    enemy.fireTmr = (enemy.fireTmr || 0) - game.dt;
+    if (enemy.fireTmr <= 0) {
+      enemy.fireTmr = enemy.fireInt || 1.5;
+      // Switch to shoot animation for ~0.7 s
+      if (enemy.shootAction) {
+        crossfadeToAction(enemy, enemy.shootAction, 0.08);
+        enemy.shootAnimTmr = 0.7;
+      }
+      const spreadH = (Math.random() - 0.5) * 0.24;
+      const bLen = Math.sqrt((ndx + spreadH) ** 2 + (ndz + spreadH) ** 2) || 1;
+      const bDir = new THREE.Vector3((ndx + spreadH) / bLen, 0, (ndz + spreadH) / bLen);
+      const bPos = pos.clone().addScaledVector(bDir, 0.6).setY(1.2);
+      spawnBullet(bPos.clone(), bDir.clone(), false, { damage: ENEMY_BULLET_DMG, spd: ENEMY_BULLET_SPD, life: 4 }, false);
+      game.socket?.emit("ownerEnemyFired", {
+        enemyId: enemy.id, x: bPos.x, y: bPos.y, z: bPos.z,
+        dx: bDir.x, dy: 0, dz: bDir.z, spd: ENEMY_BULLET_SPD, life: 4,
+        damage: ENEMY_BULLET_DMG,
+      });
+    }
+  }
+}
+
+function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult) {
+  moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  enemy.walkT = (enemy.walkT || 0) + game.dt * walkMult;
+  enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
+
+  if (dist < range && enemy.atkTmr <= 0) {
+    enemy.atkTmr = freq;
+    if (enemy.attackAction) crossfadeToAction(enemy, enemy.attackAction, 0.05);
+    applyMeleeDamage(enemy, closest, enemy.atkDmg);
+  } else if (dist >= range) {
+    enemy.atkTmr = Math.min(enemy.atkTmr || 0, 0.3);
+    // Charging: use gallop if available, otherwise walk
+    const moveAnim = dist > range + 1 ? (enemy.gallopAction ?? enemy.walkAction) : enemy.walkAction;
+    if (moveAnim) crossfadeToAction(enemy, moveAnim, 0.2);
+  }
+}
+
+function ownedBossAI(enemy, pos, closest, dist, ndx, ndz, targets) {
+  if (enemy.escaping) {
+    enemy.bossVelY = (enemy.bossVelY || 0) - BOSS_ESCAPE_GRAVITY * game.dt;
+    pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
+    pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + (enemy.bossEfx || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
+    pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + (enemy.bossEfz || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
+    if (pos.y <= 0) { pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false; }
+    return;
+  }
+  moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
+  if ((enemy.windupTmr || 0) > 0) {
+    enemy.windupTmr -= game.dt;
+    if (enemy.windupTmr <= 0) enemy.swingTmr = 0.22;
+  } else if ((enemy.swingTmr || 0) > 0) {
+    const prev = enemy.swingTmr;
+    enemy.swingTmr -= game.dt;
+    if (prev > 0.09 && enemy.swingTmr <= 0.09 && dist < 7.8) applyMeleeDamage(enemy, closest, enemy.atkDmg);
+    if (enemy.swingTmr <= 0) enemy.swingTmr = 0;
+  } else {
+    enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
+    if (enemy.atkTmr <= 0 && dist < 7.8) { enemy.atkTmr = 1.1; enemy.windupTmr = 0.2; }
+  }
+  const nearCount = targets.filter((t) => { const ddx = t.pos.x - pos.x, ddz = t.pos.z - pos.z; return ddx*ddx+ddz*ddz < 36; }).length;
+  if (!enemy.escaping && pos.y === 0 && nearCount >= 1) {
+    enemy.bossEfx = -ndx; enemy.bossEfz = -ndz;
+    enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
+  }
 }
 
 
@@ -537,7 +731,7 @@ export function announceWave() {
     }
   } else {
     if (game.wave >= 6) {
-      subtitle.textContent = "DOGS & SKELETONS INCOMING";
+      subtitle.textContent = "DOGS & SHOOTERS INCOMING";
     } else if (game.wave >= 3) {
       subtitle.textContent = "DOGS INCOMING";
     } else {
@@ -604,9 +798,7 @@ export function trySwordHit() {
 
     const toEnemy = enemy.group.position.clone().sub(playerPos).normalize();
     if (toEnemy.dot(cameraDirection) > 0.5) {
-      // Use enemy.hp as the damage value so damageDealt stat reflects actual HP removed,
-      // not an arbitrary instakill constant. Boss capped at 160 per swing by design.
-      const swordDmg = enemy.type === "boss" ? Math.min(160, enemy.hp) : enemy.hp;
+      const swordDmg = enemy.type === "boss" ? 250 : 500;
       processHit(enemy, swordDmg, enemy.group.position.clone().setY(1.5));
     }
   }

@@ -17,6 +17,113 @@ import { getBossEnemy } from "./enemies.js";
 
 let bossAlertCooldown = 0;
 
+// ── Grappling hook ────────────────────────────────────────────────────────────
+
+export function fireGrapple() {
+  if (!game.localPlayerIsAlive || game.localPlayerIsDowned) return;
+  if (game.state !== "PLAYING") return;
+
+  if (game.grappleState === "hooked") {
+    releaseGrapple();
+    return;
+  }
+
+  if (game.grappleCooldown > 0) return;
+
+  // Raycast from camera centre into the scene, hit only static arena geometry.
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
+  raycaster.far = 45;
+
+  const arenaChildren = game.arenaGroup ? game.arenaGroup.children : [];
+  const hits = raycaster.intersectObjects(arenaChildren, true);
+
+  let attachPoint = null;
+
+  if (hits.length > 0) {
+    attachPoint = hits[0].point.clone();
+  } else {
+    // Fall back to floor (y = 0 plane) if no obstacle was hit
+    const dir = raycaster.ray.direction;
+    const orig = raycaster.ray.origin;
+    if (dir.y < -0.01) {
+      const t = -orig.y / dir.y;
+      if (t > 0 && t < 45) {
+        attachPoint = orig.clone().addScaledVector(dir, t);
+      }
+    }
+  }
+
+  if (!attachPoint) return;
+
+  const dist = game.visuals.player.playerGroup.position.distanceTo(attachPoint);
+  if (dist < 2) return; // too close
+
+  game.grapplePoint = attachPoint;
+  game.grappleState = "hooked";
+}
+
+function releaseGrapple() {
+  game.grappleState = "idle";
+  game.grapplePoint = null;
+  game.grappleCooldown = 0.8;
+  if (game.visuals.grapple) {
+    game.visuals.grapple.hookMesh.visible = false;
+    game.visuals.grapple.rope.visible = false;
+  }
+}
+
+export function updateGrapple() {
+  if (game.grappleCooldown > 0) game.grappleCooldown -= game.dt;
+
+  const gv = game.visuals.grapple;
+  if (!gv) return;
+
+  if (game.grappleState !== "hooked" || !game.grapplePoint) {
+    gv.hookMesh.visible = false;
+    gv.rope.visible = false;
+    return;
+  }
+
+  // Cancel if player died
+  if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
+    releaseGrapple();
+    return;
+  }
+
+  const playerPos = game.visuals.player.playerGroup.position;
+  const hook = game.grapplePoint;
+  const dx = hook.x - playerPos.x;
+  const dy = hook.y - playerPos.y;
+  const dz = hook.z - playerPos.z;
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  if (dist < 1.5) {
+    releaseGrapple();
+    return;
+  }
+
+  // Pull player toward attach point at 18 u/s
+  const speed = 18;
+  const ndx = dx / dist, ndy = dy / dist, ndz = dz / dist;
+  playerPos.x += ndx * speed * game.dt;
+  playerPos.y = Math.max(0, playerPos.y + ndy * speed * game.dt);
+  playerPos.z += ndz * speed * game.dt;
+  if (ndy > 0.1) game.playerVelY = ndy * speed * 0.5;
+
+  // Hook visual
+  gv.hookMesh.position.copy(hook);
+  gv.hookMesh.visible = true;
+
+  // Rope between player chest and hook
+  const handPos = playerPos.clone().setY(playerPos.y + 1.4);
+  const pos = gv.rope.geometry.attributes.position;
+  pos.setXYZ(0, handPos.x, handPos.y, handPos.z);
+  pos.setXYZ(1, hook.x, hook.y, hook.z);
+  pos.needsUpdate = true;
+  gv.rope.visible = true;
+}
+
 export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
     game.keys[event.code] = true;
@@ -61,6 +168,10 @@ export function setupInput(actions) {
     if (event.code === "KeyR" && game.state === "PLAYING" && !game.isReloading && game.ammo < getWeapon().mag) {
       startReload();
       actions.updateHUD();
+    }
+
+    if (event.code === "KeyG" && game.state === "PLAYING") {
+      actions.fireGrapple();
     }
   });
 
@@ -127,8 +238,15 @@ export function tryPointerLock() {
 }
 
 export function tryJump() {
-  if (!game.isGrounded && !game.isOnLadder) {
+  if (!game.isGrounded && !game.isOnLadder && game.grappleState !== "hooked") {
     return;
+  }
+
+  // Release grapple on jump — lets the player swing and release mid-air
+  if (game.grappleState === "hooked") {
+    game.grappleState = "idle";
+    game.grapplePoint = null;
+    game.grappleCooldown = 0.5;
   }
 
   game.isGrounded = false;
@@ -160,7 +278,7 @@ export function updatePlayer(actions) {
 
   if (game.isMoving) {
     moveDirection.normalize();
-    const speed = game.isSprinting ? 6 * 3.1 : game.isCrouching ? 2.7 : 6;
+    const speed = game.isSprinting ? 6 * 1.55 : game.isCrouching ? 2.7 : 6;
     game.visuals.player.playerGroup.position.addScaledVector(moveDirection, speed * game.dt);
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;

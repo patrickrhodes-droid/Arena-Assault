@@ -4,7 +4,15 @@
       "Bash(git pull *)",
       "Bash(node --check \"c:/Users/prs16/Documents/Arena Assault/server.js\")",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(grep -E \"\\\\.\\(js|html|json|css|md\\)$\")",
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)"
     ]
   }
 }

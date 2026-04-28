@@ -1,18 +1,17 @@
-export const ARENA_SIZE = 144;
-export const HALF = ARENA_SIZE / 2;
-export const WALL_H = 6;
-export const P_RAD = 0.5;
-export const P_MAX_HP = 1000;
-export const B_SPD_E = 28;
-export const BASE_FOV = 70;
-export const GRAV = 20;
-export const JUMP_VEL = 11.2;
-export const EYE_H = 2.15;
+// Re-export shared constants from the single source of truth.
+// Server.js keeps its own copies — see gameConstants.js for the canonical values.
+export {
+  ARENA_SIZE, HALF, WALL_H, P_RAD, P_MAX_HP,
+  BASE_FOV, GRAV, JUMP_VEL, EYE_H, EPS,
+  WEAPON_ORDER,
+} from "./gameConstants.js";
+// PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON, PVP_SWORD_KILLS_TO_WIN, PVP_CORNERS are declared
+// directly below — do NOT re-export them here or the module gets a duplicate-export SyntaxError.
+
+export const B_SPD_E = 28;         // alias kept for backward compatibility (= ENEMY_BULLET_SPEED)
 export const LAND_SNAP = 0.35;
 export const LEDGE_GRACE = 0.35;
-export const EPS = 0.0001;
 export const DEFAULT_WEAPON = "pistol";
-export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword"];
 
 export const WEAPON_DEFS = {
   pistol: {
@@ -78,7 +77,7 @@ export const WEAPON_DEFS = {
     fireRate: 1.15,
     reload: 2.6,
     pellets: 1,
-    damage: 480,
+    damage: 500,
     spreadHip: 0.012,
     spreadAim: 0.0015,
     bulletSpeed: 160,
@@ -96,7 +95,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.4,
     reload: 0.1,
     pellets: 0,
-    damage: 480,
+    damage: 500,
     range: 4.5,
     arc: 1.2,
     bulletSpeed: 0,

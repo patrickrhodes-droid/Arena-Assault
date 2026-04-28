@@ -94,6 +94,9 @@ export const game = {
   muzzleTmr: 0,
   knockbackX: 0,
   knockbackZ: 0,
+  grappleState: "idle",   // "idle" | "hooked"
+  grapplePoint: null,     // THREE.Vector3 when hooked
+  grappleCooldown: 0,
   keys: {},
   scene: null,
   camera: null,
@@ -132,6 +135,9 @@ export function resetSessionState() {
   game.localPlayerIsAlive = true;
   game.localPlayerIsDowned = false;
   game.localPlayerIsSpectating = false;
+  game.grappleState = "idle";
+  game.grapplePoint = null;
+  game.grappleCooldown = 0;
   game.waveState = "WAIT";
   game.waveTmr = 2.5;
   game.isCrouching = false;

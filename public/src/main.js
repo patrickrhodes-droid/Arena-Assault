@@ -3,7 +3,7 @@ import { createAudioController } from "./audio.js";
 import { processHit, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles } from "./combat.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
-import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState } from "./player.js";
+import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
 import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, updateRemotePlayerVisuals } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
 import {
@@ -94,6 +94,7 @@ const actions = {
     }
   },
   tryPointerLock,
+  fireGrapple: () => fireGrapple(),
   updateHUD,
   updatePlayerName: (event) => {
     game.playerName = event.target.value.trim() || "";
@@ -667,6 +668,7 @@ function animate(time) {
 
   if (game.state === "PLAYING") {
     updatePlayer(actions);
+    updateGrapple();
     syncLocalPlayerState();
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });

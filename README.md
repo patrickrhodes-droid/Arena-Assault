@@ -63,6 +63,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | Left click | Fire |
 | Right click | Aim down sights |
 | R | Reload |
+| G | Fire / release grappling hook |
 | E (hold) | Revive downed teammate |
 | Esc | Pause / fullscreen toggle |
 
@@ -73,8 +74,8 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | 1 | Service Pistol | 102 | Semi-auto, fast fire rate, always available |
 | 2 | Assault Rifle | 46 per bullet | Full-auto, 30-round mag |
 | 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
-| 4 | Sniper Rifle | 480 | Slow fire, heavy ADS zoom |
-| 5 | Tactical Blade | 999 (melee) | One-hit kills in PvP; vs boss: 160 per swing |
+| 4 | Sniper Rifle | 500 | Slow fire, heavy ADS zoom |
+| 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: 250 per swing |
 
 ## PvP Gun Game mode
 
@@ -90,9 +91,9 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 
 | Type | Appears | Behaviour |
 |---|---|---|
-| Soldier | Wave 1+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
+| Skeleton | Wave 1+ | 1 HP, fast melee rusher. Wave 6 = 4 groups of 2 per wave (+1 group per wave, capped at 8). Animated GLB model. |
 | Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
-| Skeleton | Wave 6+ | 1 HP, spawns in groups of 2. Wave 6 = 4 groups (+1 per wave, capped at 8). Animated GLB model. |
+| Soldier | Wave 6+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. Spawns in pairs alongside skeleton groups. |
 | Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. High HP, heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
 
 The boss attack has a 7.8 unit reach (50% wider than original) and swings every 1.1 s for more aggressive threat.

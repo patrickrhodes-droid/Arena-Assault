@@ -114,8 +114,31 @@ export function initScene() {
   addPermanentLighting();
   buildPlayer();
   buildWeaponVisuals();
+  buildGrappleVisuals();
   buildSharedRuntimeAssets();
   rebuildArena("arena"); // default lobby scene
+}
+
+function buildGrappleVisuals() {
+  // Lure body: elongated orange sphere like a fishing lure
+  const lureMat = new THREE.MeshStandardMaterial({ color: 0xff6600, roughness: 0.25, metalness: 0.7, emissive: 0xff3300, emissiveIntensity: 0.3 });
+  const lureGeo = new THREE.SphereGeometry(0.07, 8, 6);
+  const hookMesh = new THREE.Mesh(lureGeo, lureMat);
+  hookMesh.scale.set(1, 2.2, 1);
+  hookMesh.visible = false;
+  game.scene.add(hookMesh);
+
+  // Rope: a Line between two points updated every frame
+  const ropeGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(6); // two Vector3s
+  ropeGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const ropeMat = new THREE.LineBasicMaterial({ color: 0xaaaaaa });
+  const rope = new THREE.Line(ropeGeo, ropeMat);
+  rope.visible = false;
+  rope.frustumCulled = false;
+  game.scene.add(rope);
+
+  game.visuals.grapple = { hookMesh, rope };
 }
 
 export function rebuildArena(mapId) {
@@ -825,10 +848,61 @@ function buildWeaponVisuals() {
   game.visuals.weapon.glbGroups = glbGroups;
 }
 
+// Swaps an enemy's placeholder box children for a GLB model and starts its walk animation.
+function applyEnemyGlb(enemy, gltf, scale) {
+  // Remove existing placeholder meshes
+  while (enemy.group.children.length > 0) {
+    const child = enemy.group.children[0];
+    enemy.group.remove(child);
+    child.geometry?.dispose();
+    if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+    else child.material?.dispose();
+  }
+
+  const model = cloneSkinnedScene(gltf.scene);
+  model.scale.setScalar(scale);
+  model.rotation.y = Math.PI;
+  model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+  enemy.group.add(model);
+
+  const mixer = new THREE.AnimationMixer(model);
+  if (gltf.animations?.length > 0) {
+    const walkClip = gltf.animations.find((a) => a.name === "Walk")
+      ?? gltf.animations.find((a) => a.name === "CharacterArmature|Run")
+      ?? gltf.animations.find((a) => /walk|run|gallop/i.test(a.name))
+      ?? gltf.animations[0];
+    mixer.clipAction(walkClip).play();
+  }
+  enemy.mixer = mixer;
+  enemy.flashPart = null; // can't flash individual GLB meshes easily
+}
+
 function buildSharedRuntimeAssets() {
   game.shared.skeletonGltf = null;
   new GLTFLoader().load("/assets/models/Skeleton.glb", (gltf) => {
     game.shared.skeletonGltf = gltf;
+  });
+
+  game.shared.swatGltf = null;
+  new GLTFLoader().load("/assets/models/SWAT.glb", (gltf) => {
+    game.shared.swatGltf = gltf;
+    // Swap in the GLB model on any soldiers already in the scene
+    for (const enemy of game.enemies) {
+      if (enemy.type === "soldier" && !enemy.mixer) {
+        applyEnemyGlb(enemy, gltf, 1.0);
+      }
+    }
+  });
+
+  game.shared.wolfGltf = null;
+  new GLTFLoader().load("/assets/models/Wolf.glb", (gltf) => {
+    game.shared.wolfGltf = gltf;
+    // Swap in the GLB model on any dogs already in the scene
+    for (const enemy of game.enemies) {
+      if (enemy.type === "dog" && !enemy.mixer) {
+        applyEnemyGlb(enemy, gltf, 1.0);
+      }
+    }
   });
 
   game.shared.characterHeadGltfs = {};

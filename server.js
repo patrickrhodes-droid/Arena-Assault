@@ -198,6 +198,10 @@ let players = {};
 let currentMode = 'COOP';
 let selectedMap = 'arena';
 
+// Temporarily stores state for players who disconnected mid-game so they can
+// rejoin and pick up where they left off (cleared after 30 s).
+const recentlyDisconnected = {};
+
 function getAlivePlayers() {
     return Object.values(players).filter(p => p.isAlive && !p.isDowned && !p.isSpectating);
 }
@@ -300,7 +304,7 @@ function makeDog(x, z) {
 function makeSkeleton(x, z) {
     return Object.assign(baseEnemy('skeleton', x, z), {
         hp: 1, maxHp: 1,
-        spd: 9 + Math.random() * 2.5,
+        spd: (9 + Math.random() * 2.5) * 0.7, // 30% slower than original
         atkDmg: 8 + gameState.wave,
         atkTmr: Math.random() * 0.4,
     });
@@ -350,24 +354,37 @@ function emitEnemySpawned(e) {
 
 function spawnEnemy() {
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
-    const [sx, sz] = pickSpawnPos(15);
+    const [cx, cz] = pickSpawnPos(15);
     const dogChance = gameState.wave >= 3 ? Math.min(0.55, 0.12 + (gameState.wave - 3) * 0.12) : 0;
-    const enemy = Math.random() < dogChance ? makeDog(sx, sz) : makeSoldier(sx, sz);
-    enemy.ownerId = getClosestPlayerId(sx, sz) || Object.keys(players)[0] || null;
-    gameState.enemies.push(enemy);
-    emitEnemySpawned(enemy);
+    if (Math.random() < dogChance) {
+        // Dogs spawn individually
+        const dog = makeDog(cx, cz);
+        dog.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
+        gameState.enemies.push(dog);
+        emitEnemySpawned(dog);
+    } else {
+        // Skeletons spawn in groups of 2 or 3, clamped to arena bounds
+        const count = 2;
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
+            const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
+            const e = makeSkeleton(ex, ez);
+            e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
+            gameState.enemies.push(e);
+            emitEnemySpawned(e);
+        }
+    }
 }
 
 function spawnSkeletonGroup() {
+    // From wave 6+, spawns a single soldier individually.
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
-    const [cx, cz] = pickSpawnPos(15);
-    for (let i = 0; i < 2; i++) {
-        const angle = (i / 2) * Math.PI * 2;
-        const e = makeSkeleton(cx + Math.cos(angle) * 1.8, cz + Math.sin(angle) * 1.8);
-        e.ownerId = getClosestPlayerId(e.x, e.z) || Object.keys(players)[0] || null;
-        gameState.enemies.push(e);
-        emitEnemySpawned(e);
-    }
+    const [sx, sz] = pickSpawnPos(15);
+    const e = makeSoldier(sx, sz);
+    e.ownerId = getClosestPlayerId(sx, sz) || Object.keys(players)[0] || null;
+    gameState.enemies.push(e);
+    emitEnemySpawned(e);
 }
 
 function spawnBoss() {
@@ -418,9 +435,8 @@ function tickWave(dt) {
             spawnBoss();
             gameState.waveState = 'ACTIVE';
         } else {
-            gameState.enemiesToSpawn = Math.min(2 + gameState.wave * 2, 30);
-            gameState.skeletonGroupsToSpawn = gameState.wave >= 6
-                ? Math.min(4 + (gameState.wave - 6), 8) : 0;
+            gameState.enemiesToSpawn = Math.min(1 + gameState.wave, 12);
+            gameState.skeletonGroupsToSpawn = gameState.wave >= 6 ? 2 : 0;
             gameState.spawnTmr = 0;
             gameState.waveState = 'SPAWNING';
         }
@@ -453,12 +469,12 @@ function tickWave(dt) {
 
 // ── Enemy damage + kill ───────────────────────────────────────────────────────
 
-function applyEnemyDamage(targetId, damage, enemyId) {
+function applyEnemyDamage(targetId, damage, enemyId, knockbackX = 0, knockbackZ = 0) {
     const player = players[targetId];
     if (!player || !player.isAlive || player.isDowned) return;
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
-        targetSocket.emit('playerDamaged', { targetId, damage, shooterId: enemyId });
+        targetSocket.emit('playerDamaged', { targetId, damage, shooterId: enemyId, knockbackX, knockbackZ });
     }
 }
 
@@ -730,6 +746,14 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        // Preserve state briefly so the player can rejoin mid-game.
+        const leaving = players[socket.id];
+        if (leaving?.playerName && gameState.mode) {
+            recentlyDisconnected[leaving.playerName] = {
+                ...leaving, savedAt: Date.now(),
+            };
+            setTimeout(() => { delete recentlyDisconnected[leaving.playerName]; }, 30000);
+        }
         delete players[socket.id];
         if (Object.keys(players).length === 0) {
             stopGameLoop();
@@ -1008,6 +1032,24 @@ io.on('connection', (socket) => {
         io.emit('playerRevived', { playerId: socket.id });
     });
 
+    // Reconnection: client sends their name so we can restore their mid-game state.
+    socket.on('rejoin', (data) => {
+        const name = (data?.playerName || '').trim();
+        const saved = recentlyDisconnected[name];
+        if (!saved || Date.now() - saved.savedAt > 30000) return;
+        delete recentlyDisconnected[name];
+        players[socket.id] = { ...saved, playerId: socket.id, isHost: false, isReady: false };
+        socket.emit('stateRestored', {
+            wave: saved.wave || 0,
+            hp: saved.hp || P_MAX_HP,
+            isAlive: saved.isAlive ?? true,
+            isDowned: saved.isDowned ?? false,
+            currentWeapon: saved.currentWeapon || 'pistol',
+            character: saved.character || null,
+        });
+        io.emit('updateLobby', players);
+    });
+
     // Client notifies server when the local player pauses or resumes.
     socket.on('playerPaused', (data) => {
         if (players[socket.id]) players[socket.id].isPaused = !!data.paused;
@@ -1018,12 +1060,11 @@ io.on('connection', (socket) => {
     // position/rotation updates here. Server updates its state so ownership
     // reassignment has accurate positions.
     socket.on('ownedEnemiesSync', (updates) => {
+        if (!players[socket.id]?.isHost) return;
         if (!Array.isArray(updates)) return;
         for (const u of updates) {
             const enemy = gameState.enemies.find(e => e.id === u.id);
-            if (!enemy || enemy.ownerId !== socket.id) continue;
-            // Trust position from owning client (Three.js handles collision).
-            // Never trust HP — server is always the authority for HP.
+            if (!enemy) continue;
             if (typeof u.x === 'number') enemy.x = u.x;
             if (typeof u.y === 'number') enemy.y = u.y;
             if (typeof u.z === 'number') enemy.z = u.z;
@@ -1036,14 +1077,17 @@ io.on('connection', (socket) => {
     socket.on('enemyMeleeHit', (data) => {
         if (!data || !data.enemyId || !data.targetId) return;
         const enemy = gameState.enemies.find(e => e.id === data.enemyId);
-        if (!enemy || enemy.ownerId !== socket.id) return;
+        if (!enemy) return;
         const target = players[data.targetId];
         if (!target || !target.isAlive || target.isDowned) return;
-        // Sanity check: enemy must be within a generous melee radius of the target.
-        const reach = enemy.type === 'boss' ? 10 : 5;
-        const dx = enemy.x - target.x, dz = enemy.z - target.z;
+        // Sanity check: use the client-reported enemy position (ex/ez) rather than
+        // the server's stored position, which may be up to 50 ms stale.
+        const reach = enemy.type === 'boss' ? 12 : 6;
+        const ex = typeof data.ex === 'number' ? data.ex : enemy.x;
+        const ez = typeof data.ez === 'number' ? data.ez : enemy.z;
+        const dx = ex - target.x, dz = ez - target.z;
         if (dx * dx + dz * dz > reach * reach) return;
-        applyEnemyDamage(data.targetId, data.damage, data.enemyId);
+        applyEnemyDamage(data.targetId, data.damage, data.enemyId, data.knockbackX || 0, data.knockbackZ || 0);
     });
 
     // Owner client reports that an enemy bullet hit a remote player.
@@ -1058,7 +1102,7 @@ io.on('connection', (socket) => {
     socket.on('ownerEnemyFired', (data) => {
         if (!data || !data.enemyId) return;
         const enemy = gameState.enemies.find(e => e.id === data.enemyId);
-        if (!enemy || enemy.ownerId !== socket.id) return;
+        if (!players[socket.id]?.isHost) return;
         socket.broadcast.emit('enemyBulletFired', data);
     });
 });
