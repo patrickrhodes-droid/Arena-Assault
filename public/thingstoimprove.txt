@@ -8,3 +8,5 @@
 [DONE] HUD shows "Wave 0" briefly at match start — already handled by wave || "-" fallback in updateHUD; confirmed not reproducible
 [DONE] PvP respawn camera takes several frames to snap to the new position (lerp lag) — instant snap via snapCamera flag
 [DONE] No reconnection handling — players who drop rejoin as brand new with no state restored (30s grace window added)
+Improved textures
+Imported scene models

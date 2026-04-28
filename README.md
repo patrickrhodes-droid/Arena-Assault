@@ -67,13 +67,19 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 
 ## Weapons
 
-| Slot | Name | Damage | Notes |
-|---|---|---|---|
-| 1 | Service Pistol | 102 | Semi-auto, fast fire rate, always available |
-| 2 | Assault Rifle | 46 per bullet | Full-auto, 30-round mag |
-| 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
-| 4 | Sniper Rifle | 480 | Slow fire, heavy ADS zoom |
-| 5 | Tactical Blade | 999 (melee) | One-hit kills in PvP; vs boss: 160 per swing |
+All figures are taken directly from `config.js` and `combat.js`.
+
+| Slot | Name | Damage | Pellets | Mag | Fire interval | Shots/s | Reload | Bullet speed | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Service Pistol | 102 | 1 | 14 | 0.30 s | ~3.3 | 1.2 s | 96 u/s | Semi-auto (click to fire) |
+| 2 | Assault Rifle | 46 | 1 | 30 | 0.09 s | ~11.1 | 1.6 s | 90 u/s | Full-auto |
+| 3 | Shotgun | 72 per pellet | 8 | 8 | 0.72 s | ~1.4 | 2.2 s | 78 u/s | Max burst 576 dmg; falloff 8–30 u → min 8/pellet |
+| 4 | Sniper Rifle | 480 | 1 | 5 | 1.15 s | ~0.87 | 2.6 s | 160 u/s | Tightest ADS spread (0.0015); high scope zoom |
+| 5 | Tactical Blade | — | — | — | 0.40 s swing | — | — | — | Co-op: one-hit kills regular enemies, 160 dmg/swing vs boss; PvP: 999 dmg (one-shot) |
+
+**ADS zoom FOV** — Pistol/Assault 28°, Shotgun 60°, Sniper 19° (scoped overlay), Sword 75°.  
+**Hip vs ADS spread** — Pistol 0.018/0.007, Assault 0.022/0.008, Shotgun 0.12/0.06, Sniper 0.012/0.0015.  
+**Boss restriction** — only the Pistol and Sword deal damage to the Titan Brute.
 
 ## PvP Gun Game mode
 
@@ -87,32 +93,105 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 
 ## Enemies (Co-op)
 
-| Type | Appears | Behaviour |
-|---|---|---|
-| Soldier | Wave 1+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
-| Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
-| Skeleton | Wave 6+ | 1 HP, spawns in groups of 5. Wave 6 = 4 groups (+1 per wave, capped at 8). Animated GLB model. |
-| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. High HP, heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
+All figures pulled from `enemies.js`. HP formulas use wave `W`.
 
-The boss attack has a 7.8 unit reach (50% wider than original) and swings every 1.1 s for more aggressive threat.
+### Soldier
+
+| Stat | Formula / value | Wave 1 | Wave 5 | Wave 10 |
+|---|---|---|---|---|
+| HP | `round((58 + W×12) × 1.1^W)` | 77 | 190 | 461 |
+| Move speed | `3.5–5.0 + W×0.2` u/s | 3.7–5.2 | 4.5–6.0 | 5.5–7.0 |
+| Fire interval | `max(0.8, 2.2−W×0.1) + 0–0.4 s` | 2.1–2.5 s | 1.7–2.1 s | 0.8–1.2 s |
+| Bullet damage | 25 (fixed) | 25 | 25 | 25 |
+| Engage range | < 50 u | — | — | — |
+| Preferred distance | 7–14 u from player | — | — | — |
+
+- Appears every wave from wave 1. Keeps at 7–14 unit spacing; retreats if closer, advances if farther.
+- Fires once per interval towards nearest living player.
+
+### Dog
+
+| Stat | Formula / value | Wave 3 | Wave 5 | Wave 10 |
+|---|---|---|---|---|
+| HP | `round((46 + W×10) × 1.1^W)` | 101 | 155 | 378 |
+| Move speed | `8.0–10.0 + W×0.3` u/s | 8.9–10.9 | 9.5–11.5 | 11.0–13.0 |
+| Melee damage | `12 + W×2` | 18 | 22 | 32 |
+| Attack range | 2.5 u | — | — | — |
+| Attack cooldown | 1.0 s | — | — | — |
+
+- First appears at wave 3. Spawn chance: `min(55%, 12% + (W−3)×12%)` — so 12% at wave 3, 55% from wave 7 onward.
+- Pure melee rush; attacks every 1 s when within 2.5 u.
+
+### Skeleton
+
+| Stat | Value |
+|---|---|
+| HP | 1 (one-hit kill, no health bar) |
+| Move speed | 9.0–11.5 u/s (fixed, no wave scaling) |
+| Melee damage | `8 + W` |
+| Attack range | 2.0 u |
+| Attack cooldown | 0.8 s |
+
+- First appears at wave 6. Spawns in groups of 5 around a random arena edge point.
+- Groups per wave: 4 at wave 6, +1 per wave, capped at 8 (so max 40 skeletons per wave from groups).
+- Uses an animated GLB model with a death animation.
+
+### Titan Brute (Boss)
+
+Spawns every 5th wave. Count and HP multiplier increase over time.
+
+| Wave | Boss count | HP multiplier | HP per boss (approx) | Club damage |
+|---|---|---|---|---|
+| 5 | 1 | 1× | 5,800 | 150 |
+| 10 | 2 | 1× | 9,340 each | 200 |
+| 15 | 2 | 2× | 30,100 each | 250 |
+| 20 | 3 | 2× | 48,400 each | 300 |
+| 25 | 3 | 4× | 155,900 each | 350 |
+
+HP formula: `round(3600 × 1.1^W × hpMultiplier)`.  
+Club damage formula: `100 + W×10`.
+
+| Stat | Value |
+|---|---|
+| Move speed | 12 u/s |
+| Attack range | 7.8 u |
+| Swing cooldown | 1.1 s (+ 0.2 s windup) |
+| Knockback | 185 u/s on hit |
+
+- Only damaged by the **Pistol** (102 dmg/shot) and **Sword** (160 dmg/swing).
+- Jumps over obstacles when stuck (escape velocity ~39 u/s).
+- Named "TITAN BRUTE ELITE" when HP multiplier > 1.
+
+## Player stats
+
+| Stat | Value |
+|---|---|
+| Max HP | 1,000 (co-op: divided by player count, rounded) |
+| Walk speed | 6 u/s |
+| Sprint speed | 18.6 u/s (Shift + W, or double-tap W) |
+| Crouch speed | 2.7 u/s |
+| Jump velocity | 11.2 u/s (gravity 20 u/s²) |
+| Health pack restore | +150 HP (capped at max) |
+| Revive HP | Full health |
 
 ## Wave system
 
-- Waves start automatically after a short countdown.
-- Every 5th wave spawns one or more Titan Brute bosses.
-- Wave announcements show the current wave number and enemy type warnings.
+- Between waves there is a 2.5 s countdown, then the next wave begins.
+- Regular waves spawn up to `min(2 + W×2, 30)` soldiers/dogs and (from wave 6) up to `min(4 + W−6, 8)` skeleton groups.
+- Every 5th wave is a boss wave — no soldiers or dogs, only Titan Brutes.
+- Wave announcements show the current wave number and enemy-type warnings.
 - An enemy ping alert pulses on the minimap after 60 seconds if enemies are still alive.
 
 ## Character system
 
 Four playable characters with distinct heads:
 
-| Name | Head colour | Head scale |
-|---|---|---|
-| Iestyn | Red / coral | 1.5× |
-| Patrick | Blue | 1.0× (GLB face model) |
-| Will | Green | 1.25× (GLB face model) |
-| Matt | Yellow | 0.8× |
+| Name | Head colour | Head scale | Model |
+|---|---|---|---|
+| Iestyn | Red / coral (#ff5544) | 1× | GLB face model |
+| Patrick | Blue (#55aaff) | 1× | GLB face model |
+| Will | Green (#66dd66) | 1× | GLB face model |
+| Matt | Yellow (#ffcc33) | 1× | GLB face model |
 
 Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. Iestyn, Patrick, and Will use custom GLB models. Matt uses a coloured box placeholder designed to be swapped for a GLB in future.
 
