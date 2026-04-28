@@ -15,6 +15,8 @@ import {
 } from "./combat.js";
 import { getBossEnemy } from "./enemies.js";
 
+let bossAlertCooldown = 0;
+
 export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
     game.keys[event.code] = true;
@@ -63,9 +65,7 @@ export function setupInput(actions) {
   });
 
   document.addEventListener("keyup", (event) => {
-    if (game.localPlayerIsAlive) {
-      game.keys[event.code] = false;
-    }
+    game.keys[event.code] = false;
     if (event.code === "KeyW") {
       game.sprintLocked = false;
     }
@@ -315,7 +315,7 @@ function handleRevive(actions) {
   let nearDowned = null;
 
   if (game.localPlayerIsAlive && !game.localPlayerIsDowned && game.state === "PLAYING") {
-    for (const [id, remotePlayer] of Object.entries(game.remotePlayers)) {
+    for (const remotePlayer of Object.values(game.remotePlayers)) {
       if (!remotePlayer.isDowned) {
         continue;
       }
@@ -391,9 +391,11 @@ function handleFiring(actions) {
   } else {
     game.ammo -= 1;
     game.weaponAmmo[game.currentWeapon] = game.ammo;
-    if (bossIsActive) {
+    if (bossIsActive && bossAlertCooldown <= 0) {
       actions.showBossImperviousAlert?.();
+      bossAlertCooldown = 2.5;
     }
+    if (bossAlertCooldown > 0) bossAlertCooldown -= game.dt;
     game.audio.playWeapon(weapon);
     addShake(weapon.shake);
     game.fpRecoilZ = weapon.recoilZ;

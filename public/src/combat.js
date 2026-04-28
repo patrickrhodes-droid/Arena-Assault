@@ -150,7 +150,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       spawnParticles(position, 2, 0xff8844, 2);
     }
 
-    if (!shouldRemove && bullet.isPlayer) {
+    if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote) {
       for (let enemyIndex = game.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
         const enemy = game.enemies[enemyIndex];
         const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
@@ -208,7 +208,8 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       }
     }
 
-    if (!shouldRemove && !bullet.isPlayer) {
+    if (!shouldRemove && !bullet.isPlayer && !bullet.fromRemote) {
+      // Check local player
       const playerGroup = game.visuals.player.playerGroup;
       const playerCenter = new THREE.Vector3(
         playerGroup.position.x,
@@ -235,6 +236,27 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
         shouldRemove = true;
       }
 
+      // If this bullet was fired by an owned enemy (not fromRemote), also check
+      // remote players and tell the server to apply damage to them.
+      if (!shouldRemove && !bullet.fromRemote) {
+        for (const [remoteId, remote] of Object.entries(game.remotePlayers)) {
+          if (!remote.isAlive || remote.isDowned || remote.isSpectating) continue;
+          const remoteCenter = new THREE.Vector3(
+            remote.group.position.x,
+            remote.group.position.y + 1.2,
+            remote.group.position.z,
+          );
+          if (distanceSqPointToSegment(remoteCenter, previousPosition, position) < 1.1) {
+            spawnParticles(position.clone(), 4, 0xff4422, 3);
+            game.socket?.emit("enemyHitRemotePlayer", {
+              targetId: remoteId,
+              damage: bullet.damage || 10,
+            });
+            shouldRemove = true;
+            break;
+          }
+        }
+      }
     }
 
     if (shouldRemove) {
@@ -245,46 +267,32 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 }
 
 export function processHit(enemy, damage, particlePosition) {
-  if (enemy.type === "boss" && game.currentWeapon !== "sword" && game.currentWeapon !== "pistol") {
-    return;
-  }
-
-  if (game.socket) {
-    game.socket.emit("enemyHit", { id: enemy.id, damage });
-  }
-
-  game.stats.shotsHit += 1;
-  game.stats.damageDealt += damage;
+  // Local audio + particles for instant feedback.
   game.audio.hit();
   spawnParticles(particlePosition, 5, 0xff6622, 4);
+  game.stats.shotsHit += 1;
+  // Cap by enemy.hp so we record actual damage dealt, not overkill damage.
+  game.stats.damageDealt += Math.min(damage, Math.max(0, enemy.hp));
 
-  if (enemy.hp - damage <= 0) {
-    game.audio.death();
-    spawnParticles(enemy.group.position.clone().setY(1), 18, 0xcc2200, 8);
-
-    if (enemy.type === "boss") {
-      game.stats.bossKills += 1;
-      game.score += 2500;
-    } else if (enemy.type === "dog") {
-      game.stats.dogKills += 1;
-      game.score += 150;
-    } else if (enemy.type === "skeleton") {
-      game.stats.kills += 1;
-      game.score += 25;
-    } else {
-      game.stats.kills += 1;
-      game.score += 100;
-    }
-
-    game.shakeAmt = Math.max(game.shakeAmt, 0.1);
-
-    if (game.isHost && Math.random() < 0.1) {
-      spawnHealthPackAt(enemy.group.position.clone());
-    }
-  }
+  // Server is now authoritative: report the hit. Server validates weapon restriction,
+  // applies damage, awards kill credit, and drops health packs.
+  game.socket?.emit("bulletHit", {
+    enemyId: enemy.id,
+    damage,
+    weapon: game.currentWeapon,
+  });
 }
 
+const MAX_PARTICLES = 200;
+
 export function spawnParticles(position, count, color, speed) {
+  // Drop oldest particles if we're at the cap to prevent mass-death frame spikes.
+  while (game.particles.length + count > MAX_PARTICLES && game.particles.length > 0) {
+    const old = game.particles.shift();
+    game.scene.remove(old.mesh);
+    old.mesh.geometry.dispose();
+    old.mesh.material.dispose();
+  }
   for (let index = 0; index < count; index += 1) {
     const mesh = new THREE.Mesh(
       game.shared.partGeo,
@@ -395,17 +403,8 @@ export function updateHealthPacks(updateHUD) {
       continue;
     }
 
-    if (game.isHost) {
-      const index = game.healthPacks.indexOf(pack);
-      game.scene.remove(pack.mesh);
-      game.healthPacks.splice(index, 1);
-      game.hp = Math.min(P_MAX_HP, game.hp + 30);
-      game.audio.reviveComplete();
-      updateHUD?.();
-      game.socket?.emit("healthPackPickedUp", { packId: pack.id, playerId: game.socket.id });
-    } else {
-      game.socket?.emit("pickupHealthPack", { packId: pack.id });
-    }
+    // Server validates and broadcasts removal; all clients use the same path.
+    game.socket?.emit("pickupHealthPack", { packId: pack.id });
     break;
   }
 }

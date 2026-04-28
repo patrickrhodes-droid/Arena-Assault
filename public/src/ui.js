@@ -424,8 +424,9 @@ export function showBossImperviousAlert() {
 
 export function drawMinimap() {
   const context = game.dom.minimapContext;
-  const width = 450; // Improvement: minimap should be bigger
-  const height = 450;
+  // Use the actual canvas pixel dimensions so nothing is clipped.
+  const width = context.canvas.width;
+  const height = context.canvas.height;
   const scale = width / ARENA_SIZE;
 
   if (game.teammateAlertPulse > 0) {

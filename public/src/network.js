@@ -3,9 +3,10 @@ import * as THREE from "three";
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
 import { setWeapon, spawnBullet, spawnHealthPackVisual } from "./combat.js";
-import { createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
+import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert } from "./ui.js";
+import { spawnParticles } from "./combat.js";
 
 export function initNetworking(actions) {
   if (game.socket) {
@@ -95,12 +96,13 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("syncWave", (data) => {
-    if (game.isHost) {
-      return;
-    }
+    const prevWave = game.wave;
     game.wave = data.wave;
     game.waveState = data.state;
     game.waveTmr = data.tmr;
+    if (data.wave > prevWave) {
+      announceWave();
+    }
     actions.updateHUD();
   });
 
@@ -128,10 +130,6 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("enemiesSynced", (syncList) => {
-    if (game.isHost) {
-      return;
-    }
-
     const serverIds = syncList.map((entry) => entry.id);
     for (let index = game.enemies.length - 1; index >= 0; index -= 1) {
       if (!serverIds.includes(game.enemies[index].id)) {
@@ -153,11 +151,47 @@ export function initNetworking(actions) {
         return;
       }
 
-      enemy.group.position.set(entry.x, entry.y, entry.z);
-      enemy.group.rotation.y = entry.rot;
+      // Store server positions for non-owned lerp; ownerId drives AI split.
+      enemy.ownerId = entry.ownerId ?? null;
+      // Only overwrite position with server data if this client doesn't own the enemy
+      // (owner's Three.js simulation is the source of truth for position).
+      if (entry.ownerId !== game.socket?.id) {
+        enemy.serverX = entry.x;
+        enemy.serverZ = entry.z;
+        enemy.serverY = entry.y ?? 0;
+        enemy.group.rotation.y = entry.rot;
+        enemy.walkT = entry.walkT;
+      }
       enemy.hp = entry.hp;
-      enemy.walkT = entry.walkT;
+      if (entry.maxHp) enemy.maxHp = entry.maxHp;
     });
+  });
+
+  // Server spawns a new enemy — create the visual and stamp AI fields from server data.
+  game.socket.on("enemySpawned", (data) => {
+    if (game.enemies.find((e) => e.id === data.id)) return; // already exists
+    let pos = new THREE.Vector3(data.x, 0, data.z);
+    if (data.type === "soldier") createSoldier(pos, data.id);
+    else if (data.type === "dog") createDog(pos, data.id);
+    else if (data.type === "skeleton") createSkeleton(pos, data.id);
+    else if (data.type === "boss") createBoss(pos, data.id);
+    const enemy = game.enemies[game.enemies.length - 1];
+    if (!enemy) return;
+    // Stamp AI fields with server values so owned-client AI is accurate.
+    if (typeof data.spd === "number") enemy.spd = data.spd;
+    if (typeof data.fireInt === "number") enemy.fireInt = data.fireInt;
+    if (typeof data.fireTmr === "number") enemy.fireTmr = data.fireTmr;
+    if (typeof data.atkDmg === "number") enemy.atkDmg = data.atkDmg;
+    if (typeof data.atkTmr === "number") enemy.atkTmr = data.atkTmr;
+    enemy.ownerId = data.ownerId ?? null;
+  });
+
+  // Server reassigns enemy ownership (e.g. when a player dies/disconnects).
+  game.socket.on("enemyOwnership", (changes) => {
+    for (const { id, ownerId } of changes) {
+      const enemy = game.enemies.find((e) => e.id === id);
+      if (enemy) enemy.ownerId = ownerId;
+    }
   });
 
   game.socket.on("playerMoved", (player) => {
@@ -329,9 +363,7 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("healthPackSpawned", (data) => {
-    if (!game.isHost) {
-      spawnHealthPackVisual(data.id, new THREE.Vector3(data.x, data.y, data.z));
-    }
+    spawnHealthPackVisual(data.id, new THREE.Vector3(data.x, data.y, data.z));
   });
 
   game.socket.on("bulletFired", (data) => {
@@ -353,14 +385,12 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("enemyBulletFired", (data) => {
-    if (game.isHost) {
-      return;
-    }
+    // All clients (including former host) receive visual-only enemy bullets.
     spawnBullet(
       new THREE.Vector3(data.x, data.y, data.z),
       new THREE.Vector3(data.dx, data.dy, data.dz).normalize(),
       false,
-      { damage: data.damage, spd: data.spd, life: data.life },
+      { damage: 0, spd: data.spd, life: data.life },
       true,
     );
   });
@@ -373,7 +403,7 @@ export function initNetworking(actions) {
     }
 
     if (data.playerId === game.socket.id) {
-      game.hp = Math.min(game.effectiveMaxHP ?? P_MAX_HP, game.hp + 30);
+      game.hp = Math.min(game.effectiveMaxHP ?? P_MAX_HP, game.hp + 150);
       game.audio.reviveComplete();
       actions.updateHUD();
     }
@@ -383,16 +413,26 @@ export function initNetworking(actions) {
     actions.gameOver(rankings);
   });
 
-  game.socket.on("clientPickupHealthPack", (data) => {
-    if (!game.isHost) {
-      return;
+  // Server awards kill credit to the shooter
+  game.socket.on("killCredit", (data) => {
+    if (data.type === "boss") {
+      game.stats.bossKills += 1;
+      game.score += data.score;
+    } else if (data.type === "dog") {
+      game.stats.dogKills += 1;
+      game.score += data.score;
+    } else {
+      game.stats.kills += 1;
+      game.score += data.score;
     }
+    game.shakeAmt = Math.max(game.shakeAmt, 0.1);
+    game.audio.death();
+    actions.updateHUD();
+  });
 
-    const index = game.healthPacks.findIndex((pack) => pack.id === data.packId);
-    if (index !== -1) {
-      game.scene.remove(game.healthPacks[index].mesh);
-      game.healthPacks.splice(index, 1);
-      game.socket.emit("healthPackPickedUp", { packId: data.packId, playerId: data.playerId });
-    }
+  // Server broadcasts enemy death for visual effects (particles etc.)
+  game.socket.on("enemyKilled", (data) => {
+    spawnParticles(new THREE.Vector3(data.x, 1, data.z), 18, 0xcc2200, 8);
+    // The enemy object is removed from game.enemies by the next enemiesSynced cleanup.
   });
 }

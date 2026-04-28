@@ -1,2 +1,37 @@
-when you revive you should spawn with full health 
-the health packs should restore 150 health points
+-- IMPLEMENTED --
+- When you revive you should spawn with full health (done)
+- Health packs should restore 150 health points (done)
+- Fix stale enemy reference in soldier bullet setTimeout (done)
+- Boss impervious alert now has a 2.5s cooldown (done)
+- announceWave now null-guards game.dom.waveAnnounce (done)
+- bulletHit handler validates weapon string and clamps damage to 10000 (done)
+- Deleted dead _removedHostAI code stub from enemies.js (done)
+- Skeleton spawn count reduced from 5 to 2 per group (done)
+- Bots now run full Three.js AI on the closest client — wall collision, LOS, and hit detection
+  all handled by the actual game engine rather than server approximations (done)
+- Minimap now covers the full arena — fixed 450px draw into 360px canvas (done)
+- Damage dealt stat now tracks actual HP removed not overkill value, for all weapons (done)
+- Pause menu freezes bots when all alive players are paused (done)
+- Skeleton groups no longer spawn on top of each other — minimum gap enforced (done)
+- fromRemote enemy bullets skip all damage checks — no wasted collision cycles (done)
+- Skeleton animation mixers culled at 30 units instead of 65 (done)
+- Object.entries → Object.values in handleRevive hot path (done)
+- Particle system capped at 200 — oldest dropped on overflow to prevent frame spikes (done)
+- HUD shows correct wave number immediately at match start via instant syncWave (done)
+- PvP respawn camera snaps to spawn position instead of lerping from old location (done)
+
+-- TO DO --
+
+10. Constants duplicated between server.js and config.js
+    HALF, ARENA_SIZE, P_MAX_HP, B_SPD_E, WEAPON_ORDER, PVP_CORNERS and boss escape values
+    are all defined in both places. If one changes the other becomes stale and gameplay diverges.
+    Fix: extract shared values into a JSON constants file imported by both.
+
+18. (partial) PvP respawn camera — camera rotation order may still cause a brief wrong-angle
+    frame before the first updateCamera() call corrects the quaternion.
+
+20. No reconnection handling
+    If a player's tab briefly loses connection, Socket.IO reconnects and they rejoin as a
+    brand-new player with fresh state (isAlive=false, wave=0, no HP sync).
+    Fix: server should detect reconnects and restore wave/HP state. Client should emit a
+    "rejoin" event on reconnect so the server can send a full state snapshot.

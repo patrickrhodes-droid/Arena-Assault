@@ -81,7 +81,7 @@ const actions = {
   startMatch: () => {
     if (game.isHost) {
       game.audio.init();
-      game.socket?.emit("startMatch");
+      game.socket?.emit("startMatch", { startingWave: game.startingWave || 1 });
     }
   },
   toggleView: () => {
@@ -117,6 +117,7 @@ const actions = {
         game.dom.hud.style.display = "block";
       }
       game.dom.clickPrompt.style.display = "none";
+      game.socket?.emit("playerPaused", { paused: false });
       return;
     }
 
@@ -127,6 +128,7 @@ const actions = {
     if (game.state === "PLAYING") {
       game.state = "PAUSED";
       game.dom.pause.style.display = "flex";
+      game.socket?.emit("playerPaused", { paused: true });
     }
     if (game.state === "PLAYING" || game.state === "PAUSED") {
       game.dom.clickPrompt.style.display = "block";
@@ -211,10 +213,6 @@ function startGame() {
   game.hp = game.effectiveMaxHP;
   cleanupGame();
 
-  if (game.isHost && game.startingWave > 1) {
-    game.wave = game.startingWave - 1;
-    game.waveTmr = 0.1;
-  }
   hideRankings();
   resetCombatState();
   resetViewState();
@@ -491,6 +489,10 @@ function playerDiedLocalPvP() {
       return;
     }
     const [cx, cz] = pickFurthestCorner();
+    game.keys = {};
+    game.mouseDown = false;
+    game.mouseClicked = false;
+    game.sprintLocked = false;
     game.localPlayerIsAlive = true;
     game.localPlayerIsDowned = false;
     game.pvpDying = false;
@@ -503,6 +505,12 @@ function playerDiedLocalPvP() {
     game.visuals.player.playerGroup.position.set(cx, 0, cz);
     game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
     game.camTheta = Math.atan2(-cx, -cz);
+    game.camPhi = 0.1;
+    // Snap camera directly to spawn position so the fade-in doesn't show the
+    // old location while lerp catches up.
+    const spawnEyeH = game.isCrouching ? 1.1 : 2.15;
+    game.camera.position.set(cx, spawnEyeH, cz);
+    game.camera.rotation.set(0, game.camTheta, 0);
     game.visuals.player.playerGroup.visible = !game.isFPS;
     game.visuals.weapon.firstPersonGun.visible = game.isFPS;
     game.dom.crosshair.classList.remove("hidden");
@@ -569,7 +577,7 @@ function revivePlayerLocal(emitToServer = true) {
   game.dom.revivePromptHud.style.display = "none";
   game.dom.reviveProgressBg.style.display = "none";
   game.dom.reviveProgressFill.style.width = "0%";
-  game.hp = Math.max(1, Math.floor(game.effectiveMaxHP * 0.3));
+  game.hp = game.effectiveMaxHP;
   game.netSyncTmr = 0;
   window.clearTimeout(game.reviveTimeout);
   if (emitToServer) {

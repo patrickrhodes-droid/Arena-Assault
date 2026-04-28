@@ -33,7 +33,7 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 
 The lobby is split into three screens:
 
-1. **PLAYER** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Each has a distinct head colour and size. Patrick's head uses a custom GLB model.
+1. **PLAYER** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Each has a distinct head colour and size. Iestyn, Patrick, and Will each use a custom GLB face model.
 2. **MAP** — The host chooses a map; all players see the selection update in real-time. Non-host players see the chosen map highlighted but cannot change it.
 3. **LOBBY** — See who is in the session, check controls, ready up, and start. Host sees **START MISSION** (co-op) and, when ≥ 2 players have characters, **PVP MATCH**.
 
@@ -57,7 +57,8 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | Double-tap W | Sprint (alt) |
 | Ctrl | Crouch (toggle) |
 | W / S on a ladder | Climb up / down |
-| 1 / 2 / 3 / 4 / Q | Switch weapon (co-op) |
+| 1 / 2 / 3 / 4 / 5 | Select weapon slot (co-op) |
+| Q | Cycle weapon (co-op) |
 | Mouse | Aim |
 | Left click | Fire |
 | Right click | Aim down sights |
@@ -91,7 +92,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 |---|---|---|
 | Soldier | Wave 1+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
 | Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
-| Skeleton | Wave 6+ | 1 HP, spawns in groups of 5. Wave 6 = 4 groups (+1 per wave, capped at 8). Animated GLB model. |
+| Skeleton | Wave 6+ | 1 HP, spawns in groups of 2. Wave 6 = 4 groups (+1 per wave, capped at 8). Animated GLB model. |
 | Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. High HP, heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
 
 The boss attack has a 7.8 unit reach (50% wider than original) and swings every 1.1 s for more aggressive threat.
@@ -109,19 +110,20 @@ Four playable characters with distinct heads:
 
 | Name | Head colour | Head scale |
 |---|---|---|
-| Iestyn | Red / coral | 1.5× |
+| Iestyn | Red / coral | 1.5× (GLB face model) |
 | Patrick | Blue | 1.0× (GLB face model) |
 | Will | Green | 1.25× (GLB face model) |
 | Matt | Yellow | 0.8× |
 
-Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. Iestyn, Patrick, and Will use custom GLB models. Matt uses a coloured box placeholder designed to be swapped for a GLB in future.
+Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. Iestyn, Patrick, and Will each use a custom GLB face model. Matt uses a coloured box placeholder designed to be swapped for a GLB in future.
 
 Heads use a layer-isolated point-light fill so they appear bright without any emissive glow bleeding onto the rest of the scene.
 
 ## Multiplayer
 
-- The first player to connect becomes the **host** and simulates all game logic.
-- **Revive system**: downed players can be revived by teammates holding `E` nearby (45 s timeout before forced spectate).
+- The **server runs all game logic** — enemy AI, wave management, damage, and health packs — so all players (including the one hosting the server) are equal thin clients with no inherent advantage.
+- The first player to connect becomes the **lobby leader** and controls map selection and match start, but has no in-game simulation advantage.
+- **Revive system**: downed players can be revived by teammates holding `E` nearby (45 s timeout before forced spectate). Revived players return with full health.
 - **Nametags** appear above each remote player's head.
 - **Teammate status panel** shows each teammate's HP bar.
 - **Teammate down alert** flashes prominently and pulses on the minimap.
@@ -129,6 +131,7 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 - **Remote animations**: other players' walk cycles, crouch squish, sword swings, and weapon changes are all synced in real-time.
 - **Bullet visibility**: shots fired by remote players are visible as tracers on all clients.
 - **Rankings screen** shows final stats for all players at game over.
+- **Pause**: when all alive players pause simultaneously, enemy AI freezes — useful for solo play.
 
 ## HUD
 
@@ -136,7 +139,7 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 - Ammo counter and weapon name (in PvP the inventory hotbar is hidden; just the current weapon shows).
 - Boss HP bar showing individual boss health or combined percentage for multiple bosses.
 - ADS scope overlays (sniper scope, red-dot for pistol/assault).
-- **Minimap** (360 × 360 px, bottom-left): obstacles, colour-coded enemies, remote players, and a directional arrow for the local player.
+- **Minimap** (360 × 360 px, bottom-left): full arena coverage, obstacles, colour-coded enemies, remote players, and a directional arrow for the local player.
 - **Weapon unlock popup** pulses on screen whenever your PvP weapon advances.
 
 ## Host controls (server PC only)
@@ -163,11 +166,11 @@ Arena Assault/
 |       |-- scene.js            # Three.js scene, multi-map arena builders, player/enemy visuals
 |       |-- collision.js        # Collision helpers
 |       |-- combat.js           # Weapons, bullets, particles, health pack pickups
-|       |-- enemies.js          # Enemy AI, wave management, boss logic, PvP sword hit
+|       |-- enemies.js          # Enemy rendering, wave UI, boss logic, PvP sword hit
 |       |-- player.js           # Input, movement, camera, networking sync
 |       |-- network.js          # Socket.IO client events
 |       `-- ui.js               # HUD, lobby screens, minimap, rankings
-|-- server.js                   # Express + Socket.IO server
+|-- server.js                   # Express + Socket.IO server — authoritative game simulation (enemy AI, waves, damage, health packs)
 |-- Startserver.bat             # Windows quick-launch shortcut
 `-- package.json
 ```

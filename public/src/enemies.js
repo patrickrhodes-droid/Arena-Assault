@@ -44,11 +44,15 @@ const BOSS_ESCAPE_HEIGHT = 50 / 6;
 const MAX_LIVE_ENEMIES = 60;
 const MAX_SKELETON_CORPSES = 5;
 
-let syncEnemiesTmr = 0;
 const BOSS_ESCAPE_GRAVITY = 180;
 const BOSS_ESCAPE_JUMP_VELOCITY = Math.sqrt(2 * BOSS_ESCAPE_GRAVITY * BOSS_ESCAPE_HEIGHT);
 const BOSS_ESCAPE_FORWARD_SPEED = 14;
-const BOSS_AIR_ACCEL = 22;
+
+const ENEMY_BULLET_SPD = 28;
+const ENEMY_BULLET_DMG = 25;
+const OWNED_SYNC_RATE = 0.05; // 20 Hz sync of owned enemy positions to server
+
+let ownedSyncTmr = 0;
 
 export function getBossEnemy() {
   return game.enemies.find((enemy) => enemy.type === "boss") || null;
@@ -358,7 +362,7 @@ export function createSkeleton(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  // Skeletons have 1 HP — no health bar shown
+  // Skeletons have 1 HP â€” no health bar shown
   const hpBar = new THREE.Group();
   const hpFill = new THREE.Mesh(game.shared.hpFgGeo, game.shared.hpFgMatSkeleton);
   hpBar.add(hpFill);
@@ -442,388 +446,33 @@ export function finishWave() {
   game.enemyPingTmr = 0;
 }
 
-export function updateEnemies({ showDamage, addShake, updateHUD, playerDiedLocal } = {}) {
+export function updateEnemies() {
   if (game.mode === "PVP") {
     return;
   }
-  if (!game.isHost) {
-    game.enemies.forEach((enemy) => {
-      updateHealthBar(enemy);
-      if (enemy.mixer) {
-        const camDx = enemy.group.position.x - game.camera.position.x;
-        const camDz = enemy.group.position.z - game.camera.position.z;
-        if (camDx * camDx + camDz * camDz < 65 * 65) {
-          enemy.mixer.update(game.dt);
-        }
-      }
-    });
-    updateSkeletonCorpses();
-    return;
-  }
 
-  const targets = [
-    { group: game.visuals.player.playerGroup, socketId: game.socket ? game.socket.id : null },
-    ...Object.entries(game.remotePlayers).map(([id, remotePlayer]) => ({
-      group: remotePlayer.group,
-      socketId: id,
-    })),
-  ];
-
-  for (const enemy of game.enemies) {
-    const enemyPosition = enemy.group.position;
-    let closestTarget = null;
-    let minDistance = Infinity;
-
-    targets.forEach((target) => {
-      if (target.socketId !== game.socket?.id) {
-        const remotePlayer = game.remotePlayers[target.socketId];
-        if (remotePlayer && (!remotePlayer.isAlive || remotePlayer.isDowned)) {
-          return;
-        }
-      } else if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
-        return;
-      }
-
-      const distance = enemyPosition.distanceTo(target.group.position);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestTarget = target;
-      }
-    });
-
-    if (!closestTarget) {
-      continue;
+  // All clients are now thin renderers â€” server owns all AI and position authority.
+  game.enemies.forEach((enemy) => {
+    // Lerp toward server-authoritative position (serverX/serverZ set by network.js)
+    if (enemy.serverX !== undefined) {
+      enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, 15 * game.dt);
+      enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, 15 * game.dt);
     }
-
-    const playerPosition = closestTarget.group.position;
-    const dx = playerPosition.x - enemyPosition.x;
-    const dz = playerPosition.z - enemyPosition.z;
-    const distance = Math.sqrt(dx * dx + dz * dz);
-    const isLocalTarget = closestTarget.socketId === game.socket?.id;
-
-    const applyMeleeDamage = (damage) => {
-      if (game.invincibilityMode) {
-        return;
-      }
-
-      if (isLocalTarget) {
-        if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
-          return;
-        }
-
-        game.hp = Math.max(0, game.hp - damage);
-        game.audio.damage();
-        showDamage?.();
-        addShake?.(0.2);
-        spawnParticles(playerPosition.clone().setY(1), 4, 0xff4422, 3);
-
-        if (enemy.type === "boss") {
-          const knockDir = new THREE.Vector3(dx, 0, dz).normalize();
-          const speed = 185;
-          game.knockbackX = knockDir.x * speed;
-          game.knockbackZ = knockDir.z * speed;
-        }
-
-        if (game.hp <= 0) {
-          game.hp = 0;
-          playerDiedLocal?.();
-        }
-
-        updateHUD?.();
-      } else if (game.socket) {
-        game.socket.emit("damagePlayer", { targetId: closestTarget.socketId, damage });
-        spawnParticles(playerPosition.clone().setY(1), 4, 0xff4422, 3);
-      }
-    };
-
-    enemy.group.rotation.y = Math.atan2(dx, dz) + Math.PI;
-
-    if (enemy.flashTmr > 0) {
-      enemy.flashTmr -= game.dt;
-      if (enemy.flashPart) {
-        if (enemy.type === "soldier") {
-          enemy.flashPart.material = enemy.flashTmr > 0 ? enemyMaterials.flash : enemyMaterials.body;
-        } else if (enemy.type === "dog") {
-          enemy.flashPart.material = enemy.flashTmr > 0 ? enemyMaterials.flash : enemyMaterials.dogBody;
-        } else {
-          enemy.flashPart.material = enemy.flashTmr > 0 ? enemyMaterials.flash : enemyMaterials.bossArmor;
-        }
-      }
+    if (enemy.serverY !== undefined) {
+      enemy.group.position.y += (enemy.serverY - enemy.group.position.y) * Math.min(1, 12 * game.dt);
     }
-
-    if (enemy.type === "soldier") {
-      const ndx = distance > EPS ? dx / distance : 0;
-      const ndz = distance > EPS ? dz / distance : 0;
-      let moveSpeed = 0;
-      if (distance > 14) {
-        moveSpeed = enemy.spd;
-      } else if (distance < 7) {
-        moveSpeed = -enemy.spd * 0.4;
-      }
-
-      if (moveSpeed !== 0) {
-        enemyPosition.x += ndx * moveSpeed * game.dt;
-        enemyPosition.z += ndz * moveSpeed * game.dt;
-      }
-
-      enemy.walkT += game.dt * (moveSpeed > 0 ? 8 : 4);
-      const swing = Math.sin(enemy.walkT) * 0.45;
-      enemy.leftLeg.rotation.x = swing;
-      enemy.rightLeg.rotation.x = -swing;
-      enemy.leftArm.rotation.x = -swing * 0.5;
-      enemy.rightArm.rotation.x = swing * 0.5;
-
-      enemy.fireTmr -= game.dt;
-      if (enemy.fireTmr <= 0 && distance < 50) {
-        enemy.fireTmr = enemy.fireInt;
-        const targetAimY = playerPosition.y + 1.2;
-        const enemyAimY = enemyPosition.y + 1.2;
-        const direction = new THREE.Vector3(
-          ndx + (Math.random() - 0.5) * 0.24,
-          ((targetAimY - enemyAimY) / Math.max(distance, 1)) + (Math.random() - 0.5) * 0.03,
-          ndz + (Math.random() - 0.5) * 0.24,
-        ).normalize();
-        const bulletPosition = enemyPosition.clone();
-        bulletPosition.y += 1.2;
-        bulletPosition.x += ndx * 0.6;
-        bulletPosition.z += ndz * 0.6;
-        spawnBullet(bulletPosition, direction, false);
-        game.socket?.emit("enemyBulletFired", {
-          x: bulletPosition.x,
-          y: bulletPosition.y,
-          z: bulletPosition.z,
-          dx: direction.x,
-          dy: direction.y,
-          dz: direction.z,
-          damage: 25,
-          spd: 28,
-          life: 4,
-        });
-      }
-    } else if (enemy.type === "dog") {
-      const ndx = distance > EPS ? dx / distance : 0;
-      const ndz = distance > EPS ? dz / distance : 0;
-      enemyPosition.x += ndx * enemy.spd * game.dt;
-      enemyPosition.z += ndz * enemy.spd * game.dt;
-
-      enemy.walkT += game.dt * 12;
-      const swing = Math.sin(enemy.walkT) * 0.6;
-      enemy.leftFrontLeg.rotation.x = swing;
-      enemy.rightFrontLeg.rotation.x = -swing;
-      enemy.leftBackLeg.rotation.x = -swing;
-      enemy.rightBackLeg.rotation.x = swing;
-      enemy.body.position.y = 0.6 + Math.abs(Math.sin(enemy.walkT * 2)) * 0.08;
-      enemy.tail.rotation.y = Math.sin(enemy.walkT * 3) * 0.5;
-
-      const verticalGap = Math.abs((playerPosition.y + 0.9) - (enemyPosition.y + 0.6));
-      if (distance < 2.5 && verticalGap < 1.4) {
-        enemy.atkTmr -= game.dt;
-        if (enemy.atkTmr <= 0) {
-          enemy.atkTmr = 1;
-          applyMeleeDamage(enemy.atkDmg);
-        }
-      } else {
-        enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
-      }
-    } else if (enemy.type === "skeleton") {
-      if (enemy.mixer) {
-        const camDx = enemy.group.position.x - game.camera.position.x;
-        const camDz = enemy.group.position.z - game.camera.position.z;
-        if (camDx * camDx + camDz * camDz < 65 * 65) {
-          enemy.mixer.update(game.dt);
-        }
-      }
-
-      const ndx = distance > EPS ? dx / distance : 0;
-      const ndz = distance > EPS ? dz / distance : 0;
-      enemyPosition.x += ndx * enemy.spd * game.dt;
-      enemyPosition.z += ndz * enemy.spd * game.dt;
-
-      enemy.walkT += game.dt * 10;
-      enemy.group.position.y = Math.abs(Math.sin(enemy.walkT * 2)) * 0.06;
-
-      const skelVerticalGap = Math.abs((playerPosition.y + 0.9) - (enemyPosition.y + 0.7));
-      if (distance < 2.0 && skelVerticalGap < 1.4) {
-        enemy.atkTmr -= game.dt;
-        if (enemy.atkTmr <= 0) {
-          enemy.atkTmr = 0.8;
-          applyMeleeDamage(enemy.atkDmg);
-        }
-      } else {
-        enemy.atkTmr = Math.min(enemy.atkTmr, 0.3);
-      }
-    } else {
-      const ndx = distance > EPS ? dx / distance : 0;
-      const ndz = distance > EPS ? dz / distance : 0;
-      let moveSpeed = 0;
-      if (distance > 5.5) {
-        moveSpeed = enemy.spd;
-      } else if (distance < 3.5) {
-        moveSpeed = -enemy.spd * 0.5;
-      }
-      if (enemyPosition.y <= 0.001) {
-        enemyPosition.x += ndx * moveSpeed * game.dt;
-        enemyPosition.z += ndz * moveSpeed * game.dt;
-        enemy.velX = ndx * moveSpeed;
-        enemy.velZ = ndz * moveSpeed;
-      } else {
-        enemy.velX += ndx * BOSS_AIR_ACCEL * game.dt;
-        enemy.velZ += ndz * BOSS_AIR_ACCEL * game.dt;
-      }
-
-      enemy.walkT += game.dt * 4.2;
-      const swing = Math.sin(enemy.walkT) * 0.35;
-      enemy.leftLeg.rotation.x = swing;
-      enemy.rightLeg.rotation.x = -swing;
-      enemy.leftArm.rotation.x = -0.18 - swing * 0.25;
-      enemy.rightArm.rotation.x = 0.24 + swing * 0.18;
-      enemy.club.rotation.z = -0.18;
-
-      if (enemy.windupTmr > 0) {
-        enemy.windupTmr -= game.dt;
-        enemy.rightArm.rotation.x = -1.2;
-        enemy.club.rotation.z = -1.1;
-        if (enemy.windupTmr <= 0) {
-          enemy.swingTmr = 0.22;
-        }
-      } else if (enemy.swingTmr > 0) {
-        enemy.swingTmr -= game.dt;
-        const progress = 1 - enemy.swingTmr / 0.22;
-        enemy.rightArm.rotation.x = -1.2 + progress * 2.1;
-        enemy.club.rotation.z = -1.1 + progress * 1.8;
-      }
-
-      const verticalGap = Math.abs((playerPosition.y + 1.1) - (enemyPosition.y + 2.2));
-      if (distance < 7.8 && verticalGap < 4.2) {
-        enemy.atkTmr -= game.dt;
-        if (enemy.atkTmr <= 0 && enemy.windupTmr <= 0 && enemy.swingTmr <= 0) {
-          enemy.atkTmr = 1.1;
-          enemy.windupTmr = 0.2;
-        }
-
-        if (enemy.swingTmr > 0.09 && enemy.swingTmr < 0.14) {
-          enemy.swingTmr = 0.08;
-          addShake?.(0.35);
-          applyMeleeDamage(enemy.atkDmg);
-        }
-      }
-
-      if (enemy.velY !== 0 || enemyPosition.y > 0) {
-        enemyPosition.x += enemy.velX * game.dt;
-        enemyPosition.z += enemy.velZ * game.dt;
-        enemyPosition.y += enemy.velY * game.dt;
-        enemy.velY -= BOSS_ESCAPE_GRAVITY * game.dt;
-        const airSpeed = Math.hypot(enemy.velX, enemy.velZ);
-        const maxAirSpeed = Math.max(BOSS_ESCAPE_FORWARD_SPEED * 1.7, enemy.spd * 1.35);
-        if (airSpeed > maxAirSpeed) {
-          const clamp = maxAirSpeed / airSpeed;
-          enemy.velX *= clamp;
-          enemy.velZ *= clamp;
-        }
-        enemy.velX *= Math.pow(0.82, game.dt);
-        enemy.velZ *= Math.pow(0.82, game.dt);
-        if (enemyPosition.y <= 0) {
-          enemyPosition.y = 0;
-          enemy.velX = 0;
-          enemy.velZ = 0;
-          enemy.velY = 0;
-        }
-      }
-
-      if (enemyPosition.y <= 0.001 && enemy.velY === 0) {
-        if (enemy.stuckTmr <= 0) {
-          enemy.lastTrackedX = enemyPosition.x;
-          enemy.lastTrackedZ = enemyPosition.z;
-        }
-
-        enemy.stuckTmr += game.dt;
-        if (enemy.stuckTmr >= 1) {
-          const movedDistance = Math.hypot(enemyPosition.x - enemy.lastTrackedX, enemyPosition.z - enemy.lastTrackedZ);
-          enemy.stuckTmr = 0;
-          enemy.lastTrackedX = enemyPosition.x;
-          enemy.lastTrackedZ = enemyPosition.z;
-
-          if (movedDistance < 0.5) {
-            const launchSpeed = Math.max(BOSS_ESCAPE_FORWARD_SPEED, moveSpeed);
-            enemy.velX = ndx * launchSpeed;
-            enemy.velZ = ndz * launchSpeed;
-            enemy.velY = BOSS_ESCAPE_JUMP_VELOCITY;
-            enemy.windupTmr = 0;
-            enemy.swingTmr = 0;
-            enemy.atkTmr = Math.max(enemy.atkTmr, 0.9);
-          }
-        }
-      } else {
-        enemy.stuckTmr = 0;
-        enemy.lastTrackedX = enemyPosition.x;
-        enemy.lastTrackedZ = enemyPosition.z;
-      }
-    }
-
-    for (const obstacle of game.oBs) {
-      if (enemy.type === "boss" && enemyPosition.y > 0.001) {
-        continue;
-      }
-      resolveCircleBox(enemyPosition, enemy.radius || P_RAD, obstacle);
-    }
-
-    const enemyRadius = enemy.radius || P_RAD;
-    enemyPosition.x = Math.max(-HALF + 1.5 + enemyRadius * 0.35, Math.min(HALF - 1.5 - enemyRadius * 0.35, enemyPosition.x));
-    enemyPosition.z = Math.max(-HALF + 1.5 + enemyRadius * 0.35, Math.min(HALF - 1.5 - enemyRadius * 0.35, enemyPosition.z));
-
     updateHealthBar(enemy);
-  }
-
-  syncEnemiesTmr -= game.dt;
-  if (game.socket && syncEnemiesTmr <= 0) {
-    syncEnemiesTmr = 0.1;
-    game.socket.emit(
-      "syncEnemies",
-      game.enemies.map((enemy) => ({
-        id: enemy.id,
-        type: enemy.type,
-        x: enemy.group.position.x,
-        y: enemy.group.position.y,
-        z: enemy.group.position.z,
-        rot: enemy.group.rotation.y,
-        hp: enemy.hp,
-        walkT: enemy.walkT,
-      })),
-    );
-  }
-
-  for (let first = 0; first < game.enemies.length; first += 1) {
-    const ea = game.enemies[first];
-    for (let second = first + 1; second < game.enemies.length; second += 1) {
-      const eb = game.enemies[second];
-      // Skeletons are tiny and numerous — skip skel-skel separation entirely
-      if (ea.type === "skeleton" && eb.type === "skeleton") {
-        continue;
-      }
-      const a = ea.group.position;
-      const b = eb.group.position;
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const minDistance = (ea.radius || 0.6) + (eb.radius || 0.6);
-      // Cheap axis-aligned early-out avoids sqrt for most pairs
-      if (Math.abs(dx) >= minDistance || Math.abs(dz) >= minDistance) {
-        continue;
-      }
-      const distance = Math.sqrt(dx * dx + dz * dz);
-      if (distance < minDistance && distance > EPS) {
-        const push = (minDistance - distance) * 0.5;
-        const nx = dx / distance;
-        const nz = dz / distance;
-        a.x -= nx * push;
-        a.z -= nz * push;
-        b.x += nx * push;
-        b.z += nz * push;
+    if (enemy.mixer) {
+      const camDx = enemy.group.position.x - game.camera.position.x;
+      const camDz = enemy.group.position.z - game.camera.position.z;
+      if (camDx * camDx + camDz * camDz < 65 * 65) {
+        enemy.mixer.update(game.dt);
       }
     }
-  }
-
+  });
   updateSkeletonCorpses();
 }
+
 
 function updateSkeletonCorpses() {
   for (let i = game.skeletonCorpses.length - 1; i >= 0; i -= 1) {
@@ -849,13 +498,9 @@ function updateHealthBar(enemy) {
 }
 
 export function updateWaves() {
-  if (game.mode === "PVP") {
-    return;
-  }
-  if (!game.isHost) {
-    return;
-  }
+  if (game.mode === "PVP") return;
 
+  // Server drives all wave logic. Clients just maintain the minimap enemy-ping timer.
   if ((game.waveState === "SPAWNING" || game.waveState === "ACTIVE") && game.enemies.length > 0) {
     game.waveElapsed += game.dt;
     if (game.waveElapsed >= game.nextEnemyPing) {
@@ -867,170 +512,14 @@ export function updateWaves() {
     game.nextEnemyPing = 60;
     game.enemyPingTmr = 0;
   }
-
   if (game.enemyPingTmr > 0) {
     game.enemyPingTmr = Math.max(0, game.enemyPingTmr - game.dt);
   }
-
-  if (game.waveState === "WAIT") {
-    game.waveTmr -= game.dt;
-    if (game.waveTmr <= 0) {
-      game.wave += 1;
-      game.waveElapsed = 0;
-      game.nextEnemyPing = 60;
-      game.enemyPingTmr = 0;
-
-      if (game.wave % 5 === 0) {
-        game.enemiesToSpawn = 0;
-        game.skeletonGroupsToSpawn = 0;
-        game.spawnTmr = 0;
-        game.waveState = "ACTIVE";
-        spawnBoss();
-      } else {
-        game.enemiesToSpawn = Math.min(2 + game.wave * 2, 30);
-        game.skeletonGroupsToSpawn = game.wave >= 6 ? Math.min(4 + (game.wave - 6), 8) : 0;
-        game.spawnTmr = 0;
-        game.waveState = "SPAWNING";
-      }
-
-      game.socket?.emit("waveUpdate", { wave: game.wave, state: game.waveState, tmr: game.waveTmr });
-      announceWave();
-    }
-  } else if (game.waveState === "SPAWNING") {
-    game.spawnTmr -= game.dt;
-    if (game.spawnTmr <= 0 && (game.enemiesToSpawn > 0 || game.skeletonGroupsToSpawn > 0)) {
-      if (game.skeletonGroupsToSpawn > 0 && (game.enemiesToSpawn === 0 || Math.random() < 0.35)) {
-        spawnSkeletonGroup();
-        game.skeletonGroupsToSpawn -= 1;
-        game.spawnTmr = 1.2;
-      } else if (game.enemiesToSpawn > 0) {
-        spawnEnemy();
-        game.enemiesToSpawn -= 1;
-        game.spawnTmr = 0.5;
-      }
-    }
-
-    if (game.enemiesToSpawn <= 0 && game.skeletonGroupsToSpawn <= 0) {
-      game.waveState = "ACTIVE";
-    }
-
-    game.socket?.emit("waveUpdate", { wave: game.wave, state: game.waveState, tmr: game.waveTmr });
-  } else if (game.waveState === "ACTIVE" && game.enemies.length === 0) {
-    finishWave();
-  }
 }
 
-export function spawnBoss() {
-  const playerGroup = game.visuals.player.playerGroup;
-  const { bossCount, hpMultiplier } = getBossWaveConfig();
-
-  for (let bossIndex = 0; bossIndex < bossCount; bossIndex += 1) {
-    let x = 0;
-    let z = -(HALF - 6);
-    let attempts = 0;
-
-    do {
-      const side = Math.floor(Math.random() * 4);
-      const offset = (Math.random() - 0.5) * (ARENA_SIZE - 14);
-      if (side === 0) {
-        x = offset;
-        z = -(HALF - 6);
-      } else if (side === 1) {
-        x = offset;
-        z = HALF - 6;
-      } else if (side === 2) {
-        x = -(HALF - 6);
-        z = offset;
-      } else {
-        x = HALF - 6;
-        z = offset;
-      }
-      attempts += 1;
-    } while (
-      (
-        Math.hypot(x - playerGroup.position.x, z - playerGroup.position.z) < 22
-        || game.enemies.some((enemy) => enemy.type === "boss" && Math.hypot(x - enemy.group.position.x, z - enemy.group.position.z) < 12)
-      )
-      && attempts < 30
-    );
-
-    createBoss(new THREE.Vector3(x, 0, z), Math.random(), { hpMultiplier });
-  }
-}
-
-export function spawnSkeletonGroup() {
-  if (game.enemies.length >= MAX_LIVE_ENEMIES) {
-    return;
-  }
-  const playerGroup = game.visuals.player.playerGroup;
-  let cx;
-  let cz;
-  let attempts = 0;
-
-  do {
-    const side = Math.floor(Math.random() * 4);
-    const offset = (Math.random() - 0.5) * (ARENA_SIZE - 6);
-    if (side === 0) {
-      cx = offset;
-      cz = -(HALF - 2);
-    } else if (side === 1) {
-      cx = offset;
-      cz = HALF - 2;
-    } else if (side === 2) {
-      cx = -(HALF - 2);
-      cz = offset;
-    } else {
-      cx = HALF - 2;
-      cz = offset;
-    }
-    attempts += 1;
-  } while (Math.hypot(cx - playerGroup.position.x, cz - playerGroup.position.z) < 15 && attempts < 20);
-
-  for (let index = 0; index < 5; index += 1) {
-    const angle = (index / 5) * Math.PI * 2;
-    const x = cx + Math.cos(angle) * 1.8;
-    const z = cz + Math.sin(angle) * 1.8;
-    createSkeleton(new THREE.Vector3(x, 0, z));
-  }
-}
-
-export function spawnEnemy() {
-  if (game.enemies.length >= MAX_LIVE_ENEMIES) {
-    return;
-  }
-  const playerGroup = game.visuals.player.playerGroup;
-  let x;
-  let z;
-  let attempts = 0;
-
-  do {
-    const side = Math.floor(Math.random() * 4);
-    const offset = (Math.random() - 0.5) * (ARENA_SIZE - 6);
-    if (side === 0) {
-      x = offset;
-      z = -(HALF - 2);
-    } else if (side === 1) {
-      x = offset;
-      z = HALF - 2;
-    } else if (side === 2) {
-      x = -(HALF - 2);
-      z = offset;
-    } else {
-      x = HALF - 2;
-      z = offset;
-    }
-    attempts += 1;
-  } while (Math.hypot(x - playerGroup.position.x, z - playerGroup.position.z) < 15 && attempts < 20);
-
-  const dogChance = game.wave >= 3 ? Math.min(0.55, 0.12 + (game.wave - 3) * 0.12) : 0;
-  if (Math.random() < dogChance) {
-    createDog(new THREE.Vector3(x, 0, z));
-  } else {
-    createSoldier(new THREE.Vector3(x, 0, z));
-  }
-}
 
 export function announceWave() {
+  if (!game.dom?.waveAnnounce) return;
   const title = game.dom.waveAnnounce.querySelector(".wa-title");
   const subtitle = game.dom.waveAnnounce.querySelector(".wa-sub");
   const bossWave = game.wave % 5 === 0;
@@ -1064,16 +553,10 @@ export function announceWave() {
 
 export function handleEnemyDamaged(data) {
   const enemy = game.enemies.find((candidate) => candidate.id === data.id);
-  if (!enemy) {
-    return;
-  }
-
+  if (!enemy) return;
   enemy.hp -= data.damage;
   enemy.flashTmr = 0.1;
-
-  if (enemy.hp <= 0 && game.isHost) {
-    removeEnemy(game.enemies.indexOf(enemy));
-  }
+  // Server handles enemy death; the enemy vanishes from the next enemiesSynced broadcast.
 }
 
 export function trySwordHit() {
@@ -1112,8 +595,7 @@ export function trySwordHit() {
     return;
   }
 
-  if (!game.isHost) return;
-
+  // All clients can report sword hits; server validates and applies damage.
   for (const enemy of game.enemies) {
     if (enemy.hp <= 0) continue;
 
@@ -1122,7 +604,10 @@ export function trySwordHit() {
 
     const toEnemy = enemy.group.position.clone().sub(playerPos).normalize();
     if (toEnemy.dot(cameraDirection) > 0.5) {
-      processHit(enemy, enemy.type === "boss" ? 160 : 9999, enemy.group.position.clone().setY(1.5));
+      // Use enemy.hp as the damage value so damageDealt stat reflects actual HP removed,
+      // not an arbitrary instakill constant. Boss capped at 160 per swing by design.
+      const swordDmg = enemy.type === "boss" ? Math.min(160, enemy.hp) : enemy.hp;
+      processHit(enemy, swordDmg, enemy.group.position.clone().setY(1.5));
     }
   }
 }
