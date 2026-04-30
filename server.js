@@ -322,6 +322,7 @@ function broadcastPauseState() {
 
 const gameState = {
     mode: null,
+    invincibility: false,
     wave: 0,
     waveState: 'WAIT',
     waveTmr: 3,
@@ -584,6 +585,7 @@ function tickWave(dt) {
 // ── Enemy damage + kill ───────────────────────────────────────────────────────
 
 function applyEnemyDamage(targetId, damage, enemyId, knockbackX = 0, knockbackZ = 0) {
+    if (gameState.mode === 'COOP' && gameState.invincibility) return;
     const player = players[targetId];
     if (!player || !player.isAlive || player.isDowned) return;
     const targetSocket = io.sockets.sockets.get(targetId);
@@ -687,12 +689,18 @@ function tickEnemies(dt) {
                     if (canSee) {
                         enemy.fireTmr = enemy.fireInt;
                         const spreadH = (Math.random() - 0.5) * 0.24;
-                        const [bnx, bnz] = norm2(ndx + spreadH, ndz + spreadH);
+                        const horizontalX = ndx + spreadH;
+                        const horizontalZ = ndz + spreadH;
+                        const [bnx, bnz] = norm2(horizontalX, horizontalZ);
                         const verticalDir = targetDist > 0 ? ((target.y + 1.2) - (enemy.y + 1.2)) / targetDist : 0;
+                        const bulletLen = Math.sqrt(bnx * bnx + bnz * bnz + verticalDir * verticalDir) || 1;
+                        const bulletDx = bnx / bulletLen;
+                        const bulletDy = verticalDir / bulletLen;
+                        const bulletDz = bnz / bulletLen;
                         io.emit('enemyBulletFired', {
                             enemyId: enemy.id,
-                            x: enemy.x + ndx * 0.6, y: enemy.y + 1.2, z: enemy.z + ndz * 0.6,
-                            dx: bnx, dy: verticalDir, dz: bnz,
+                            x: enemy.x + bulletDx * 0.6, y: enemy.y + 1.2, z: enemy.z + bulletDz * 0.6,
+                            dx: bulletDx, dy: bulletDy, dz: bulletDz,
                             damage: 25, spd: B_SPD_E, life: 4,
                         });
                         // Schedule damage after approximate travel time.
@@ -979,10 +987,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('hostSetInvincibility', (data) => {
+        if (!players[socket.id]?.isHost) return;
+        gameState.invincibility = !!data?.enabled;
+        io.emit('invincibilityChanged', { enabled: gameState.invincibility });
+    });
+
     socket.on('startMatch', (data) => {
         if (!players[socket.id]?.isHost) return;
         const startingWave = (typeof data?.startingWave === 'number' && data.startingWave > 1)
             ? data.startingWave : 1;
+        gameState.invincibility = !!data?.invincibility;
         currentMode = 'COOP';
         const playerCount = Object.keys(players).length;
         const effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
@@ -1000,6 +1015,7 @@ io.on('connection', (socket) => {
         resetGameState('COOP', startingWave);
         startGameLoop();
         io.emit('matchStarted', { mode: 'COOP', map: selectedMap });
+        io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
         io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr });
         broadcastPauseState();
@@ -1027,8 +1043,10 @@ io.on('connection', (socket) => {
             p.weapon = 'pistol';
             p.hp = P_MAX_HP;
         });
+        gameState.invincibility = false;
         resetGameState('PVP', 1); // clears any leftover COOP state
         io.emit('matchStarted', { mode: 'PVP', map: selectedMap, spawnAssignments });
+        io.emit('invincibilityChanged', { enabled: false });
         broadcastPauseState();
     });
 
@@ -1249,20 +1267,26 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Owner client reports that one of its enemies hit a player in melee.
-    socket.on('enemyMeleeHit', (data) => {
+    // Owner client reports a melee attempt; target client validates and applies it locally.
+    socket.on('enemyMeleeAttempt', (data) => {
         if (!data || !data.enemyId || !data.targetId) return;
         const enemy = gameState.enemies.find(e => e.id === data.enemyId);
         if (!enemy) return;
         const target = players[data.targetId];
         if (!target || !target.isAlive || target.isDowned) return;
-        // Sanity check: use the client-reported enemy position (ex/ez) rather than
-        // the server's stored position, which may be up to 50 ms stale.
-        const ex = typeof data.ex === 'number' ? data.ex : enemy.x;
-        const ey = typeof data.ey === 'number' ? data.ey : enemy.y;
-        const ez = typeof data.ez === 'number' ? data.ez : enemy.z;
-        if (!canEnemyMeleeTarget(enemy, target, ex, ey, ez)) return;
-        applyEnemyDamage(data.targetId, data.damage, data.enemyId, data.knockbackX || 0, data.knockbackZ || 0);
+        const targetSocket = io.sockets.sockets.get(data.targetId);
+        if (!targetSocket) return;
+        targetSocket.emit('enemyMeleeAttempt', {
+            enemyId: data.enemyId,
+            enemyType: enemy.type,
+            targetId: data.targetId,
+            damage: data.damage,
+            ex: typeof data.ex === 'number' ? data.ex : enemy.x,
+            ey: typeof data.ey === 'number' ? data.ey : enemy.y,
+            ez: typeof data.ez === 'number' ? data.ez : enemy.z,
+            knockbackX: data.knockbackX || 0,
+            knockbackZ: data.knockbackZ || 0,
+        });
     });
 
     // Owner client reports that an enemy bullet hit a remote player.

@@ -1,6 +1,17 @@
 import * as THREE from "three";
 
-import { BASE_FOV, EYE_H, GRAV, HALF, JUMP_VEL, LAND_SNAP, P_RAD } from "./config.js";
+import {
+  BASE_FOV,
+  EYE_H,
+  GRAPPLE_TUNING,
+  GRAV,
+  HALF,
+  JUMP_VEL,
+  LAND_SNAP,
+  PLAYER_MOVEMENT,
+  P_RAD,
+  REVIVE_TUNING,
+} from "./config.js";
 import { game } from "./state.js";
 import { addShake } from "./state.js";
 import { getSupportHeight, resolveCircleBox } from "./collision.js";
@@ -28,6 +39,60 @@ function findEnemyFromHit(object) {
   return null;
 }
 
+function tryGrappleEnemyPull() {
+  if (game.currentWeapon !== "grapple") {
+    return false;
+  }
+
+  const enemyGroups = game.enemies.map((enemy) => enemy.group);
+  if (enemyGroups.length === 0) {
+    return false;
+  }
+
+  const enemyRaycaster = new THREE.Raycaster();
+  enemyRaycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
+  enemyRaycaster.far = GRAPPLE_TUNING.maxDistance;
+  const enemyHits = enemyRaycaster.intersectObjects(enemyGroups, true);
+  if (enemyHits.length === 0) {
+    return false;
+  }
+
+  const enemy = findEnemyFromHit(enemyHits[0].object);
+  if (!enemy) {
+    return false;
+  }
+
+  const playerPos = game.visuals.player.playerGroup.position;
+  const enemyPos = enemy.group.position.clone();
+  processHit(enemy, getWeapon().damage, enemyHits[0].point.clone());
+  if (enemy.type === "boss") {
+    game.grappleEnemyId = enemy.id;
+    game.grapplePoint = enemyPos.clone().setY(enemyPos.y + GRAPPLE_TUNING.bossAttachHeight);
+    game.grappleState = "hooked";
+    return true;
+  }
+
+  const distance = playerPos.distanceTo(enemyPos);
+  if (distance <= GRAPPLE_TUNING.enemyPullStopDistance) {
+    return true;
+  }
+
+  const direction = enemyPos.sub(playerPos).normalize();
+  const targetPos = playerPos.clone().addScaledVector(direction, GRAPPLE_TUNING.enemyPullStopDistance);
+  enemy.group.position.copy(targetPos);
+  enemy.serverX = targetPos.x;
+  enemy.serverY = targetPos.y;
+  enemy.serverZ = targetPos.z;
+  game.socket?.emit("grappleEnemy", {
+    enemyId: enemy.id,
+    x: targetPos.x,
+    y: targetPos.y,
+    z: targetPos.z,
+    weapon: game.currentWeapon,
+  });
+  return true;
+}
+
 // ── Grappling hook ────────────────────────────────────────────────────────────
 
 export function fireGrapple() {
@@ -41,42 +106,11 @@ export function fireGrapple() {
 
   if (game.grappleCooldown > 0) return;
 
-  if (game.currentWeapon === "grapple") {
-    const enemyGroups = game.enemies.map((enemy) => enemy.group);
-    const enemyRaycaster = new THREE.Raycaster();
-    enemyRaycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
-    enemyRaycaster.far = 45;
-    const enemyHits = enemyRaycaster.intersectObjects(enemyGroups, true);
-    if (enemyHits.length > 0) {
-      const enemy = findEnemyFromHit(enemyHits[0].object);
-      if (enemy) {
-        const playerPos = game.visuals.player.playerGroup.position;
-        const enemyPos = enemy.group.position.clone();
-        const hitPoint = enemyHits[0].point.clone();
-        processHit(enemy, 80, hitPoint);
-        if (enemy.type !== "boss") {
-          const distance = playerPos.distanceTo(enemyPos);
-          if (distance > 8) {
-            const direction = enemyPos.clone().sub(playerPos).normalize();
-            const targetPos = playerPos.clone().addScaledVector(direction, 8);
-            enemy.group.position.copy(targetPos);
-            game.socket?.emit("grappleEnemy", {
-              enemyId: enemy.id,
-              x: enemy.group.position.x,
-              y: enemy.group.position.y,
-              z: enemy.group.position.z,
-              weapon: game.currentWeapon,
-            });
-          }
-        }
-        return;
-      }
-    }
-  }
+  if (tryGrappleEnemyPull()) return;
 
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
-  raycaster.far = 45;
+  raycaster.far = GRAPPLE_TUNING.maxDistance;
 
   const arenaChildren = game.arenaGroup ? game.arenaGroup.children : [];
   const hits = raycaster.intersectObjects(arenaChildren, true);
@@ -100,7 +134,7 @@ export function fireGrapple() {
   if (!attachPoint) return;
 
   const dist = game.visuals.player.playerGroup.position.distanceTo(attachPoint);
-  if (dist < 2) return; // too close
+  if (dist < GRAPPLE_TUNING.minAttachDistance) return; // too close
 
   game.grapplePoint = attachPoint;
   game.grappleState = "hooked";
@@ -109,7 +143,8 @@ export function fireGrapple() {
 function releaseGrapple() {
   game.grappleState = "idle";
   game.grapplePoint = null;
-  game.grappleCooldown = 0.8;
+  game.grappleEnemyId = null;
+  game.grappleCooldown = GRAPPLE_TUNING.releaseCooldown;
   if (game.visuals.grapple) {
     game.visuals.grapple.hookMesh.visible = false;
     game.visuals.grapple.rope.visible = false;
@@ -128,6 +163,15 @@ export function updateGrapple() {
     return;
   }
 
+  if (game.grappleEnemyId) {
+    const grappleEnemy = game.enemies.find((enemy) => enemy.id === game.grappleEnemyId);
+    if (!grappleEnemy || grappleEnemy.hp <= 0) {
+      releaseGrapple();
+      return;
+    }
+    game.grapplePoint = grappleEnemy.group.position.clone().setY(grappleEnemy.group.position.y + GRAPPLE_TUNING.bossAttachHeight);
+  }
+
   // Cancel if player died
   if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
     releaseGrapple();
@@ -141,13 +185,12 @@ export function updateGrapple() {
   const dz = hook.z - playerPos.z;
   const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-  if (dist < 1.5) {
+  if (dist < GRAPPLE_TUNING.releaseDistance) {
     releaseGrapple();
     return;
   }
 
-  // Pull player toward attach point at 60 u/s
-  const speed = 60;
+  const speed = GRAPPLE_TUNING.pullSpeed;
   const ndx = dx / dist, ndy = dy / dist, ndz = dz / dist;
   playerPos.x += ndx * speed * game.dt;
   playerPos.y = Math.max(0, playerPos.y + ndy * speed * game.dt);
@@ -290,7 +333,8 @@ export function tryJump() {
   if (game.grappleState === "hooked") {
     game.grappleState = "idle";
     game.grapplePoint = null;
-    game.grappleCooldown = 0.5;
+    game.grappleEnemyId = null;
+    game.grappleCooldown = GRAPPLE_TUNING.jumpReleaseCooldown;
   }
 
   game.isGrounded = false;
@@ -338,7 +382,9 @@ export function updatePlayer(actions) {
 
   if (game.isMoving) {
     moveDirection.normalize();
-    const speed = game.isSprinting ? 6 * 2.9 : game.isCrouching ? 2.7 : 6;
+    const speed = game.isSprinting
+      ? PLAYER_MOVEMENT.walkSpeed * PLAYER_MOVEMENT.sprintMultiplier
+      : game.isCrouching ? PLAYER_MOVEMENT.crouchSpeed : PLAYER_MOVEMENT.walkSpeed;
     game.visuals.player.playerGroup.position.addScaledVector(moveDirection, speed * game.dt);
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;
@@ -380,7 +426,9 @@ export function updatePlayer(actions) {
     } else {
       game.playerVelY = 0;
       game.isGrounded = false;
-      const climbSpeed = game.keys.KeyW ? 4.5 : game.keys.KeyS ? -4.5 : 0;
+      const climbSpeed = game.keys.KeyW
+        ? PLAYER_MOVEMENT.ladderClimbSpeed
+        : game.keys.KeyS ? -PLAYER_MOVEMENT.ladderClimbSpeed : 0;
       pp.y = Math.max(0, Math.min(activeLadder.yMax, pp.y + climbSpeed * game.dt));
     }
   }
@@ -490,8 +538,8 @@ function handleReload() {
 }
 
 function handleRevive(actions) {
-  const reviveRange = 2.8;
-  const reviveTime = 3.0;
+  const reviveRange = REVIVE_TUNING.range;
+  const reviveTime = REVIVE_TUNING.holdTime;
   let nearDowned = null;
 
   if (game.localPlayerIsAlive && !game.localPlayerIsDowned && game.state === "PLAYING") {

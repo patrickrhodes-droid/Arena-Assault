@@ -43,7 +43,7 @@ The lobby is split into three screens:
 |---|---|---|
 | **Combat Arena** | Industrial | The original 144 × 144 unit arena with metal staircases, crate clusters, bunkers, and 4 double-height sniper towers. Cyan accent lighting. |
 | **Dust Bowl** | Desert | Sandy, open layout with ruined archways, stone pillars, oasis compounds, low sand-dune ridges, and two stepped-pyramid sniper platforms. Warm amber lighting. |
-| **Downtown** | City (Night) | Tight urban grid with four large climbable buildings, a central plaza, jersey barriers, alleyways, dumpsters, and neon accent lights. Dark atmosphere with blue-white street lamps. |
+| **Downtown** | City (Day) | Tight urban grid with four large climbable buildings, a central plaza, jersey barriers, alleyways, dumpsters, and warm combat-zone accents. Bright sunlit skyline with clear visibility. |
 
 All maps share the same collision, ladder-climb, and spawn systems — only the geometry, colours, fog, sky, and lighting differ.
 
@@ -60,7 +60,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | 1 / 2 / 3 / 4 / 5 / 6 | Select weapon slot (co-op) |
 | Q | Cycle weapon (co-op) |
 | Mouse | Aim |
-| Left click | Fire |
+| Left click | Fire / use equipped weapon |
 | Right click | Aim down sights |
 | R | Reload |
 | G | Fire / release grappling hook |
@@ -76,7 +76,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
 | 4 | Sniper Rifle | 500 | Slow fire, heavy ADS zoom |
 | 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: 250 per swing |
-| 6 | Grapple Hook | 80 | Hits enemies for 80 damage; pulls non-boss enemies until they are 8 units away |
+| 6 | Grapple Hook | 80 | Pulls you to walls or cover; if aimed at an enemy it deals 80 damage and yanks non-boss enemies to 8 units away |
 
 ## PvP Gun Game mode
 
@@ -168,17 +168,17 @@ If you change one of these and gameplay depends on the server too, update both f
 |---|---:|---|
 | Base player max HP | 1000 | `public/src/gameConstants.js` -> `P_MAX_HP`, and `server.js` -> `P_MAX_HP` |
 | Co-op HP scaling per player | `round(P_MAX_HP / playerCount)` | `server.js` inside `socket.on('startMatch')` |
-| Base walk speed | 6 | `public/src/player.js` in `updatePlayer()` |
-| Sprint multiplier | `6 * 1.55` | `public/src/player.js` in `updatePlayer()` |
-| Crouch speed | 2.7 | `public/src/player.js` in `updatePlayer()` |
+| Base walk speed | 6 | `public/src/config.js` -> `PLAYER_MOVEMENT.walkSpeed` |
+| Sprint multiplier | 2.9 | `public/src/config.js` -> `PLAYER_MOVEMENT.sprintMultiplier` |
+| Crouch speed | 2.7 | `public/src/config.js` -> `PLAYER_MOVEMENT.crouchSpeed` |
 | Jump velocity | 11.2 | `public/src/gameConstants.js` -> `JUMP_VEL` |
 | Gravity | 20 | `public/src/gameConstants.js` -> `GRAV` |
-| Grapple pull speed | 18 | `public/src/player.js` in `updateGrapple()` |
-| Grapple max attach distance | 45 | `public/src/player.js` in `fireGrapple()` (`raycaster.far = 45`) |
-| Grapple cooldown after release | 0.8 s | `public/src/player.js` in `releaseGrapple()` |
-| Grapple cooldown after jump-release | 0.5 s | `public/src/player.js` in `tryJump()` |
-| Revive range | 2.8 | `public/src/player.js` -> `reviveRange` |
-| Revive hold time | 3.0 s | `public/src/player.js` -> `reviveTime` |
+| Grapple pull speed | 60 | `public/src/config.js` -> `GRAPPLE_TUNING.pullSpeed` |
+| Grapple max attach distance | 45 | `public/src/config.js` -> `GRAPPLE_TUNING.maxDistance` |
+| Grapple cooldown after release | 0.8 s | `public/src/config.js` -> `GRAPPLE_TUNING.releaseCooldown` |
+| Grapple cooldown after jump-release | 0.5 s | `public/src/config.js` -> `GRAPPLE_TUNING.jumpReleaseCooldown` |
+| Revive range | 2.8 | `public/src/config.js` -> `REVIVE_TUNING.range` |
+| Revive hold time | 3.0 s | `public/src/config.js` -> `REVIVE_TUNING.holdTime` |
 | Downed bleed-out timer | 45 s | `public/src/main.js` where `game.downedTime / 45` is used |
 | Health pack heal amount | 150 | `public/src/network.js` in `healthPackRemoved` |
 
@@ -203,7 +203,7 @@ Current default weapon values:
 | Shotgun | 8 | 0.72 s | 2.2 s | 72 per pellet | 8 pellets, falls to 8 min damage |
 | Sniper | 5 | 1.15 s | 2.6 s | 500 | Bullet speed 160 |
 | Sword | 1 | 0.4 s | 0.1 s | 500 | Range 4.5, arc 1.2 |
-| Grapple | - | 0.9 s | - | 80 | No ammo; hits enemies and brings them to 8 units away |
+| Grapple | - | 0.9 s | - | 80 | No ammo; pulls you to world geometry or drags non-boss enemies to 8 units away |
 
 Related weapon logic:
 
@@ -222,7 +222,7 @@ Related weapon logic:
 
 ### Enemy stats
 
-The server-side values in `server.js` are the ones that actually matter for gameplay. Matching constructors also exist in `public/src/enemies.js` so spawned visuals start with the same stats.
+The server-side values in `server.js` are the ones that actually matter for gameplay. The client now mirrors most enemy stat blocks from central config objects in `public/src/config.js`, so you can tune there first and then copy matching changes to `server.js` when needed.
 
 #### Skeleton
 
@@ -232,9 +232,11 @@ The server-side values in `server.js` are the ones that actually matter for game
 | Stat | Current value |
 |---|---:|
 | HP | 1 |
-| Speed | `(9 + random * 2.5) * 0.7` |
+| Speed | `9 + random * 2.5` |
 | Melee damage | `8 + wave` |
 | Attack timer seed | `random * 0.4` |
+
+Client mirror location: `public/src/config.js` -> `SKELETON_TUNING`
 
 #### Dog
 
@@ -247,6 +249,8 @@ The server-side values in `server.js` are the ones that actually matter for game
 | Speed | `8 + random * 2 + wave * 0.3` |
 | Melee damage | `12 + wave * 2` |
 | Attack timer seed | `random * 0.5` |
+
+Client mirror location: `public/src/config.js` -> `DOG_TUNING`
 
 #### Soldier
 
@@ -262,10 +266,7 @@ The server-side values in `server.js` are the ones that actually matter for game
 | Bullet speed | 28 |
 | Bullet life | 4 s |
 
-Soldier bullet damage/speed are defined in:
-
-- `server.js` in `tickEnemies()`
-- `public/src/enemies.js` -> `ENEMY_BULLET_DMG` and `ENEMY_BULLET_SPD`
+Client mirror location: `public/src/config.js` -> `SOLDIER_TUNING`
 
 #### Titan Brute (boss)
 
@@ -288,6 +289,7 @@ Soldier bullet damage/speed are defined in:
 Boss tuning locations:
 
 - `server.js` top-level constants: `BOSS_ATTACK_REACH`, `BOSS_ATTACK_FREQ`, `BOSS_WINDUP`, `BOSS_SWING`, `BOSS_ESCAPE_GRAV`, `BOSS_ESCAPE_HEIGHT`, `BOSS_ESCAPE_FWD_SPD`
+- `public/src/config.js` -> `BOSS_TUNING` for the mirrored HP, move speed, and damage values used by the client
 - `public/src/enemies.js` top-level constants for the visual/client-owned mirror
 
 ### Wave and spawn pacing

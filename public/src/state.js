@@ -97,6 +97,7 @@ export const game = {
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"
   grapplePoint: null,     // THREE.Vector3 when hooked
+  grappleEnemyId: null,
   grappleCooldown: 0,
   keys: {},
   scene: null,
@@ -138,6 +139,7 @@ export function resetSessionState() {
   game.localPlayerIsSpectating = false;
   game.grappleState = "idle";
   game.grapplePoint = null;
+  game.grappleEnemyId = null;
   game.grappleCooldown = 0;
   game.waveState = "WAIT";
   game.waveTmr = 2.5;

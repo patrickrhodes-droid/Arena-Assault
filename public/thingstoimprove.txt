@@ -49,7 +49,7 @@ add assets from asset packs to the maps
 I have an issue where i cant shoot on top of structures that have ladders , 
 ithink its because the ladder technically goes up past the top of the structure
 , also the bots can hit you if you on something , 
-change the bot melee damage / hit detection so that its authenticated on the individual players side using three.js collision logic 
+change the bot melee damage / hit detection so that its authenticated on the individual players side (i dont care about cheating the game is only for playing lan with mates nothing serious)
  also the city map is far too dark make it a sunny urban warzone type vibe and try to change any references in the readme or other places to it being a dark moody nightime city wherever in the code
- since making the grapple a weapon , selecting it doesnt work and it kinda freezes the game it also still activates on G ,
-  it should pull you to walls and pull enemies to you , th epulling to walls already works well when you press g but when added as a weapon it breaks
+ since making the grapple a weapon , selecting it doesnt work and it kinda freezes the game it also still works well when G is clicked , it just needs to do that 
+  it should pull you to walls and pull enemies to you but hold off on integrating the pulling enemies towards you for now , thepulling to walls already works well when you press g but when added as a weapon it breaks

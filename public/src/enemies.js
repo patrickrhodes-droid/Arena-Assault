@@ -1,6 +1,15 @@
 import * as THREE from "three";
 
-import { ARENA_SIZE, EPS, HALF, P_RAD } from "./config.js";
+import {
+  ARENA_SIZE,
+  BOSS_TUNING,
+  DOG_TUNING,
+  EPS,
+  HALF,
+  P_RAD,
+  SKELETON_TUNING,
+  SOLDIER_TUNING,
+} from "./config.js";
 import { game } from "./state.js";
 import { resolveCircleBox } from "./collision.js";
 import { processHit, spawnBullet, spawnParticles } from "./combat.js";
@@ -48,8 +57,8 @@ const BOSS_ESCAPE_GRAVITY = 180;
 const BOSS_ESCAPE_JUMP_VELOCITY = Math.sqrt(2 * BOSS_ESCAPE_GRAVITY * BOSS_ESCAPE_HEIGHT);
 const BOSS_ESCAPE_FORWARD_SPEED = 14;
 
-const ENEMY_BULLET_SPD = 28;
-const ENEMY_BULLET_DMG = 25;
+const ENEMY_BULLET_SPD = SOLDIER_TUNING.bulletSpeed;
+const ENEMY_BULLET_DMG = SOLDIER_TUNING.bulletDamage;
 const OWNED_SYNC_RATE = 0.05; // 20 Hz sync of owned enemy positions to server
 
 let ownedSyncTmr = 0;
@@ -94,7 +103,8 @@ export function createSoldier(position, id = Math.random()) {
   let mixer = null;
   let flashPart = null;
   let walkAction = null;   // CharacterArmature|Run
-  let shootAction = null;  // CharacterArmature|Gun_Shoot
+  let shootAction = null;  // CharacterArmature|Run_Shoot / Gun_Shoot
+  let deathAction = null;  // CharacterArmature|Death
   let currentAction = null;
 
   const swatGltf = game.shared.swatGltf;
@@ -106,12 +116,16 @@ export function createSoldier(position, id = Math.random()) {
     group.add(model);
     mixer = new THREE.AnimationMixer(model);
     const anims = swatGltf.animations ?? [];
-    const runClip   = anims.find((a) => a.name === "CharacterArmature|Run")
-                   ?? anims.find((a) => /run|walk/i.test(a.name));
-    const shootClip = anims.find((a) => a.name === "CharacterArmature|Gun_Shoot")
-                   ?? anims.find((a) => /shoot|gun/i.test(a.name));
+    const runClip = anims.find((a) => a.name === "CharacterArmature|Run")
+      ?? anims.find((a) => /run|walk/i.test(a.name));
+    const shootClip = anims.find((a) => a.name === "CharacterArmature|Run_Shoot")
+      ?? anims.find((a) => a.name === "CharacterArmature|Gun_Shoot")
+      ?? anims.find((a) => /shoot|gun/i.test(a.name));
+    const deathClip = anims.find((a) => a.name === "CharacterArmature|Death")
+      ?? anims.find((a) => /death|die/i.test(a.name));
     if (runClip)   { walkAction  = mixer.clipAction(runClip);   walkAction.play();  currentAction = walkAction; }
     if (shootClip) { shootAction = mixer.clipAction(shootClip); }
+    if (deathClip) { deathAction = mixer.clipAction(deathClip); }
   } else {
     // Placeholder box model — replaced automatically when SWAT.glb finishes loading
     const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.35), enemyMaterials.body);
@@ -144,10 +158,17 @@ export function createSoldier(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = Math.round((58 + game.wave * 12) * Math.pow(1.1, game.wave));
+  const hpMax = Math.round(
+    (SOLDIER_TUNING.baseHp + game.wave * SOLDIER_TUNING.hpPerWave) * Math.pow(SOLDIER_TUNING.hpScale, game.wave),
+  );
   const { hpBar, hpFill } = createHealthBar(game.shared.hpFgMatSoldier);
-  const speed = 3.5 + Math.random() * 1.5 + game.wave * 0.2;
-  const fireInterval = Math.max(0.8, 2.2 - game.wave * 0.1) + Math.random() * 0.4;
+  const speed = SOLDIER_TUNING.baseSpeed
+    + Math.random() * SOLDIER_TUNING.speedRandom
+    + game.wave * SOLDIER_TUNING.speedWaveBonus;
+  const fireInterval = Math.max(
+    SOLDIER_TUNING.fireIntervalMin,
+    SOLDIER_TUNING.fireIntervalBase - game.wave * SOLDIER_TUNING.fireIntervalWaveReduction,
+  ) + Math.random() * SOLDIER_TUNING.fireIntervalRandom;
 
   game.enemies.push({
     id,
@@ -157,6 +178,7 @@ export function createSoldier(position, id = Math.random()) {
     flashPart,
     walkAction,
     shootAction,
+    deathAction,
     currentAction,
     shootAnimTmr: 0,
     radius: 0.6,
@@ -244,9 +266,11 @@ export function createDog(position, id = Math.random()) {
   group.position.copy(position);
   game.scene.add(group);
 
-  const hpMax = Math.round((46 + game.wave * 10) * Math.pow(1.1, game.wave));
+  const hpMax = Math.round(
+    (DOG_TUNING.baseHp + game.wave * DOG_TUNING.hpPerWave) * Math.pow(DOG_TUNING.hpScale, game.wave),
+  );
   const { hpBar, hpFill } = createHealthBar(game.shared.hpFgMatDog);
-  const speed = 8 + Math.random() * 2 + game.wave * 0.3;
+  const speed = DOG_TUNING.baseSpeed + Math.random() * DOG_TUNING.speedRandom + game.wave * DOG_TUNING.speedWaveBonus;
 
   game.enemies.push({
     id,
@@ -262,7 +286,7 @@ export function createDog(position, id = Math.random()) {
     hp: hpMax,
     maxHp: hpMax,
     spd: speed,
-    atkDmg: 12 + game.wave * 2,
+    atkDmg: DOG_TUNING.attackDamageBase + game.wave * DOG_TUNING.attackDamagePerWave,
     atkTmr: 0,
     avoidCheckTmr: 2.0,
     avoidTmr: 0,
@@ -330,7 +354,7 @@ export function createBoss(position, id = Math.random(), options = {}) {
   game.scene.add(group);
 
   const hpMultiplier = options.hpMultiplier ?? 1;
-  const hpMax = Math.round(3600 * Math.pow(1.1, game.wave) * hpMultiplier);
+  const hpMax = Math.round(BOSS_TUNING.baseHp * Math.pow(BOSS_TUNING.hpScale, game.wave) * hpMultiplier);
   const hpBar = new THREE.Group();
   const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
   const hpFill = new THREE.Mesh(
@@ -358,8 +382,8 @@ export function createBoss(position, id = Math.random(), options = {}) {
     radius: 1.45,
     hp: hpMax,
     maxHp: hpMax,
-    spd: 12,
-    atkDmg: 100 + game.wave * 10,
+    spd: BOSS_TUNING.moveSpeed,
+    atkDmg: BOSS_TUNING.attackDamageBase + game.wave * BOSS_TUNING.attackDamagePerWave,
     atkTmr: 0,
     swingTmr: 0,
     windupTmr: 0,
@@ -418,10 +442,10 @@ export function createSkeleton(position, id = Math.random()) {
     mixer,
     flashPart: null,
     radius: 0.4,
-    hp: 1,
-    maxHp: 1,
-    spd: 9 + Math.random() * 2.5,
-    atkDmg: 8 + game.wave,
+    hp: SKELETON_TUNING.hp,
+    maxHp: SKELETON_TUNING.hp,
+    spd: SKELETON_TUNING.baseSpeed + Math.random() * SKELETON_TUNING.speedRandom,
+    atkDmg: SKELETON_TUNING.attackDamageBase + game.wave * SKELETON_TUNING.attackDamagePerWave,
     atkTmr: 0,
     avoidCheckTmr: 2.0,
     avoidTmr: 0,
@@ -459,6 +483,34 @@ function playSkeletonDeathEffect(position, rotationY) {
   game.skeletonCorpses.push({ model, mixer, elapsed: 0, duration: deathClip.duration + 0.4 });
 }
 
+function playSwatDeathEffect(position, rotationY) {
+  const gltf = game.shared.swatGltf;
+  if (!gltf || !gltf.animations?.length || game.skeletonCorpses.length >= MAX_SKELETON_CORPSES) {
+    return;
+  }
+
+  const deathClip = gltf.animations.find((clip) => clip.name === "CharacterArmature|Death")
+    ?? gltf.animations.find((clip) => /death|die/i.test(clip.name));
+  if (!deathClip) {
+    return;
+  }
+
+  const model = cloneSkinnedScene(gltf.scene);
+  model.scale.setScalar(1.7);
+  model.position.copy(position);
+  model.rotation.y = rotationY + Math.PI;
+  model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+  game.scene.add(model);
+
+  const mixer = new THREE.AnimationMixer(model);
+  const action = mixer.clipAction(deathClip);
+  action.setLoop(THREE.LoopOnce);
+  action.clampWhenFinished = true;
+  action.play();
+
+  game.skeletonCorpses.push({ model, mixer, elapsed: 0, duration: deathClip.duration + 0.45 });
+}
+
 export function removeEnemy(index) {
   const enemy = game.enemies[index];
   if (!enemy) {
@@ -468,6 +520,8 @@ export function removeEnemy(index) {
   if (enemy.type === "skeleton" && enemy.mixer) {
     playSkeletonDeathEffect(enemy.group.position, enemy.group.rotation.y);
     enemy.mixer.stopAllAction();
+  } else if (enemy.type === "soldier" && game.shared.swatGltf) {
+    playSwatDeathEffect(enemy.group.position, enemy.group.rotation.y);
   }
 
   game.scene.remove(enemy.group);
@@ -664,12 +718,11 @@ function updateDetourState(enemy, pos, targetPos, movedDistSq, attackRange) {
 }
 
 function applyMeleeDamage(enemy, target, damage) {
-  if (target.isLocal) game.audio.damage();
   const pos = enemy.group.position;
   const dx = target.pos.x - pos.x, dz = target.pos.z - pos.z;
   const len = Math.sqrt(dx * dx + dz * dz) || 1;
   const isBoss = enemy.type === "boss";
-  game.socket?.emit("enemyMeleeHit", {
+  game.socket?.emit("enemyMeleeAttempt", {
     enemyId: enemy.id, targetId: target.id, damage,
     ex: pos.x, ey: pos.y, ez: pos.z,
     knockbackX: isBoss ? (dx / len) * 185 : 0,
@@ -701,19 +754,40 @@ function runOwnedEnemyAI(enemy) {
   const ndx = dx / dist, ndz = dz / dist;
   enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
   if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
-  else if (enemy.type === "dog")      ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.5, 1.0, 12);
-  else if (enemy.type === "skeleton") ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, 2.0, 0.8, 12);
+  else if (enemy.type === "dog") {
+    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12);
+  } else if (enemy.type === "skeleton") {
+    ownedMeleeAI(
+      enemy,
+      pos,
+      closest,
+      dist,
+      ndx,
+      ndz,
+      SKELETON_TUNING.attackRange,
+      SKELETON_TUNING.attackFrequency,
+      12,
+    );
+  }
   else if (enemy.type === "boss")     ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
 }
 
 function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
-  const moveSpd = dist > 14 ? enemy.spd : dist < 7 ? -enemy.spd * 0.4 : 0;
+  const moveSpd = dist > SOLDIER_TUNING.kiteAdvanceDistance
+    ? enemy.spd
+    : dist < SOLDIER_TUNING.kiteRetreatDistance ? -enemy.spd * SOLDIER_TUNING.retreatSpeedMultiplier : 0;
   const prevX = pos.x;
   const prevZ = pos.z;
   const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
   const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
   moveEnemyWithCollision(pos, dirX, dirZ, moveSpd);
-  updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, 7);
+  updateDetourState(
+    enemy,
+    pos,
+    closest.pos,
+    (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2,
+    SOLDIER_TUNING.kiteRetreatDistance,
+  );
   enemy.walkT = (enemy.walkT || 0) + game.dt * 8;
 
   // Tick shoot animation timer; blend back to run when it expires
@@ -723,23 +797,32 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
     crossfadeToAction(enemy, enemy.walkAction, 0.2);
   }
 
-  if (dist < 50) {
+  if (dist < SOLDIER_TUNING.attackRange) {
     enemy.fireTmr = (enemy.fireTmr || 0) - game.dt;
     if (enemy.fireTmr <= 0) {
       enemy.fireTmr = enemy.fireInt || 1.5;
       // Switch to shoot animation for ~0.7 s
       if (enemy.shootAction) {
         crossfadeToAction(enemy, enemy.shootAction, 0.08);
-        enemy.shootAnimTmr = 0.7;
+        enemy.shootAnimTmr = SOLDIER_TUNING.shootAnimDuration;
       }
       const spreadH = (Math.random() - 0.5) * 0.24;
-      const bLen = Math.sqrt((ndx + spreadH) ** 2 + (ndz + spreadH) ** 2) || 1;
-      const bDir = new THREE.Vector3((ndx + spreadH) / bLen, 0, (ndz + spreadH) / bLen);
+      const horizontalX = ndx + spreadH;
+      const horizontalZ = ndz + spreadH;
+      const horizontalLen = Math.sqrt(horizontalX ** 2 + horizontalZ ** 2) || 1;
+      const verticalDir = dist > 0 ? ((closest.pos.y + 1.2) - (pos.y + 1.2)) / dist : 0;
+      const bDir = new THREE.Vector3(horizontalX / horizontalLen, verticalDir, horizontalZ / horizontalLen).normalize();
       const bPos = pos.clone().addScaledVector(bDir, 0.6).setY(1.2);
-      spawnBullet(bPos.clone(), bDir.clone(), false, { damage: ENEMY_BULLET_DMG, spd: ENEMY_BULLET_SPD, life: 4 }, false);
+      spawnBullet(
+        bPos.clone(),
+        bDir.clone(),
+        false,
+        { damage: ENEMY_BULLET_DMG, spd: ENEMY_BULLET_SPD, life: SOLDIER_TUNING.bulletLife },
+        false,
+      );
       game.socket?.emit("ownerEnemyFired", {
         enemyId: enemy.id, x: bPos.x, y: bPos.y, z: bPos.z,
-        dx: bDir.x, dy: 0, dz: bDir.z, spd: ENEMY_BULLET_SPD, life: 4,
+        dx: bDir.x, dy: bDir.y, dz: bDir.z, spd: ENEMY_BULLET_SPD, life: SOLDIER_TUNING.bulletLife,
         damage: ENEMY_BULLET_DMG,
       });
     }

@@ -213,6 +213,9 @@ export function bindMenuControls(actions) {
 
   game.dom.invincibilityToggle.addEventListener("change", () => {
     game.invincibilityMode = game.dom.invincibilityToggle.checked;
+    if (game.isHost) {
+      game.socket?.emit("hostSetInvincibility", { enabled: game.invincibilityMode });
+    }
   });
 }
 

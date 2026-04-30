@@ -81,7 +81,10 @@ const actions = {
   startMatch: () => {
     if (game.isHost) {
       game.audio.init();
-      game.socket?.emit("startMatch", { startingWave: game.startingWave || 1 });
+      game.socket?.emit("startMatch", {
+        startingWave: game.startingWave || 1,
+        invincibility: Boolean(game.invincibilityMode),
+      });
     }
   },
   toggleView: () => {

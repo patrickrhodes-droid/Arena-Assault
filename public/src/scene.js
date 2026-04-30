@@ -488,15 +488,15 @@ function buildArenaDesert() {
 }
 
 function buildArenaCity() {
-  game.scene.fog = new THREE.FogExp2(0x140f24, 0.0042);
-  game.scene.background = new THREE.Color(0x140f24);
-  addSun(0xc8b7ff, 1.1, 20, 70, -30);
-  addSun(0xff6db2, 0.55, -38, 42, 24);
-  const cityHemi = new THREE.HemisphereLight(0x756dff, 0x1c1330, 0.65);
+  game.scene.fog = new THREE.FogExp2(0xc9d8e4, 0.0018);
+  game.scene.background = new THREE.Color(0x87b8e8);
+  addSun(0xfff4d6, 2.85, 34, 78, -24);
+  addSun(0xffd1a8, 0.8, -18, 36, 30);
+  const cityHemi = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 1.1);
   game.scene.add(cityHemi);
   game.arenaLights.push(cityHemi);
 
-  // Street-lamp pools.
+  // Sunlit street bounce.
   const lampPositions = [
     [-30, -30], [30, -30], [-30, 30], [30, 30],
     [0, -48], [0, 48], [-48, 0], [48, 0],
@@ -504,35 +504,36 @@ function buildArenaCity() {
     [0, 0], [-50, -50], [50, -50], [-50, 50], [50, 50],
   ];
   for (const [x, z] of lampPositions) {
-    const pl = new THREE.PointLight(0xffc278, 2.4, 34);
-    pl.position.set(x, 6, z);
+    const pl = new THREE.PointLight(0xffd19a, 1.15, 26);
+    pl.position.set(x, 4.5, z);
     game.scene.add(pl);
     game.arenaLights.push(pl);
   }
-  // Neon accent lights.
+
+  // Warm combat-zone accents.
   for (const [x, z, col] of [
-    [-15, 0, 0x6d7cff], [15, 0, 0xff4fa3],
-    [0, -15, 0x27d3ff], [0, 15, 0xa855ff],
-    [-40, -40, 0x7b8cff], [40, 40, 0xff5db1],
-    [40, -40, 0x37d7ff], [-40, 40, 0xc86bff],
+    [-15, 0, 0xff9a3d], [15, 0, 0xff6f3c],
+    [0, -15, 0xffb347], [0, 15, 0xe17b2d],
+    [-40, -40, 0xf7b267], [40, 40, 0xff8b4d],
+    [40, -40, 0xffc15a], [-40, 40, 0xd98a3a],
   ]) {
-    const nl = new THREE.PointLight(col, 2.8, 30);
+    const nl = new THREE.PointLight(col, 1.1, 18);
     nl.position.set(x, 2, z);
     game.scene.add(nl);
     game.arenaLights.push(nl);
   }
 
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x1c1a2a, roughness: 0.86 });
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x7d7a74, roughness: 0.9 });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x4e4663, roughness: 0.82 });
-  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x241d38, roughness: 0.86 });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x586078, roughness: 0.4, metalness: 0.65 });
-  const neonMat = new THREE.MeshStandardMaterial({ color: 0xff4fa3, emissive: 0xff4fa3, emissiveIntensity: 1.2 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1830, roughness: 0.86 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0xa39a8b, roughness: 0.84 });
+  const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x6b6258, roughness: 0.88 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x7b8076, roughness: 0.48, metalness: 0.55 });
+  const neonMat = new THREE.MeshStandardMaterial({ color: 0xff9a3d, emissive: 0xff9a3d, emissiveIntensity: 0.7 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xb7a48b, roughness: 0.88 });
 
   buildWalls(wallMat, neonMat);
 
@@ -800,6 +801,15 @@ function buildWeaponVisuals() {
         fpScale: [0.92, 0.95, 1.85],
         fpMuzzleZ: -0.88,
       },
+      grapple: {
+        tpPos: [0.48, 1.3, -0.22],
+        tpScale: [0.8, 0.8, 0.7],
+        tpMuzzleZ: -0.38,
+        fpPos: [0.22, -0.24, -0.42],
+        fpAdsPos: [0.01, -0.12, -0.34],
+        fpScale: [0.8, 0.8, 0.72],
+        fpMuzzleZ: -0.38,
+      },
     },
   };
 
@@ -809,6 +819,7 @@ function buildWeaponVisuals() {
     shotgun: { file: "/assets/models/Shotgun.glb",       scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
+    grapple: { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
   };
 
   const glbGroups = {};
@@ -863,11 +874,31 @@ function applyEnemyGlb(enemy, gltf, scale) {
 
   const mixer = new THREE.AnimationMixer(model);
   if (gltf.animations?.length > 0) {
-    const walkClip = gltf.animations.find((a) => a.name === "Walk")
-      ?? gltf.animations.find((a) => a.name === "CharacterArmature|Run")
-      ?? gltf.animations.find((a) => /walk|run|gallop/i.test(a.name))
-      ?? gltf.animations[0];
-    mixer.clipAction(walkClip).play();
+    if (enemy.type === "soldier") {
+      const runClip = gltf.animations.find((a) => a.name === "CharacterArmature|Run")
+        ?? gltf.animations.find((a) => /run|walk/i.test(a.name))
+        ?? gltf.animations[0];
+      const shootClip = gltf.animations.find((a) => a.name === "CharacterArmature|Run_Shoot")
+        ?? gltf.animations.find((a) => a.name === "CharacterArmature|Gun_Shoot")
+        ?? gltf.animations.find((a) => /shoot|gun/i.test(a.name));
+      const deathClip = gltf.animations.find((a) => a.name === "CharacterArmature|Death")
+        ?? gltf.animations.find((a) => /death|die/i.test(a.name));
+      enemy.walkAction = runClip ? mixer.clipAction(runClip) : null;
+      enemy.shootAction = shootClip ? mixer.clipAction(shootClip) : null;
+      enemy.deathAction = deathClip ? mixer.clipAction(deathClip) : null;
+      if (enemy.walkAction) {
+        enemy.walkAction.play();
+        enemy.currentAction = enemy.walkAction;
+      }
+    } else {
+      const walkClip = gltf.animations.find((a) => a.name === "Walk")
+        ?? gltf.animations.find((a) => /walk|run|gallop/i.test(a.name))
+        ?? gltf.animations[0];
+      const walkAction = mixer.clipAction(walkClip);
+      walkAction.play();
+      enemy.walkAction = walkAction;
+      enemy.currentAction = walkAction;
+    }
   }
   enemy.mixer = mixer;
   enemy.flashPart = null; // can't flash individual GLB meshes easily

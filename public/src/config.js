@@ -13,6 +13,81 @@ export const LAND_SNAP = 0.35;
 export const LEDGE_GRACE = 0.35;
 export const DEFAULT_WEAPON = "pistol";
 
+export const PLAYER_MOVEMENT = {
+  walkSpeed: 6,
+  sprintMultiplier: 2.9,
+  crouchSpeed: 2.7,
+  ladderClimbSpeed: 4.5,
+};
+
+export const GRAPPLE_TUNING = {
+  maxDistance: 45,
+  minAttachDistance: 2,
+  pullSpeed: 60,
+  releaseDistance: 1.5,
+  releaseCooldown: 0.8,
+  jumpReleaseCooldown: 0.5,
+  enemyPullStopDistance: 8,
+  bossAttachHeight: 1.5,
+};
+
+export const REVIVE_TUNING = {
+  range: 2.8,
+  holdTime: 3.0,
+};
+
+export const SKELETON_TUNING = {
+  hp: 1,
+  baseSpeed: 9,
+  speedRandom: 2.5,
+  attackDamageBase: 8,
+  attackDamagePerWave: 1,
+  attackRange: 2.0,
+  attackFrequency: 0.8,
+};
+
+export const DOG_TUNING = {
+  baseHp: 46,
+  hpPerWave: 10,
+  hpScale: 1.1,
+  baseSpeed: 8,
+  speedRandom: 2,
+  speedWaveBonus: 0.3,
+  attackDamageBase: 12,
+  attackDamagePerWave: 2,
+  attackRange: 2.5,
+  attackFrequency: 1.0,
+};
+
+export const SOLDIER_TUNING = {
+  baseHp: 58,
+  hpPerWave: 12,
+  hpScale: 1.1,
+  baseSpeed: 3.5,
+  speedRandom: 1.5,
+  speedWaveBonus: 0.2,
+  fireIntervalMin: 0.8,
+  fireIntervalBase: 2.2,
+  fireIntervalWaveReduction: 0.1,
+  fireIntervalRandom: 0.4,
+  kiteAdvanceDistance: 14,
+  kiteRetreatDistance: 7,
+  retreatSpeedMultiplier: 0.4,
+  attackRange: 50,
+  bulletDamage: 25,
+  bulletSpeed: 28,
+  bulletLife: 4,
+  shootAnimDuration: 0.7,
+};
+
+export const BOSS_TUNING = {
+  baseHp: 3600,
+  hpScale: 1.1,
+  moveSpeed: 12,
+  attackDamageBase: 100,
+  attackDamagePerWave: 10,
+};
+
 export const WEAPON_DEFS = {
   pistol: {
     label: "SERVICE PISTOL",
@@ -107,7 +182,7 @@ export const WEAPON_DEFS = {
   grapple: {
     label: "GRAPPLE HOOK",
     mag: 0,
-    fireRate: 0.9,
+    fireRate: 0.3,
     reload: 0,
     pellets: 0,
     damage: 80,
@@ -126,7 +201,7 @@ export const WEAPON_DEFS = {
 
 export const CHARACTERS = {
   iestyn:  { name: "Iestyn",  headColor: 0xff5544, headScale: 1 },
-  patrick: { name: "Patrick", headColor: 0x55aaff, headScale: 1.0 },
+  patrick: { name: "Patrick", headColor: 0x55aaff, headScale: 1},
   will:    { name: "Will",    headColor: 0x66dd66, headScale: 1 },
   matt:    { name: "Matt",    headColor: 0xffcc33, headScale: 1 },
 };
@@ -158,9 +233,9 @@ export const MAP_DEFS = {
   },
   city: {
     name: "DOWNTOWN",
-    subtitle: "Urban Combat Zone",
-    accentColor: "#ff4fa3",
-    previewGradient: "linear-gradient(135deg,#140f24 0%,#2b1f48 50%,#0b0914 100%)",
+    subtitle: "Sunlit Urban Warzone",
+    accentColor: "#ff8a3d",
+    previewGradient: "linear-gradient(135deg,#8ec5f4 0%,#d8b27a 52%,#f2dfbf 100%)",
   },
 };
 

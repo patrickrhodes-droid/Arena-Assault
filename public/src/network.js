@@ -126,6 +126,13 @@ export function initNetworking(actions) {
     game.worldPaused = !!data?.paused;
   });
 
+  game.socket.on("invincibilityChanged", (data) => {
+    game.invincibilityMode = !!data?.enabled;
+    if (game.dom?.invincibilityToggle) {
+      game.dom.invincibilityToggle.checked = game.invincibilityMode;
+    }
+  });
+
   game.socket.on("enemyDamaged", (data) => {
     handleEnemyDamaged(data);
   });
@@ -142,8 +149,56 @@ export function initNetworking(actions) {
     enemy.serverZ = data.z;
   });
 
+  game.socket.on("enemyMeleeAttempt", (data) => {
+    if (!data || data.targetId !== game.socket.id || !game.localPlayerIsAlive || game.localPlayerIsDowned) {
+      return;
+    }
+    if (game.mode === "COOP" && game.invincibilityMode) {
+      return;
+    }
+
+    const enemy = game.enemies.find((entry) => entry.id === data.enemyId);
+    const enemyType = enemy?.type || data.enemyType || "skeleton";
+    const enemyReach = enemyType === "boss" ? 7.8 : enemyType === "dog" ? 2.5 : 2.0;
+    const enemyHeight = enemyType === "boss" ? 4.8 : enemyType === "dog" ? 1.0 : 1.35;
+    const enemyX = typeof data.ex === "number" ? data.ex : enemy?.group.position.x;
+    const enemyY = typeof data.ey === "number" ? data.ey : enemy?.group.position.y;
+    const enemyZ = typeof data.ez === "number" ? data.ez : enemy?.group.position.z;
+
+    if (typeof enemyX !== "number" || typeof enemyY !== "number" || typeof enemyZ !== "number") {
+      return;
+    }
+
+    const playerPos = game.visuals.player.playerGroup.position;
+    const dx = enemyX - playerPos.x;
+    const dz = enemyZ - playerPos.z;
+    if (dx * dx + dz * dz > enemyReach * enemyReach) return;
+    if (Math.abs(enemyY - playerPos.y) > enemyHeight) return;
+
+    game.hp = Math.max(0, game.hp - data.damage);
+    game.audio.damage();
+    actions.showDamage();
+    actions.addShake(0.15);
+    if (data.knockbackX || data.knockbackZ) {
+      game.knockbackX = data.knockbackX;
+      game.knockbackZ = data.knockbackZ;
+    }
+    if (data.enemyId) {
+      game.lastDamageShooter = data.enemyId;
+      game.lastDamageWeapon = "melee";
+    }
+    if (game.hp <= 0) {
+      game.hp = 0;
+      actions.playerDiedLocal();
+    }
+    actions.updateHUD();
+  });
+
   game.socket.on("playerDamaged", (data) => {
     if (data.targetId !== game.socket.id || !game.localPlayerIsAlive || game.localPlayerIsDowned) {
+      return;
+    }
+    if (game.mode === "COOP" && game.invincibilityMode) {
       return;
     }
     game.hp = Math.max(0, game.hp - data.damage);

@@ -18,9 +18,9 @@ export const EPS = 1e-6;
 
 export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "grapple"];
 
-export const PVP_WIN_KILLS = 13;
-export const PVP_KILLS_PER_WEAPON = 2;
-export const PVP_SWORD_KILLS_TO_WIN = 5;
+export const PVP_WIN_KILLS = 6;
+export const PVP_KILLS_PER_WEAPON = 1;
+export const PVP_SWORD_KILLS_TO_WIN = 2;
 export const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
 
 export const BOSS_ESCAPE_HEIGHT = 50 / 6;

@@ -1,4 +1,4 @@
-import { HALF, LEDGE_GRACE, P_RAD, EPS, WALL_H } from "./config.js";
+import { HALF, LEDGE_GRACE, P_RAD, EPS } from "./config.js";
 import { game } from "./state.js";
 
 export function closestOnBox(cx, cz, obstacle) {
@@ -70,13 +70,23 @@ export function getSupportHeight(prevY, nextY, px, pz) {
 }
 
 export function bulletHitObstacle(x, y, z) {
+  for (const ladder of game.ladders) {
+    if (
+      x >= ladder.xMin && x <= ladder.xMax
+      && z >= ladder.zMin && z <= ladder.zMax
+      && y >= 0 && y <= ladder.yMax
+    ) {
+      return false;
+    }
+  }
+
   for (const obstacle of game.oBs) {
     if (x >= obstacle.min.x && x <= obstacle.max.x && y >= 0 && y <= obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
       return true;
     }
   }
 
-  if (Math.abs(x) > HALF || Math.abs(z) > HALF || y > WALL_H || y < 0) {
+  if (Math.abs(x) > HALF || Math.abs(z) > HALF || y > HALF || y < 0) {
     return true;
   }
 
