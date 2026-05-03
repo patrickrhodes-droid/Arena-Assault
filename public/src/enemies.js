@@ -863,18 +863,23 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   const prevX = pos.x;
   const prevZ = pos.z;
   const inAttackRange = dist < 7.8;
+  const isSwinging = (enemy.swingTmr || 0) > 0;
+  // Move toward player at full speed when out of range; half-speed during wind-up so boss can close the gap.
   if (!inAttackRange) {
     moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+  } else if ((enemy.windupTmr || 0) > 0) {
+    moveEnemyWithCollision(pos, ndx, ndz, enemy.spd * 0.5);
   }
   const movedDistSq = (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2;
   enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
   if ((enemy.windupTmr || 0) > 0) {
     enemy.windupTmr -= game.dt;
-    if (enemy.windupTmr <= 0) enemy.swingTmr = 0.22;
-  } else if ((enemy.swingTmr || 0) > 0) {
+    if (enemy.windupTmr <= 0) { enemy.windupTmr = 0; enemy.swingTmr = 0.22; }
+  } else if (isSwinging) {
     const prev = enemy.swingTmr;
     enemy.swingTmr -= game.dt;
-    if (prev > 0.09 && enemy.swingTmr <= 0.09 && dist < 7.8) applyMeleeDamage(enemy, closest, enemy.atkDmg);
+    // Fire damage when swing timer crosses 0.09 — no extra distance gate since wind-up already validated range.
+    if (prev > 0.09 && enemy.swingTmr <= 0.09) applyMeleeDamage(enemy, closest, enemy.atkDmg);
     if (enemy.swingTmr <= 0) enemy.swingTmr = 0;
   } else {
     enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;

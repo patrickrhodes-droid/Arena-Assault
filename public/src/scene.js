@@ -254,7 +254,9 @@ function buildArenaOriginal() {
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x314650, roughness: 0.82 });
+  const wallTex = makeMetalPanelTexture();
+  wallTex.repeat.set(18, 5);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82, map: wallTex });
   const stripMat = new THREE.MeshStandardMaterial({
     color: 0x2de1d0,
     emissive: 0x2de1d0,
@@ -402,6 +404,32 @@ function buildArenaOriginal() {
   addWorldBox(21.5, 0.75, 38, 1.5, 1.5, 1.5, crateMat);
   addWorldBox(-20, 0.75, -38, 1.5, 1.5, 1.5, crateMat);
   addWorldBox(-21.5, 0.75, -38, 1.5, 1.5, 1.5, crateMat);
+
+  // ─── Shooter asset pack props ───
+  const SA = "/assets/models/shooter asset pack/";
+  loadProp(SA + "Exploding Barrel.glb", -28, 0, -28, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", 28, 0, 28, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", -20, 0, -38, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", 20, 0, 38, 1.0);
+  loadProp(SA + "Gas Tank.glb", 48, 0, -4, 1.0);
+  loadProp(SA + "Gas Tank.glb", -48, 0, 4, 1.0);
+  loadProp(SA + "Water Tank.glb", 52, 0, 8, 1.2);
+  loadProp(SA + "Water Tank.glb", -52, 0, -8, 1.2);
+  loadProp(SA + "Pallet.glb", -42, 0, 36, 1.0, Math.PI * 0.25);
+  loadProp(SA + "Pallet.glb", 42, 0, -36, 1.0);
+  loadProp(SA + "Tires.glb", 0, 0, -30, 1.0);
+  loadProp(SA + "Tires.glb", 0, 0, 30, 1.0);
+  loadProp(SA + "Tires.glb", -30, 0, 0, 1.0);
+  loadProp(SA + "Crate.glb", 0, 0, -50, 1.0);
+  loadProp(SA + "Crate.glb", 0, 0, 50, 1.0);
+  loadProp(SA + "Sack Trench.glb", -18, 0, -26, 1.5);
+  loadProp(SA + "Sack Trench.glb", 18, 0, 26, 1.5, Math.PI);
+  loadProp(SA + "Dumpster.glb", -10, 0, -51, 1.2, Math.PI * 0.5);
+  loadProp(SA + "Dumpster.glb", 10, 0, 51, 1.2, Math.PI * 0.5);
+  loadProp(SA + "Debris Papers.glb", 8, 0, -16, 1.0);
+  loadProp(SA + "Debris Papers.glb", -8, 0, 16, 1.0);
+  loadProp(SA + "Cardboard Boxes.glb", -35, 0, 20, 0.9);
+  loadProp(SA + "Cardboard Boxes.glb", 35, 0, -20, 0.9);
 }
 
 function buildArenaDesert() {
@@ -419,17 +447,23 @@ function buildArenaDesert() {
     game.arenaLights.push(pl);
   }
 
-  // Sandy ground.
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0xD4A46A, roughness: 0.95 });
+  // Sandy ground with canvas texture.
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, map: makeSandGroundTexture() });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
   const sandMat = new THREE.MeshStandardMaterial({ color: 0xC2906A, roughness: 0.9 });
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x9B7350, roughness: 0.85 });
-  const ruinMat = new THREE.MeshStandardMaterial({ color: 0x8B6848, roughness: 0.88 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xB8844E, roughness: 0.82 });
+  const stoneTex = makeSandstoneTexture();
+  stoneTex.repeat.set(2, 2);
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, map: stoneTex });
+  const ruinTex = makeSandstoneTexture();
+  ruinTex.repeat.set(3, 1);
+  const ruinMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: ruinTex });
+  const wallTex = makeSandstoneTexture();
+  wallTex.repeat.set(18, 5);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82, map: wallTex });
   const accentMat = new THREE.MeshStandardMaterial({ color: 0xff8822, emissive: 0xff6600, emissiveIntensity: 0.7 });
 
   buildWalls(wallMat, accentMat);
@@ -485,6 +519,34 @@ function buildArenaDesert() {
   addWorldBox(30, 0.5, -45, 1.5, 1, 1.5, sandMat);
   addWorldBox(45, 0.5, 30, 1.5, 1, 1.5, sandMat);
   addWorldBox(-45, 0.5, -30, 1.5, 1, 1.5, sandMat);
+
+  // ─── Shooter asset pack props ───
+  const SA = "/assets/models/shooter asset pack/";
+  loadProp(SA + "Exploding Barrel.glb", -12, 0, -48, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", 12, 0, -48, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", -12, 0, 48, 1.0);
+  loadProp(SA + "Exploding Barrel.glb", 12, 0, 48, 1.0);
+  loadProp(SA + "Gas Can.glb", -25, 0, 8, 0.8);
+  loadProp(SA + "Gas Can.glb", 25, 0, -8, 0.8);
+  loadProp(SA + "Gas Can.glb", 10, 0, -35, 0.8);
+  loadProp(SA + "Tires.glb", 46, 0, -46, 1.0);
+  loadProp(SA + "Tires.glb", -46, 0, 46, 1.0);
+  loadProp(SA + "Crate.glb", -4, 0, -50, 1.0);
+  loadProp(SA + "Crate.glb", 4, 0, 50, 1.0);
+  loadProp(SA + "Crate.glb", 4, 0, -50, 1.0);
+  loadProp(SA + "Sack Trench.glb", -30, 0, 0, 1.5);
+  loadProp(SA + "Sack Trench.glb", 30, 0, 0, 1.5, Math.PI);
+  loadProp(SA + "Sack Trench Small.glb", 0, 0, 35, 1.2);
+  loadProp(SA + "Sack Trench Small.glb", 0, 0, -35, 1.2, Math.PI);
+  loadProp(SA + "Pallet.glb", -12, 0, -44, 1.0);
+  loadProp(SA + "Pallet.glb", 12, 0, 44, 1.0);
+  loadProp(SA + "Broken Car.glb", 20, 0, 20, 1.5, Math.PI * 0.3);
+  loadProp(SA + "Broken Car.glb", -20, 0, -20, 1.5, Math.PI * 0.7);
+  loadProp(SA + "Tank.glb", 52, 0, -52, 1.5, Math.PI * 0.25);
+  loadProp(SA + "Trash Container Open.glb", -5, 0, 48, 1.0);
+  loadProp(SA + "Trash Container Open.glb", 5, 0, -48, 1.0);
+  loadProp(SA + "Debris Papers.glb", 0, 0, 0, 1.0);
+  loadProp(SA + "Debris Papers.glb", -15, 0, 15, 1.0);
 }
 
 function buildArenaCity() {
@@ -523,17 +585,23 @@ function buildArenaCity() {
     game.arenaLights.push(nl);
   }
 
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x7d7a74, roughness: 0.9 });
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, map: makeAsphaltTexture() });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
   const concreteMat = new THREE.MeshStandardMaterial({ color: 0xa39a8b, roughness: 0.84 });
+  // Brick texture for buildings only; dumpster geometry uses plain darkConcrete
+  const brickTex = makeConcreteBrickTexture();
+  brickTex.repeat.set(2, 1.25);
+  const buildingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: brickTex });
   const darkConcrete = new THREE.MeshStandardMaterial({ color: 0x6b6258, roughness: 0.88 });
   const metalMat = new THREE.MeshStandardMaterial({ color: 0x7b8076, roughness: 0.48, metalness: 0.55 });
   const neonMat = new THREE.MeshStandardMaterial({ color: 0xff9a3d, emissive: 0xff9a3d, emissiveIntensity: 0.7 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xb7a48b, roughness: 0.88 });
+  const wallTex = makeConcreteBrickTexture();
+  wallTex.repeat.set(18, 5);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: wallTex });
 
   buildWalls(wallMat, neonMat);
 
@@ -547,16 +615,16 @@ function buildArenaCity() {
 
   // ─── City blocks (4 quadrant buildings, climbable from street side) ───
   // NW building
-  addWorldBox(-38, 5, -38, 16, 10, 16, darkConcrete);
+  addWorldBox(-38, 5, -38, 16, 10, 16, buildingMat);
   addWorldBox(-38, 10.5, -38, 10, 1, 10, concreteMat);
   // NE building
-  addWorldBox(38, 5, -38, 16, 10, 16, darkConcrete);
+  addWorldBox(38, 5, -38, 16, 10, 16, buildingMat);
   addWorldBox(38, 10.5, -38, 10, 1, 10, concreteMat);
   // SW building
-  addWorldBox(-38, 5, 38, 16, 10, 16, darkConcrete);
+  addWorldBox(-38, 5, 38, 16, 10, 16, buildingMat);
   addWorldBox(-38, 10.5, 38, 10, 1, 10, concreteMat);
   // SE building
-  addWorldBox(38, 5, 38, 16, 10, 16, darkConcrete);
+  addWorldBox(38, 5, 38, 16, 10, 16, buildingMat);
   addWorldBox(38, 10.5, 38, 10, 1, 10, concreteMat);
 
   // ─── Fire escape staircases on each building (toward centre) ───
@@ -604,6 +672,285 @@ function buildArenaCity() {
     strip.position.set(x, 7, z);
     game.arenaGroup.add(strip);
   }
+
+  // ─── City Props asset pack ───
+  const CP = "/assets/models/City Props asset pack/";
+  const SA = "/assets/models/shooter asset pack/";
+
+  // Street lights along main avenues
+  for (const [lx, lz] of [[-20, -22], [20, -22], [-20, 22], [20, 22], [-55, -18], [-55, 18], [55, -18], [55, 18], [-20, -50], [20, -50], [-20, 50], [20, 50]]) {
+    loadProp(CP + "Street Light.glb", lx, 0, lz, 2.0);
+  }
+
+  // Trees — far corners and building sides
+  for (const [tx, tz, s] of [[-60, -60, 2.5], [60, -60, 2.5], [-60, 60, 2.5], [60, 60, 2.5], [-50, -38, 2.0], [50, -38, 2.0], [-50, 38, 2.0], [50, 38, 2.0]]) {
+    loadProp(CP + "Tree Long.glb", tx, 0, tz, s, Math.random() * Math.PI * 2);
+  }
+  for (const [tx, tz] of [[-28, -50], [28, -50], [-28, 50], [28, 50]]) {
+    loadProp(CP + "Tree.glb", tx, 0, tz, 2.0);
+  }
+
+  // Trash cans along sidewalks
+  for (const [cx, cz] of [[-46, -25], [46, -25], [-46, 25], [46, 25], [-25, -46], [25, -46], [-25, 46], [25, 46]]) {
+    loadProp(CP + "Trash Can.glb", cx, 0, cz, 1.0);
+  }
+
+  // Fire hydrants
+  for (const [hx, hz] of [[-8, -22], [8, -22], [-8, 22], [8, 22], [-22, -8], [22, -8]]) {
+    loadProp(CP + "Fire Hydrant.glb", hx, 0, hz, 0.8);
+  }
+
+  // Bollards around fountain plaza
+  for (const [bx, bz] of [[-5, -5], [5, -5], [-5, 5], [5, 5], [-5, 0], [5, 0], [0, -5], [0, 5]]) {
+    loadProp(CP + "Bollard.glb", bx, 0, bz, 0.8);
+  }
+
+  // Benches in plaza
+  loadProp(CP + "Bench.glb", -9, 0, 0, 1.0, Math.PI * 0.5);
+  loadProp(CP + "Bench.glb", 9, 0, 0, 1.0, Math.PI * 0.5);
+  loadProp(CP + "Bench.glb", 0, 0, -9, 1.0);
+  loadProp(CP + "Bench.glb", 0, 0, 9, 1.0);
+
+  // Traffic cones near jersey barriers
+  for (const [tcx, tcz] of [[-12, -15], [-14, -13], [12, -15], [14, -13], [-12, 15], [14, 15]]) {
+    loadProp(CP + "Traffic Cone.glb", tcx, 0, tcz, 0.8);
+  }
+
+  // Traffic lights at intersections
+  loadProp(CP + "Traffic Light.glb", -22, 0, -22, 2.0);
+  loadProp(CP + "Traffic Light.glb", 22, 0, 22, 2.0, Math.PI);
+  loadProp(CP + "Traffic Light.glb", 22, 0, -22, 2.0, Math.PI * 1.5);
+
+  // Stop signs
+  loadProp(CP + "Stop Sign.glb", -22, 0, 22, 1.5);
+  loadProp(CP + "Stop Sign.glb", 22, 0, -22, 1.5, Math.PI);
+
+  // Manhole covers in streets
+  for (const [mx, mz] of [[-8, 0], [8, 0], [0, -10], [0, 10], [25, -30], [-25, 30]]) {
+    loadProp(CP + "Manhole.glb", mx, 0.01, mz, 2.0);
+  }
+
+  // Trash bags near buildings
+  for (const [tx, tz] of [[-21, -9], [21, 9], [9, -21], [-9, 21], [-55, -22], [55, 22]]) {
+    loadProp(CP + "Trash Bag.glb", tx, 0, tz, 0.8);
+  }
+
+  // Bike racks near buildings
+  loadProp(CP + "Bike Rack.glb", -44, 0, -30, 1.0, Math.PI * 0.5);
+  loadProp(CP + "Bike Rack.glb", 44, 0, 30, 1.0, Math.PI * 0.5);
+
+  // Concrete barriers (extra street cover)
+  loadProp(CP + "Concrete Barrier.glb", -55, 0, -5, 1.5);
+  loadProp(CP + "Concrete Barrier.glb", 55, 0, 5, 1.5, Math.PI);
+
+  // Box piles near building backs
+  for (const [bx, bz] of [[-48, -48], [48, 48], [-48, 48], [48, -48]]) {
+    loadProp(CP + "Box Pile.glb", bx, 0, bz, 1.0);
+  }
+
+  // Ground clutter
+  for (const [fx, fz] of [[-30, -10], [30, 10], [-10, 30], [10, -30]]) {
+    loadProp(CP + "Floor Trash.glb", fx, 0, fz, 1.0);
+  }
+
+  // Bushes near buildings
+  loadProp(CP + "Long Bush.glb", -46, 0, -44, 1.2);
+  loadProp(CP + "Long Bush.glb", 46, 0, 44, 1.2);
+  for (const [bx, bz] of [[-12, -12], [12, -12], [-12, 12], [12, 12]]) {
+    loadProp(CP + "Small Bush.glb", bx, 0, bz, 1.0);
+  }
+
+  // Fallen leaves under corner trees
+  for (const [lx, lz] of [[-60, -60], [60, -60], [-60, 60], [60, 60]]) {
+    loadProp(CP + "Fallen Leaves.glb", lx + 3, 0, lz + 3, 1.5);
+  }
+
+  // Shooter pack: dumpsters, broken cars, shipping containers, debris
+  loadProp(SA + "Dumpster.glb", -21, 0, -8, 1.2);
+  loadProp(SA + "Dumpster.glb", 21, 0, 8, 1.2);
+  loadProp(SA + "Dumpster.glb", 9, 0, -21, 1.2, Math.PI * 0.5);
+  loadProp(SA + "Broken Car.glb", -26, 0, -8, 1.5, Math.PI * 0.1);
+  loadProp(SA + "Broken Car.glb", 26, 0, 8, 1.5, Math.PI * 1.1);
+  loadProp(SA + "Shipping Container.glb", -55, 0, -48, 2.0);
+  loadProp(SA + "Shipping Container.glb", 55, 0, 48, 2.0, Math.PI);
+  loadProp(SA + "Shipping Container.glb", -48, 0, 55, 2.0, Math.PI * 0.5);
+  loadProp(SA + "Tires.glb", -44, 0, 5, 1.0);
+  loadProp(SA + "Tires.glb", 44, 0, -5, 1.0);
+  loadProp(SA + "Crate.glb", -55, 0, -40, 1.0);
+  loadProp(SA + "Crate.glb", 55, 0, 40, 1.0);
+  loadProp(SA + "Cardboard Boxes.glb", -40, 0, -55, 0.8);
+  loadProp(SA + "Cardboard Boxes.glb", 40, 0, 55, 0.8);
+  loadProp(SA + "Sign.glb", -18, 0, -18, 1.5);
+  loadProp(SA + "Sign.glb", 18, 0, 18, 1.5, Math.PI);
+  for (const [px, pz] of [[-5, -28], [5, 28], [-28, 5], [28, -5]]) {
+    loadProp(SA + "Debris Papers.glb", px, 0, pz, 1.0);
+  }
+}
+
+// ─── Canvas texture generators ───────────────────────────────────────────────
+
+function makeMetalPanelTexture() {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#2e4550";
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = "#1e3038";
+  ctx.lineWidth = 3;
+  for (let y = 0; y <= 256; y += 64) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+  ctx.lineWidth = 2;
+  for (let x = 0; x <= 256; x += 128) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke(); }
+  ctx.strokeStyle = "rgba(80,140,160,0.22)";
+  ctx.lineWidth = 1;
+  for (let y = 2; y <= 256; y += 64) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke(); }
+  ctx.fillStyle = "#3d5f6e";
+  for (let px = 16; px < 256; px += 128) {
+    for (let py = 8; py < 256; py += 64) {
+      ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(px + 96, py, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  const d = ctx.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 12;
+    d.data[i] = Math.max(0, Math.min(255, d.data[i] + n));
+    d.data[i + 1] = Math.max(0, Math.min(255, d.data[i + 1] + n));
+    d.data[i + 2] = Math.max(0, Math.min(255, d.data[i + 2] + n));
+  }
+  ctx.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeSandstoneTexture() {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#b8844e";
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = "rgba(90,55,20,0.4)";
+  ctx.lineWidth = 2;
+  for (let row = 0; row * 48 <= 256; row++) {
+    ctx.beginPath(); ctx.moveTo(0, row * 48); ctx.lineTo(256, row * 48); ctx.stroke();
+    const off = (row % 2) * 64;
+    for (let x = off - 128; x <= 256; x += 128) {
+      ctx.beginPath(); ctx.moveTo(x, row * 48); ctx.lineTo(x, (row + 1) * 48); ctx.stroke();
+    }
+  }
+  const d = ctx.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 28;
+    d.data[i] = Math.max(0, Math.min(255, d.data[i] + n));
+    d.data[i + 1] = Math.max(0, Math.min(255, d.data[i + 1] + n * 0.85));
+    d.data[i + 2] = Math.max(0, Math.min(255, d.data[i + 2] + n * 0.6));
+  }
+  ctx.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeConcreteBrickTexture() {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#8a8070";
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = "rgba(55,50,44,0.55)";
+  ctx.lineWidth = 2;
+  const bh = 32;
+  for (let row = 0; row * bh <= 256; row++) {
+    ctx.beginPath(); ctx.moveTo(0, row * bh); ctx.lineTo(256, row * bh); ctx.stroke();
+    const off = (row % 2) * 64;
+    for (let x = off - 128; x <= 256; x += 128) {
+      ctx.beginPath(); ctx.moveTo(x, row * bh); ctx.lineTo(x, (row + 1) * bh); ctx.stroke();
+    }
+  }
+  const d = ctx.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 18;
+    d.data[i] = Math.max(0, Math.min(255, d.data[i] + n));
+    d.data[i + 1] = Math.max(0, Math.min(255, d.data[i + 1] + n));
+    d.data[i + 2] = Math.max(0, Math.min(255, d.data[i + 2] + n));
+  }
+  ctx.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeSandGroundTexture() {
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#d4a46a";
+  ctx.fillRect(0, 0, 512, 512);
+  const d = ctx.getImageData(0, 0, 512, 512);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 30;
+    d.data[i] = Math.max(0, Math.min(255, d.data[i] + n));
+    d.data[i + 1] = Math.max(0, Math.min(255, d.data[i + 1] + n * 0.88));
+    d.data[i + 2] = Math.max(0, Math.min(255, d.data[i + 2] + n * 0.62));
+  }
+  ctx.putImageData(d, 0, 0);
+  ctx.strokeStyle = "rgba(160,100,40,0.1)";
+  ctx.lineWidth = 1;
+  for (let y = 0; y < 512; y += 9) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + (Math.random() - 0.5) * 4);
+    ctx.lineTo(512, y + (Math.random() - 0.5) * 4);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(10, 10);
+  return tex;
+}
+
+function makeAsphaltTexture() {
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#4e4b47";
+  ctx.fillRect(0, 0, 512, 512);
+  const d = ctx.getImageData(0, 0, 512, 512);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 22;
+    d.data[i] = Math.max(0, Math.min(255, d.data[i] + n));
+    d.data[i + 1] = Math.max(0, Math.min(255, d.data[i + 1] + n));
+    d.data[i + 2] = Math.max(0, Math.min(255, d.data[i + 2] + n));
+  }
+  ctx.putImageData(d, 0, 0);
+  ctx.strokeStyle = "rgba(25,22,20,0.3)";
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 14; i++) {
+    ctx.beginPath();
+    let cx = Math.random() * 512, cy = Math.random() * 512;
+    ctx.moveTo(cx, cy);
+    for (let j = 0; j < 5; j++) { cx += (Math.random() - 0.5) * 90; cy += (Math.random() - 0.5) * 90; ctx.lineTo(cx, cy); }
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(10, 10);
+  return tex;
+}
+
+// Loads a GLB prop decoratively (no collision). Aborts if the arena was rebuilt before load completes.
+function loadProp(file, x, y, z, scale = 1, rotY = 0) {
+  const targetGroup = game.arenaGroup;
+  new GLTFLoader().load(file, (gltf) => {
+    if (game.arenaGroup !== targetGroup) return;
+    const model = gltf.scene.clone(true);
+    model.scale.setScalar(scale);
+    model.rotation.y = rotY;
+    model.position.set(x, y, z);
+    model.traverse((node) => {
+      if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+    });
+    targetGroup.add(model);
+  });
 }
 
 function buildWalls(wallMat, accentMat) {

@@ -45,7 +45,7 @@ The lobby is split into three screens:
 | **Dust Bowl** | Desert | Sandy, open layout with ruined archways, stone pillars, oasis compounds, low sand-dune ridges, and two stepped-pyramid sniper platforms. Warm amber lighting. |
 | **Downtown** | City (Day) | Tight urban grid with four large climbable buildings, a central plaza, jersey barriers, alleyways, dumpsters, and warm combat-zone accents. Bright sunlit skyline with clear visibility. |
 
-All maps share the same collision, ladder-climb, and spawn systems — only the geometry, colours, fog, sky, and lighting differ.
+All maps share the same collision, ladder-climb, and spawn systems — only the geometry, textures, colours, fog, sky, and lighting differ. Each map is populated with props from the **City Props** and **Shooter** GLB asset packs (street lights, trees, trash cans, fire hydrants, traffic lights, dumpsters, barrels, crates, vehicles, sack trenches, shipping containers, and more). Walls, ground, and buildings use procedural canvas textures (metal panels for Arena, sandstone for Desert, asphalt + concrete brick for City).
 
 ## Controls
 
@@ -95,7 +95,7 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | Skeleton | Wave 1+ | 1 HP, fast melee rusher. Wave 6 = 4 groups of 2 per wave (+1 group per wave, capped at 8). Animated GLB model. |
 | Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
 | Soldier | Wave 6+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. Spawns in pairs alongside skeleton groups. |
-| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. High HP, heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
+| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. Telegraphed wind-up before each swing; continues closing the gap during wind-up so the hit reliably lands. Heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
 
 The boss attack has a 7.8 unit reach (50% wider than original) and swings every 1.1 s for more aggressive threat.
 
@@ -123,7 +123,7 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 
 ## Multiplayer
 
-- The **server runs all game logic** — enemy AI, wave management, damage, and health packs — so all players (including the one hosting the server) are equal thin clients with no inherent advantage.
+- The **server drives wave spawning, damage validation, and health packs**. Enemy AI (movement, pathfinding, attacks) runs on the host client and is synced to other clients at 20 Hz, giving all non-host players smooth enemy visuals without simulation overhead.
 - The first player to connect becomes the **lobby leader** and controls map selection and match start, but has no in-game simulation advantage.
 - **Revive system**: downed players can be revived by teammates holding `E` nearby (45 s timeout before forced spectate). Revived players return with full health.
 - **Nametags** appear above each remote player's head.
@@ -329,7 +329,7 @@ Arena Assault/
 |   |-- styles/
 |   |   `-- main.css            # All UI styling
 |   |-- assets/
-|   |   `-- models/             # GLB weapon and character head models
+|   |   `-- models/             # GLB weapon, character, and prop models (City Props & Shooter asset packs)
 |   `-- src/
 |       |-- main.js             # App bootstrap and main game loop
 |       |-- config.js           # Constants, weapon defs, map defs, character defs

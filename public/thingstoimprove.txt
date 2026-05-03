@@ -28,6 +28,18 @@
 - Grappling hook added (G key): raycast to attach point, pulls player at 18 u/s;
   jump to release mid-swing; lure + rope visuals (done)
 
+-- IMPLEMENTED (continued) --
+- Boss attack now lands reliably: boss continues pursuing at half-speed during wind-up,
+  and the dist<7.8 re-check at swing time was removed (wind-up entry already validated range).
+- Canvas textures added to all three maps: metal-panel walls (Arena), sandstone walls/structures
+  (Desert), asphalt ground + concrete-brick buildings/walls (City).
+- Props from City Props and shooter asset packs added to all maps:
+  Arena — barrels, gas tanks, water tanks, pallets, tires, crates, sack trenches, dumpsters.
+  Desert — barrels, gas cans, tires, crates, sack trenches, pallets, broken cars, tank, trash containers.
+  City — street lights, trees, trash cans, fire hydrants, bollards, benches, traffic cones,
+          traffic lights, stop signs, manhole covers, trash bags, bike racks, concrete barriers,
+          box piles, bushes, fallen leaves, dumpsters, broken cars, shipping containers, signs.
+
 -- TO DO --
 
 Soldier and dog 3D GLB models:
@@ -42,14 +54,35 @@ Soldier and dog 3D GLB models:
 20. (residual) Reconnection uses playerName as identity key which is not
     unique. A proper fix requires a persistent session token (cookie/localStorage).
 
+Grapple as weapon broken:
+  Selecting the grapple slot freezes/breaks the game. G key still works correctly.
+  The grapple weapon slot needs to fire the grapple the same way G does, without
+  disrupting game state. Pulling enemies is also deferred per original request.
 
+Ladder shooting bug:
+  Cannot shoot while standing on top of structures that have ladders attached.
+  The ladder collision zone extends above the structure top, blocking shots.
+  Fix: cap the ladder yMax to the structure surface height, or exclude ladder
+  volumes from the bullet-hit-obstacle check when the player is above them.
 
-add assets from asset packs to the maps
+-- KNOWN RELIABILITY ISSUES --
 
-I have an issue where i cant shoot on top of structures that have ladders , 
-ithink its because the ladder technically goes up past the top of the structure
-, also the bots can hit you if you on something , 
-change the bot melee damage / hit detection so that its authenticated on the individual players side (i dont care about cheating the game is only for playing lan with mates nothing serious)
- also the city map is far too dark make it a sunny urban warzone type vibe and try to change any references in the readme or other places to it being a dark moody nightime city wherever in the code
- since making the grapple a weapon , selecting it doesnt work and it kinda freezes the game it also still works well when G is clicked , it just needs to do that 
-  it should pull you to walls and pull enemies to you but hold off on integrating the pulling enemies towards you for now , thepulling to walls already works well when you press g but when added as a weapon it breaks
+segmentIntersectsExpandedBox uses obs.xMin/xMax/zMin/zMax but obstacles are stored
+  as obs.min.x / obs.max.x / obs.min.z / obs.max.z. This means soldier/dog/skeleton
+  detour pathfinding always returns false (no blocking obstacle found), so those
+  enemies always go straight and get stuck behind walls instead of routing around them.
+  Fix: change segmentIntersectsExpandedBox and getDetourDirection to use obs.min.x etc.
+
+tickEnemies (server.js) is never called from startGameLoop. The server-side boss AI
+  (attack, movement, escape jump) is dead code. All enemy AI runs on the host client.
+  This is intentional per the architecture but means if the host disconnects mid-wave,
+  all enemies freeze. Consider adding a note in server.js or eventually calling
+  tickEnemies as a fallback when no client owns an enemy.
+
+enemyMeleeAttempt server handler does not verify the sender is the host/owner of the
+  enemy. Any connected client could theoretically send fake boss hits to damage other
+  players. Low risk for LAN play but worth noting.
+
+Boss escape jump resets enemy.stuckTmr to 0 but never resets enemy.windupTmr or
+  enemy.swingTmr. If the boss jumps mid-windup, on landing those timers may fire
+  a hit even though the boss just teleported to a new position.
