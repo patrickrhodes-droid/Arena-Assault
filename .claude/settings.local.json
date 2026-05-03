@@ -12,7 +12,12 @@
       "Bash(mkdir:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\patri\\\\Arena-Assault\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(ConvertTo-Json)",
+      "Bash(Out-String)"
     ]
   }
 }

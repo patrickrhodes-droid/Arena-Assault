@@ -42,10 +42,6 @@
 
 -- TO DO --
 
-Soldier and dog 3D GLB models:
-  Code is ready to add models — place soldier.glb and dog.glb in
-  public/assets/models/ and wire up loading in createSoldier/createDog
-  (mirror the existing createSkeleton GLB loading pattern).
 
 10. (residual) server.js still duplicates constants from gameConstants.js.
     server.js is CommonJS so it cannot import the ES module directly.
@@ -54,10 +50,6 @@ Soldier and dog 3D GLB models:
 20. (residual) Reconnection uses playerName as identity key which is not
     unique. A proper fix requires a persistent session token (cookie/localStorage).
 
-Grapple as weapon broken:
-  Selecting the grapple slot freezes/breaks the game. G key still works correctly.
-  The grapple weapon slot needs to fire the grapple the same way G does, without
-  disrupting game state. Pulling enemies is also deferred per original request.
 
 Ladder shooting bug:
   Cannot shoot while standing on top of structures that have ladders attached.
@@ -86,3 +78,9 @@ enemyMeleeAttempt server handler does not verify the sender is the host/owner of
 Boss escape jump resets enemy.stuckTmr to 0 but never resets enemy.windupTmr or
   enemy.swingTmr. If the boss jumps mid-windup, on landing those timers may fire
   a hit even though the boss just teleported to a new position.
+
+would it be possible to have contacts between the player models and the new glb env models ?
+some ladders dont have an associated model (city and desert)
+after having selected map change background map preview to selected map
+when on floor player looks like hes floating and his shadow is to the left (3rd person)
+desert and city look very similar now colours wise
