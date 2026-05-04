@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
-import { setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles } from "./combat.js";
+import { setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, triggerDestructible } from "./combat.js";
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear } from "./ui.js";
@@ -15,11 +15,48 @@ export function initNetworking(actions) {
   game.socket = window.io();
   game.socket.emit("playerNameUpdate", { playerName: "" });
 
-  // On reconnect (e.g. tab briefly loses connection), try to restore mid-game state.
-  game.socket.on("connect", () => {
-    if (game.state === "PLAYING" && game.playerName) {
-      game.socket.emit("rejoin", { playerName: game.playerName });
+  // Retrieve or create a persistent session token stored in localStorage.
+  // This is a unique identifier that survives page refreshes and lets the server
+  // restore mid-game state after a brief disconnection, without relying on playerName.
+  let sessionToken = null;
+  try {
+    sessionToken = localStorage.getItem("arena_session_token");
+    if (!sessionToken) {
+      sessionToken = (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
+      localStorage.setItem("arena_session_token", sessionToken);
     }
+  } catch { /* localStorage unavailable (private browsing etc.) — use in-memory only */ }
+  game.sessionToken = sessionToken;
+
+  // On connect/reconnect: register the token and attempt state restore if mid-game.
+  game.socket.on("connect", () => {
+    if (sessionToken) game.socket.emit("registerToken", { token: sessionToken });
+    if (game.state === "PLAYING" && sessionToken) {
+      game.socket.emit("rejoin", { token: sessionToken });
+    }
+  });
+
+  // Room lock status — show password prompt to non-hosts if room is locked.
+  game.socket.on("roomInfo", (data) => {
+    game.roomLocked = !!data?.locked;
+    if (game.roomLocked && !game.isHost) {
+      const overlay = game.dom?.passwordOverlay;
+      if (overlay) { overlay.style.display = "flex"; }
+    }
+  });
+
+  game.socket.on("passwordResult", (data) => {
+    if (data?.ok) {
+      const overlay = game.dom?.passwordOverlay;
+      if (overlay) overlay.style.display = "none";
+    } else {
+      const errEl = game.dom?.passwordError;
+      if (errEl) { errEl.style.display = "block"; setTimeout(() => { errEl.style.display = "none"; }, 2500); }
+    }
+  });
+
+  game.socket.on("serverMessage", (data) => {
+    if (data?.level === "error") console.warn("[Server]", data.text);
   });
 
   game.socket.on("stateRestored", (data) => {
@@ -534,5 +571,12 @@ export function initNetworking(actions) {
   game.socket.on("enemyKilled", (data) => {
     spawnParticles(new THREE.Vector3(data.x, 1, data.z), 18, 0xcc2200, 8);
     // The enemy object is removed from game.enemies by the next enemiesSynced cleanup.
+  });
+
+  // Host relays prop destruction; non-host clients apply it locally.
+  game.socket.on("propDestroyed", (data) => {
+    if (!data?.propId || game.isHost) return; // host already handled it locally
+    const origin = new THREE.Vector3(data.x ?? 0, data.y ?? 0, data.z ?? 0);
+    triggerDestructible(data.propId, origin, null); // null processHit — visual only on non-host
   });
 }

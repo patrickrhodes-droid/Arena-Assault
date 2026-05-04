@@ -1,12 +1,20 @@
-const express = require('express');
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { join, dirname } from 'path';
+import { networkInterfaces } from 'os';
+import { fileURLToPath } from 'url';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
-const os = require('os');
+const http = createServer(app);
+const io = new Server(http);
 
 const PORT = 3001;
-const publicDir = path.join(__dirname, 'public');
+const publicDir = join(__dirname, 'public');
 
 // ── Network utilities ─────────────────────────────────────────────────────────
 
@@ -18,7 +26,7 @@ function normalizeIpAddress(address) {
 }
 
 function getServerIpv4Addresses() {
-    const interfaces = os.networkInterfaces();
+    const interfaces = networkInterfaces();
     const addresses = [];
     Object.values(interfaces).forEach((entries) => {
         (entries || []).forEach((entry) => {
@@ -40,8 +48,54 @@ function createConnectionInfo(address) {
 }
 
 app.use(express.static(publicDir));
-app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+app.get('/', (req, res) => res.sendFile(join(publicDir, 'index.html')));
 app.get('/arenatest.html', (req, res) => res.redirect('/'));
+
+// ── Persistent leaderboard ────────────────────────────────────────────────────
+
+const LEADERBOARD_FILE = join(__dirname, 'leaderboard.json');
+const LEADERBOARD_MAX = 20; // keep top 20 entries per mode
+
+function loadLeaderboard() {
+    try {
+        if (existsSync(LEADERBOARD_FILE)) {
+            return JSON.parse(readFileSync(LEADERBOARD_FILE, 'utf8'));
+        }
+    } catch { /* corrupt file — start fresh */ }
+    return { coop: [], pvp: [] };
+}
+
+function saveLeaderboard(lb) {
+    try { writeFileSync(LEADERBOARD_FILE, JSON.stringify(lb, null, 2)); } catch { /* disk full etc. */ }
+}
+
+let leaderboard = loadLeaderboard();
+
+function recordCoopGame(rankings, wave) {
+    const date = new Date().toISOString().slice(0, 10);
+    for (const r of rankings) {
+        if (!r.playerName || r.score <= 0) continue;
+        leaderboard.coop.push({ playerName: r.playerName, score: r.score, wave: r.wave || wave, kills: r.kills || 0, date });
+    }
+    leaderboard.coop.sort((a, b) => b.score - a.score);
+    leaderboard.coop = leaderboard.coop.slice(0, LEADERBOARD_MAX);
+    saveLeaderboard(leaderboard);
+}
+
+function recordPvpGame(rankings) {
+    const date = new Date().toISOString().slice(0, 10);
+    for (const r of rankings) {
+        if (!r.playerName) continue;
+        leaderboard.pvp.push({ playerName: r.playerName, kills: r.kills || 0, date });
+    }
+    leaderboard.pvp.sort((a, b) => b.kills - a.kills);
+    leaderboard.pvp = leaderboard.pvp.slice(0, LEADERBOARD_MAX);
+    saveLeaderboard(leaderboard);
+}
+
+app.get('/api/leaderboard', (_req, res) => {
+    res.json(leaderboard);
+});
 
 // ── PvP constants ─────────────────────────────────────────────────────────────
 
@@ -298,9 +352,11 @@ function updateEnemyDetour(enemy, target, obstacles, movedDistSq, chaseRange, dt
 let players = {};
 let currentMode = 'COOP';
 let selectedMap = 'arena';
+let roomPassword = null; // null = open room, string = locked room
 
 // Temporarily stores state for players who disconnected mid-game so they can
-// rejoin and pick up where they left off (cleared after 30 s).
+// rejoin and pick up where they left off (cleared after 60 s).
+// Keyed by the client's session token (UUID stored in localStorage), not by name.
 const recentlyDisconnected = {};
 
 function getAlivePlayers() {
@@ -879,12 +935,21 @@ function buildPvPRankings() {
         }));
 }
 
+// ── Room password helpers ─────────────────────────────────────────────────────
+
+function broadcastRoomInfo() {
+    io.emit('roomInfo', { locked: roomPassword !== null });
+}
+
 // ── Socket connections ────────────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
     const isFirst = Object.keys(players).length === 0;
     const connectionInfo = createConnectionInfo(socket.handshake.address);
+
+    // Send room lock status immediately so the client can show a password prompt.
+    socket.emit('roomInfo', { locked: roomPassword !== null });
 
     players[socket.id] = {
         rotation: 0, x: 0, y: 0, z: 0,
@@ -908,11 +973,10 @@ io.on('connection', (socket) => {
         console.log('User disconnected:', socket.id);
         // Preserve state briefly so the player can rejoin mid-game.
         const leaving = players[socket.id];
-        if (leaving?.playerName && gameState.mode) {
-            recentlyDisconnected[leaving.playerName] = {
-                ...leaving, savedAt: Date.now(),
-            };
-            setTimeout(() => { delete recentlyDisconnected[leaving.playerName]; }, 30000);
+        const token = leaving?.sessionToken;
+        if (token && gameState.mode) {
+            recentlyDisconnected[token] = { ...leaving, savedAt: Date.now() };
+            setTimeout(() => { delete recentlyDisconnected[token]; }, 60000);
         }
         delete players[socket.id];
         if (Object.keys(players).length === 0) {
@@ -1127,7 +1191,9 @@ io.on('connection', (socket) => {
         if (shooter.pvpKills >= PVP_WIN_KILLS && shooter.pvpSwordKills >= PVP_SWORD_KILLS_TO_WIN) {
             currentMode = 'COOP';
             stopGameLoop();
-            io.emit('pvpMatchOver', { winnerId: shooterId, rankings: buildPvPRankings() });
+            const pvpRankings = buildPvPRankings();
+            recordPvpGame(pvpRankings);
+            io.emit('pvpMatchOver', { winnerId: shooterId, rankings: pvpRankings });
         }
     }
 
@@ -1194,6 +1260,7 @@ io.on('connection', (socket) => {
                     wave: p.wave || 0,
                     status: p.isSpectating ? 'SPECTATING' : p.isDowned ? 'DOWNED' : 'DEAD',
                 }));
+            recordCoopGame(rankings, gameState.wave);
             io.emit('globalGameOver', rankings);
         }
     });
@@ -1225,13 +1292,15 @@ io.on('connection', (socket) => {
         broadcastPauseState();
     });
 
-    // Reconnection: client sends their name so we can restore their mid-game state.
+    // Reconnection: client sends a session token (UUID from localStorage).
+    // This replaces the old name-based lookup and is unique per browser session.
     socket.on('rejoin', (data) => {
-        const name = (data?.playerName || '').trim();
-        const saved = recentlyDisconnected[name];
-        if (!saved || Date.now() - saved.savedAt > 30000) return;
-        delete recentlyDisconnected[name];
-        players[socket.id] = { ...saved, playerId: socket.id, isHost: false, isReady: false };
+        const token = (data?.token || '').trim();
+        if (!token) return;
+        const saved = recentlyDisconnected[token];
+        if (!saved || Date.now() - saved.savedAt > 60000) return;
+        delete recentlyDisconnected[token];
+        players[socket.id] = { ...saved, playerId: socket.id, isHost: false, isReady: false, sessionToken: token };
         socket.emit('stateRestored', {
             wave: saved.wave || 0,
             hp: saved.hp || P_MAX_HP,
@@ -1241,6 +1310,38 @@ io.on('connection', (socket) => {
             character: saved.character || null,
         });
         io.emit('updateLobby', players);
+    });
+
+    // Client registers their session token immediately after connecting.
+    socket.on('registerToken', (data) => {
+        if (players[socket.id] && data?.token) {
+            players[socket.id].sessionToken = data.token;
+        }
+    });
+
+    // Client submits room password (non-host must do this before being allowed in lobby).
+    socket.on('submitPassword', (data) => {
+        if (!roomPassword) { socket.emit('passwordResult', { ok: true }); return; }
+        const ok = (data?.password || '').trim() === roomPassword;
+        socket.emit('passwordResult', { ok });
+        if (!ok) {
+            socket.emit('serverMessage', { text: 'Wrong room password. Disconnecting.', level: 'error' });
+            setTimeout(() => socket.disconnect(true), 1500);
+        }
+    });
+
+    // Host can set or clear the room password.
+    socket.on('hostSetPassword', (data) => {
+        if (!players[socket.id]?.isHost) return;
+        const pw = (data?.password || '').trim();
+        roomPassword = pw.length > 0 ? pw : null;
+        broadcastRoomInfo();
+    });
+
+    // Host relays prop destruction to all other clients.
+    socket.on('propDestroyed', (data) => {
+        if (!players[socket.id]?.isHost || !data?.propId) return;
+        socket.broadcast.emit('propDestroyed', data);
     });
 
     // Client notifies server when the local player pauses or resumes.

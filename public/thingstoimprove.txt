@@ -60,12 +60,39 @@
 - Dead reviveProgress object removed from game state (was never read, just noise).
 - Duplicate HP assignments removed in startGame / startPvPGame.
 
+-- IMPLEMENTED (continued) --
+- Server converted to ESM (import/export): all require() → import, __dirname fixed via
+  fileURLToPath, package.json gets "type":"module". fs, path, os all destructure-imported.
+- Reconnection token: client generates a UUID stored in localStorage (survives refreshes).
+  Server keys recentlyDisconnected on the token instead of playerName; TTL extended to 60 s.
+  New `registerToken` socket event stamps the token onto the server-side player entry on connect.
+- Persistent leaderboard: server reads/writes leaderboard.json (top 20 COOP + PvP entries).
+  Recorded on every COOP game-over and PvP match-over. Exposed at GET /api/leaderboard.
+  Game-over screen has "ALL-TIME LEADERBOARD" button that fetches and displays the table.
+- Room password: host can optionally set a password in the Host Controls panel. Non-host
+  clients who join a locked room see a password prompt overlay before entering the lobby.
+  Server validates via `submitPassword` event and disconnects wrong-password clients.
+- Destructible props: explosive barrels and gas cans/tanks explode when shot — large particle
+  burst, 7-unit AOE enemy damage (200 at centre, falls off linearly), collision entry deactivated,
+  mesh removed. Host relays `propDestroyed` event so all clients see the destruction.
+- Boss second phase: at 50% HP the boss enters an enraged state — speed rises from 12 to
+  ~18.6 units/s, attack cooldown drops from 1.1 s to 0.65 s, and the body meshes gain an
+  orange-red emissive glow as a visual warning to players.
+- Player floating fix: all player body-part Y positions lowered by 0.06 units (both local
+  player and remote players) so boot bottoms overlap the ground plane, eliminating the
+  visible floating gap in third-person view.
+- Blacksite lighting overhauled: hemisphere intensity raised to 1.4, fog density halved,
+  fluorescent point lights multiplied and their radius/intensity roughly doubled, so the
+  facility interior is fully visible while retaining the dark tactical atmosphere.
+- Bazooka scale tripled (0.13 → 0.38) and first-person position pulled closer to camera so
+  the weapon fills the screen correctly instead of appearing tiny and far away.
+- Map preview in lobby is now live: selecting a map card instantly rebuilds the 3D scene
+  behind the UI to show the actual map geometry as a real-time preview.
+
 -- TO DO --
 
-
-10. (residual) server.js still duplicates constants from gameConstants.js.
-    server.js is CommonJS so it cannot import the ES module directly.
-    Fix: add a build step (esbuild/rollup) or convert server.js to ESM.
+10. (residual) server.js still duplicates some constants from gameConstants.js.
+    Since the server is now ESM it can directly import them — this is a remaining cleanup task.
 
 20. (residual) Reconnection uses playerName as identity key which is not
     unique. A proper fix requires a persistent session token (cookie/localStorage).

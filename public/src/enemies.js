@@ -851,7 +851,27 @@ function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult
   }
 }
 
+function activateBossPhase2(enemy) {
+  enemy.bossPhase2 = true;
+  enemy.spd = BOSS_TUNING.moveSpeed * 1.55;   // 18.6 units/s
+  // Visual: make the boss glow orange-red to signal enrage
+  enemy.group.traverse((node) => {
+    if (node.isMesh && node.material) {
+      const m = node.material.clone();
+      m.emissive = new THREE.Color(0xff3300);
+      m.emissiveIntensity = 0.55;
+      node.material = m;
+    }
+  });
+}
+
 function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
+  // ── Phase 2 transition at 50% HP ──────────────────────────────────────────
+  if (!enemy.bossPhase2 && enemy.hp <= enemy.maxHp * 0.5) {
+    activateBossPhase2(enemy);
+  }
+  const atkFrequency = enemy.bossPhase2 ? 0.65 : 1.1; // faster attack rate in phase 2
+
   if (enemy.escaping) {
     enemy.bossVelY = (enemy.bossVelY || 0) - BOSS_ESCAPE_GRAVITY * game.dt;
     pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
@@ -883,7 +903,7 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     if (enemy.swingTmr <= 0) enemy.swingTmr = 0;
   } else {
     enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
-    if (enemy.atkTmr <= 0 && inAttackRange) { enemy.atkTmr = 1.1; enemy.windupTmr = 0.2; }
+    if (enemy.atkTmr <= 0 && inAttackRange) { enemy.atkTmr = atkFrequency; enemy.windupTmr = 0.2; }
   }
 
   if (!inAttackRange && movedDistSq < 0.04) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;

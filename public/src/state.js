@@ -83,6 +83,7 @@ export const game = {
   bullets: [],
   particles: [],
   oBs: [],
+  destructibles: [], // { id, mesh, x, z, triggerRadius, obsEntry, alive }
   healthPacks: [],
   remotePlayers: {},
   reviveHoldTime: 0,

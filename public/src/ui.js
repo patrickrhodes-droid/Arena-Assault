@@ -2,7 +2,7 @@ import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, P_MAX_HP, PVP_WIN_KILLS, WEAPON
 import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
-import { applyCharacterHead } from "./scene.js";
+import { applyCharacterHead, rebuildArena } from "./scene.js";
 
 export function cacheDom() {
   game.dom = {
@@ -95,6 +95,14 @@ export function cacheDom() {
     killFeed: document.getElementById("kill-feed"),
     waveClear: document.getElementById("wave-clear"),
     giveUpBtn: document.getElementById("give-up-btn"),
+    passwordOverlay: document.getElementById("password-overlay"),
+    passwordEntry: document.getElementById("password-entry"),
+    passwordSubmitBtn: document.getElementById("password-submit-btn"),
+    passwordError: document.getElementById("password-error"),
+    roomPasswordInput: document.getElementById("room-password-input"),
+    leaderboardBtn: document.getElementById("leaderboard-btn"),
+    leaderboardSection: document.getElementById("leaderboard-section"),
+    leaderboardContent: document.getElementById("leaderboard-content"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
@@ -195,6 +203,30 @@ export function bindMenuControls(actions) {
       if (game.localPlayerIsDowned) actions.enterSpectatorMode?.();
     });
   }
+
+  // Room password: host input — debounce emit to server
+  if (game.dom.roomPasswordInput) {
+    let pwDebounce = null;
+    game.dom.roomPasswordInput.addEventListener("input", () => {
+      clearTimeout(pwDebounce);
+      pwDebounce = setTimeout(() => {
+        if (game.isHost) {
+          game.socket?.emit("hostSetPassword", { password: game.dom.roomPasswordInput.value.trim() });
+        }
+      }, 600);
+    });
+  }
+
+  // Password prompt for non-hosts joining a locked room
+  if (game.dom.passwordSubmitBtn) {
+    const submitPw = () => {
+      const pw = (game.dom.passwordEntry?.value || "").trim();
+      if (!pw) return;
+      game.socket?.emit("submitPassword", { password: pw });
+    };
+    game.dom.passwordSubmitBtn.addEventListener("click", submitPw);
+    game.dom.passwordEntry?.addEventListener("keydown", (e) => { if (e.key === "Enter") submitPw(); });
+  }
   game.dom.viewBtn.addEventListener("click", toggleView);
   if (game.dom.fullscreenBtn) {
     game.dom.fullscreenBtn.addEventListener("click", () => {
@@ -229,12 +261,36 @@ export function bindMenuControls(actions) {
       game.socket?.emit("hostSetInvincibility", { enabled: game.invincibilityMode });
     }
   });
+
+  if (game.dom.leaderboardBtn) {
+    game.dom.leaderboardBtn.addEventListener("click", () => {
+      const sec = game.dom.leaderboardSection;
+      if (!sec.hidden) { sec.hidden = true; return; }
+      fetch("/api/leaderboard")
+        .then((r) => r.json())
+        .then((lb) => {
+          const coopRows = (lb.coop || []).map((e, i) =>
+            `<tr><td>${i + 1}</td><td>${e.playerName}</td><td>${e.score}</td><td>${e.wave}</td><td>${e.kills}</td><td>${e.date}</td></tr>`
+          ).join("") || "<tr><td colspan='6' style='text-align:center;color:var(--muted)'>No entries yet</td></tr>";
+          game.dom.leaderboardContent.innerHTML = `
+            <h3 style="color:var(--warn);letter-spacing:2px;margin:12px 0 6px">CO-OP HIGH SCORES</h3>
+            <table><thead><tr><th>#</th><th>PLAYER</th><th class="center">SCORE</th><th class="center">WAVE</th><th class="center">KILLS</th><th class="center">DATE</th></tr></thead>
+            <tbody>${coopRows}</tbody></table>`;
+          sec.hidden = false;
+        })
+        .catch(() => { game.dom.leaderboardContent.innerHTML = "<p style='color:var(--warn)'>Could not load leaderboard.</p>"; sec.hidden = false; });
+    });
+  }
 }
 
-export function syncMapCards(mapId) {
+export function syncMapCards(mapId, rebuildPreview = true) {
   game.dom.mapCards.forEach((c) => {
     c.classList.toggle("selected", c.dataset.map === mapId);
   });
+  // Rebuild the 3D background to match the selected map (live in-engine preview).
+  if (rebuildPreview && mapId && game.state === "MENU") {
+    rebuildArena(mapId);
+  }
 }
 
 export function updateMapChosenLabel(mapId) {

@@ -153,6 +153,7 @@ export function rebuildArena(mapId) {
   game.arenaLights = [];
   game.oBs.length = 0;
   game.ladders.length = 0;
+  game.destructibles.length = 0;
 
   game.arenaGroup = new THREE.Group();
   game.scene.add(game.arenaGroup);
@@ -409,12 +410,12 @@ function buildArenaOriginal() {
 
   // ─── Shooter asset pack props ───
   const SA = "/assets/models/shooter asset pack/";
-  loadProp(SA + "Exploding Barrel.glb", -28, 0, -28, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", 28, 0, 28, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", -20, 0, -38, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", 20, 0, 38, 1.0);
-  loadProp(SA + "Gas Tank.glb", 48, 0, -4, 1.0);
-  loadProp(SA + "Gas Tank.glb", -48, 0, 4, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", -28, 0, -28, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", 28, 0, 28, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", -20, 0, -38, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", 20, 0, 38, 1.0);
+  loadDestructibleProp(SA + "Gas Tank.glb", 48, 0, -4, 1.0);
+  loadDestructibleProp(SA + "Gas Tank.glb", -48, 0, 4, 1.0);
   loadProp(SA + "Water Tank.glb", 52, 0, 8, 1.2);
   loadProp(SA + "Water Tank.glb", -52, 0, -8, 1.2);
   loadProp(SA + "Pallet.glb", -42, 0, 36, 1.0, Math.PI * 0.25);
@@ -524,13 +525,13 @@ function buildArenaDesert() {
 
   // ─── Shooter asset pack props ───
   const SA = "/assets/models/shooter asset pack/";
-  loadProp(SA + "Exploding Barrel.glb", -12, 0, -48, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", 12, 0, -48, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", -12, 0, 48, 1.0);
-  loadProp(SA + "Exploding Barrel.glb", 12, 0, 48, 1.0);
-  loadProp(SA + "Gas Can.glb", -25, 0, 8, 0.8);
-  loadProp(SA + "Gas Can.glb", 25, 0, -8, 0.8);
-  loadProp(SA + "Gas Can.glb", 10, 0, -35, 0.8);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", -12, 0, -48, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", 12, 0, -48, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", -12, 0, 48, 1.0);
+  loadDestructibleProp(SA + "Exploding Barrel.glb", 12, 0, 48, 1.0);
+  loadDestructibleProp(SA + "Gas Can.glb", -25, 0, 8, 0.8);
+  loadDestructibleProp(SA + "Gas Can.glb", 25, 0, -8, 0.8);
+  loadDestructibleProp(SA + "Gas Can.glb", 10, 0, -35, 0.8);
   loadProp(SA + "Tires.glb", 46, 0, -46, 1.0);
   loadProp(SA + "Tires.glb", -46, 0, 46, 1.0);
   loadProp(SA + "Crate.glb", -4, 0, -50, 1.0);
@@ -792,33 +793,36 @@ function buildArenaCity() {
 // ─── Blacksite: multi-room indoor building map ───────────────────────────────
 
 function buildArenaBlacksite() {
-  game.scene.fog = new THREE.FogExp2(0x080a0d, 0.012);
-  game.scene.background = new THREE.Color(0x080a0d);
+  game.scene.fog = new THREE.FogExp2(0x0d1018, 0.006);  // less dense fog so you can see further
+  game.scene.background = new THREE.Color(0x0d1018);
 
-  // Dim hemisphere — interior only
-  const hemi = new THREE.HemisphereLight(0x1a2535, 0x060810, 0.35);
+  // Strong hemisphere base — makes everything visible
+  const hemi = new THREE.HemisphereLight(0x5a7aaa, 0x1a1a28, 1.4);
   game.scene.add(hemi);
   game.arenaLights.push(hemi);
 
-  // Overhead fluorescent clusters in hub and wings
+  // Overhead fluorescent clusters — bright, wide radius
   for (const [x, z] of [
-    [0, 0], [-28, 0], [28, 0], [0, -28], [0, 28],
+    [0, 0], [-20, 0], [20, 0], [0, -20], [0, 20],
+    [-14, -14], [14, -14], [-14, 14], [14, 14],
+    [0, -37], [0, 37], [-37, 0], [37, 0],
     [0, -62], [0, 62], [-62, 0], [62, 0],
     [-50, -50], [50, -50], [-50, 50], [50, 50],
+    [-25, -62], [25, -62], [-25, 62], [25, 62],
+    [-62, -25], [-62, 25], [62, -25], [62, 25],
   ]) {
-    const fl = new THREE.PointLight(0xb8d8ff, 2.2, 34);
-    fl.position.set(x, 7, z);
+    const fl = new THREE.PointLight(0xd0e8ff, 3.2, 45);
+    fl.position.set(x, 6.5, z);
     game.scene.add(fl); game.arenaLights.push(fl);
   }
 
-  // Red emergency lights in corridors and room corners
+  // Red emergency accent lights at low height for atmosphere
   for (const [x, z] of [
     [-60, -60], [60, -60], [-60, 60], [60, 60],
     [0, -50], [0, 50], [-50, 0], [50, 0],
-    [-30, -30], [30, -30], [-30, 30], [30, 30],
   ]) {
-    const el = new THREE.PointLight(0xff1a10, 1.0, 18);
-    el.position.set(x, 1.2, z);
+    const el = new THREE.PointLight(0xff2010, 1.6, 22);
+    el.position.set(x, 1.5, z);
     game.scene.add(el); game.arenaLights.push(el);
   }
 
@@ -1008,9 +1012,9 @@ function buildArenaBlacksite() {
   loadProp(SA + "Concrete Barrier.glb", -37, 0, 0, 1.4);
   loadProp(SA + "Concrete Barrier.glb", 37, 0, 0, 1.4);
 
-  // Barrels in corridors
+  // Barrels in corridors — destructible
   for (const [bx, bz] of [[-6, -42], [6, -42], [-6, 42], [6, 42], [-42, -6], [-42, 6], [42, -6], [42, 6]]) {
-    loadProp(SA + "Exploding Barrel.glb", bx, 0, bz, 0.9);
+    loadDestructibleProp(SA + "Exploding Barrel.glb", bx, 0, bz, 0.9);
   }
 
   // North wing: lab equipment
@@ -1232,6 +1236,33 @@ function loadProp(file, x, y, z, scale = 1, rotY = 0, collidable = true) {
   });
 }
 
+// Loads a GLB prop and registers it as destructible (explodes when shot).
+// The prop still gets normal AABB collision; the obsEntry is saved for deactivation.
+function loadDestructibleProp(file, x, y, z, scale = 1, rotY = 0, triggerRadius = 2.2) {
+  const targetGroup = game.arenaGroup;
+  const propId = `${Math.round(x * 10)}_${Math.round(z * 10)}`;
+  new GLTFLoader().load(file, (gltf) => {
+    if (game.arenaGroup !== targetGroup) return;
+    const model = gltf.scene.clone(true);
+    model.scale.setScalar(scale);
+    model.rotation.y = rotY;
+    model.position.set(x, y, z);
+    model.traverse((node) => {
+      if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+    });
+    targetGroup.add(model);
+    // Collision AABB
+    model.updateWorldMatrix(true, true);
+    const bbox = new THREE.Box3().setFromObject(model);
+    let obsEntry = null;
+    if (bbox.min.x < bbox.max.x && bbox.min.z < bbox.max.z) {
+      obsEntry = { min: { x: bbox.min.x, z: bbox.min.z }, max: { x: bbox.max.x, z: bbox.max.z }, h: bbox.max.y };
+      game.oBs.push(obsEntry);
+    }
+    game.destructibles.push({ id: propId, mesh: model, x, z, triggerRadius, obsEntry, alive: true });
+  });
+}
+
 function buildWalls(wallMat, accentMat) {
   const wallData = [
     { position: [0, WALL_H / 2, -HALF], size: [ARENA_SIZE, WALL_H, 1] },
@@ -1294,42 +1325,45 @@ function buildPlayer() {
     emissiveIntensity: 1.2,
   });
 
+  // All Y positions are offset -0.06 so boot bottoms overlap the ground plane,
+  // eliminating the visible floating gap in third-person view.
+  const Y = -0.06;
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.4), bodyMat);
-  torso.position.y = 1.2;
+  torso.position.y = 1.2 + Y;
   playerGroup.add(torso);
 
   const headGroup = new THREE.Group();
-  headGroup.position.y = 1.9;
+  headGroup.position.y = 1.9 + Y;
   playerGroup.add(headGroup);
 
   const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.02), visorMat);
-  visor.position.set(0, 1.92, -0.18);
+  visor.position.set(0, 1.92 + Y, -0.18);
   playerGroup.add(visor);
 
   applyCharacterHead(headGroup, game.myCharacter, { visor });
 
   const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.65, 0.2), bodyMat);
-  leftArm.position.set(-0.55, 1.3, 0);
+  leftArm.position.set(-0.55, 1.3 + Y, 0);
   playerGroup.add(leftArm);
 
   const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.65, 0.2), bodyMat);
-  rightArm.position.set(0.55, 1.3, 0);
+  rightArm.position.set(0.55, 1.3 + Y, 0);
   playerGroup.add(rightArm);
 
   const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.25), legMat);
-  leftLeg.position.set(-0.2, 0.4, 0);
+  leftLeg.position.set(-0.2, 0.4 + Y, 0);
   playerGroup.add(leftLeg);
 
   const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.25), legMat);
-  rightLeg.position.set(0.2, 0.4, 0);
+  rightLeg.position.set(0.2, 0.4 + Y, 0);
   playerGroup.add(rightLeg);
 
   const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.35), bootMat);
-  leftBoot.position.set(-0.2, 0.08, 0);
+  leftBoot.position.set(-0.2, 0.08 + Y, 0);
   playerGroup.add(leftBoot);
 
   const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.35), bootMat);
-  rightBoot.position.set(0.2, 0.08, 0);
+  rightBoot.position.set(0.2, 0.08 + Y, 0);
   playerGroup.add(rightBoot);
 
   game.visuals.player = {
@@ -1439,11 +1473,11 @@ function buildWeaponVisuals() {
       bazooka: {
         tpPos: [0.55, 1.32, -0.32],
         tpScale: [1, 1, 1],
-        tpMuzzleZ: -0.9,
-        fpPos: [0.3, -0.22, -0.65],
-        fpAdsPos: [0.0, -0.1, -0.4],
+        tpMuzzleZ: -0.75,
+        fpPos: [0.18, -0.16, -0.38],
+        fpAdsPos: [0.0, -0.08, -0.30],
         fpScale: [1, 1, 1],
-        fpMuzzleZ: -0.9,
+        fpMuzzleZ: -0.75,
       },
     },
   };
@@ -1455,7 +1489,7 @@ function buildWeaponVisuals() {
     sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
     grapple: { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
-    bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.13,  rotY: 0 },
+    bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.38,  rotY: 0 },
   };
 
   const glbGroups = {};
@@ -1647,34 +1681,35 @@ export function createRemotePlayer(id, initialData = {}) {
   const gunMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.8 });
   const group = new THREE.Group();
 
+  const RY = -0.06; // same ground offset as local player
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.4), bodyMat);
-  torso.position.y = 1.2;
+  torso.position.y = 1.2 + RY;
   group.add(torso);
 
   const headGroup = new THREE.Group();
-  headGroup.position.y = 1.9;
+  headGroup.position.y = 1.9 + RY;
   group.add(headGroup);
 
   const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.02), visorMat);
-  visor.position.set(0, 1.92, -0.18);
+  visor.position.set(0, 1.92 + RY, -0.18);
   group.add(visor);
 
   applyCharacterHead(headGroup, initialData.character || null, { visor });
 
   const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.65, 0.2), bodyMat);
-  leftArm.position.set(-0.55, 1.3, 0);
+  leftArm.position.set(-0.55, 1.3 + RY, 0);
   group.add(leftArm);
 
   const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.65, 0.2), bodyMat);
-  rightArm.position.set(0.55, 1.3, 0);
+  rightArm.position.set(0.55, 1.3 + RY, 0);
   group.add(rightArm);
 
   const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.25), legMat);
-  leftLeg.position.set(-0.2, 0.4, 0);
+  leftLeg.position.set(-0.2, 0.4 + RY, 0);
   group.add(leftLeg);
 
   const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.25), legMat);
-  rightLeg.position.set(0.2, 0.4, 0);
+  rightLeg.position.set(0.2, 0.4 + RY, 0);
   group.add(rightLeg);
 
   const remoteGun = new THREE.Group();
@@ -1682,7 +1717,7 @@ export function createRemotePlayer(id, initialData = {}) {
   const remoteBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.5), gunMat);
   remoteBarrel.position.set(0, 0, -0.35);
   remoteGun.add(remoteBarrel);
-  remoteGun.position.set(0.5, 1.35, -0.3);
+  remoteGun.position.set(0.5, 1.35 + RY, -0.3);
   group.add(remoteGun);
 
   const playerName = initialData.playerName || `Player ${id.slice(0, 8)}`;

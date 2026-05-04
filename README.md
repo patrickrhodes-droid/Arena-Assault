@@ -44,8 +44,18 @@ The lobby is split into three screens:
 | **Combat Arena** | Industrial | The original 144 × 144 unit arena with metal staircases, crate clusters, bunkers, and 4 double-height sniper towers. Cyan accent lighting. |
 | **Dust Bowl** | Desert | Sandy, open layout with ruined archways, stone pillars, oasis compounds, low sand-dune ridges, and two stepped-pyramid sniper platforms. Warm amber lighting. |
 | **Downtown** | City (Day) | Tight urban grid with four large climbable buildings, a central plaza, jersey barriers, alleyways, dumpsters, and warm combat-zone accents. Bright sunlit skyline with clear visibility. |
+| **Blacksite** | Indoor | Abandoned research compound. A cross-shaped ground floor with a central atrium, four long corridors, and four large corner rooms. Second floor features four catwalks overlooking the hub plus a raised central observation deck. Tactical corridors create natural chokepoints. |
 
-All maps share the same collision, ladder-climb, and spawn systems — only the geometry, textures, colours, fog, sky, and lighting differ. Each map is populated with props from the **City Props** and **Shooter** GLB asset packs (street lights, trees, trash cans, fire hydrants, traffic lights, dumpsters, barrels, crates, vehicles, sack trenches, shipping containers, and more). Walls, ground, and buildings use procedural canvas textures (metal panels for Arena, sandstone for Desert, asphalt + concrete brick for City).
+All maps share the same collision, ladder-climb, and spawn systems — only the geometry, textures, colours, fog, sky, and lighting differ. Each map is populated with props from the **City Props** and **Shooter** GLB asset packs (street lights, trees, trash cans, fire hydrants, traffic lights, dumpsters, barrels, crates, vehicles, sack trenches, shipping containers, and more). Walls, ground, and buildings use procedural canvas textures (metal panels for Arena, sandstone for Desert, asphalt + concrete brick for City and Blacksite).
+
+### Blacksite navigation
+
+- **Ground floor** — central atrium connects to four corridors (N/S/E/W). Each corridor leads to a large open wing. Wide doorways (no physical doors) let you move freely between all areas.
+- **Catwalks** — approach the base of any catwalk pillar (north, south, east, or west of the atrium) and press **W** while facing it to climb the ladder to the elevated walkway above.
+- **Observation deck** — a raised central platform in the middle of the atrium. A ladder on its north face leads to the top. Use it as a sniper perch with sightlines into all four corridors.
+- **Explosive barrels** — red barrels and gas cans scattered throughout the corridors detonate when shot, dealing heavy AOE damage to nearby enemies. Use them tactically.
+
+Selecting a map in the lobby rebuilds the 3D background in real time so you can see what the map looks like before starting.
 
 ## Controls
 
@@ -95,9 +105,9 @@ All maps share the same collision, ladder-climb, and spawn systems — only the 
 | Skeleton | Wave 1+ | 1 HP, fast melee rusher. Wave 6 = 4 groups of 2 per wave (+1 group per wave, capped at 8). Animated GLB model. |
 | Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
 | Soldier | Wave 6+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. Spawns in pairs alongside skeleton groups. |
-| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. Telegraphed wind-up before each swing; continues closing the gap during wind-up so the hit reliably lands. Heavy knockback, jump-escape behaviour. Multiple bosses from wave 10 onward. Only the Pistol and Sword damage the Titan Brute. |
+| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing; continues closing the gap during wind-up. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward. Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. |
 
-The boss attack has a 7.8 unit reach (50% wider than original) and swings every 1.1 s for more aggressive threat.
+The boss attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2).
 
 ## Wave system
 
@@ -148,6 +158,15 @@ Heads use a layer-isolated point-light fill so they appear bright without any em
 
 - **Start at Wave** — begin co-op at any wave 1–30.
 - **Invincibility** — all players take no damage for the session.
+- **Room Password** — optionally set a password; joining players must enter it before entering the lobby. Leave blank to keep the room open.
+
+## Leaderboard
+
+An all-time leaderboard is saved to `leaderboard.json` on the server and updated after every session. On the game-over screen, click **ALL-TIME LEADERBOARD** to fetch and display the top 20 COOP scores.
+
+## Reconnection
+
+If a player's browser briefly loses the connection (tab refresh, network blip), they automatically rejoin within 60 seconds and their wave, HP, weapon, and character are restored. Each browser session stores a unique token in `localStorage`; the server matches the token to the saved state rather than relying on player name.
 
 ## Gameplay tuning reference
 

@@ -159,6 +159,11 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
         applySplashDamage(bullet, position, processHit);
       }
+      // Check if the bullet hit a destructible prop (any weapon can trigger).
+      if (bullet.isPlayer && !bullet.fromRemote) {
+        const dest = findNearbyDestructible(position.x, position.z);
+        if (dest) triggerDestructible(dest.id, position.clone(), processHit);
+      }
     }
 
     if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote) {
@@ -337,6 +342,45 @@ export function updateParticles() {
       particle.mesh.material.dispose();
       game.particles.splice(index, 1);
     }
+  }
+}
+
+// Check if a world position is near any alive destructible prop.
+function findNearbyDestructible(x, z) {
+  for (const d of game.destructibles) {
+    if (!d.alive) continue;
+    const dx = d.x - x, dz = d.z - z;
+    if (dx * dx + dz * dz < d.triggerRadius * d.triggerRadius) return d;
+  }
+  return null;
+}
+
+// Destroy a destructible prop: big particle burst, AOE enemy damage, remove mesh + collision.
+export function triggerDestructible(propId, origin, processHit) {
+  const d = game.destructibles.find((p) => p.id === propId && p.alive);
+  if (!d) return;
+  d.alive = false;
+  // Remove mesh from scene
+  if (d.mesh?.parent) d.mesh.parent.remove(d.mesh);
+  // Deactivate collision entry (push it out of reach)
+  if (d.obsEntry) { d.obsEntry.h = -9999; }
+  // Big explosion particles
+  spawnParticles(origin, 32, 0xff5500, 14);
+  spawnParticles(origin, 16, 0xffcc00, 8);
+  // AOE damage to enemies within 7 units
+  for (const enemy of game.enemies) {
+    const dx = enemy.group.position.x - origin.x;
+    const dz = enemy.group.position.z - origin.z;
+    const distSq = dx * dx + dz * dz;
+    const aoeSq = 7 * 7;
+    if (distSq < aoeSq) {
+      const dmg = Math.round(200 * (1 - Math.sqrt(distSq) / 7));
+      if (dmg > 0) processHit?.(enemy, dmg, origin.clone());
+    }
+  }
+  // Broadcast destruction so all clients see it
+  if (game.socket && game.isHost) {
+    game.socket.emit("propDestroyed", { propId, x: origin.x, y: origin.y, z: origin.z });
   }
 }
 
