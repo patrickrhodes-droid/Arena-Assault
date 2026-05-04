@@ -1,0 +1,2377 @@
+{
+  "version": 2,
+  "id": "arena",
+  "name": "COMBAT ARENA",
+  "subtitle": "Industrial Training Facility",
+  "theme": "arena",
+  "arenaSize": 144,
+  "fog": {
+    "color": "#10242c",
+    "density": 0.0054
+  },
+  "background": "#10242c",
+  "ground": {
+    "type": "procedural",
+    "material": "arenaGround"
+  },
+  "objects": [
+    {
+      "id": "met_001",
+      "type": "box",
+      "label": "Arena / Wall North",
+      "position": [
+        0,
+        3,
+        -72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_002",
+      "type": "box",
+      "label": "Arena / Wall South",
+      "position": [
+        0,
+        3,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_003",
+      "type": "box",
+      "label": "Arena / Wall West",
+      "position": [
+        -72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_004",
+      "type": "box",
+      "label": "Arena / Wall East",
+      "position": [
+        72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_005",
+      "type": "box",
+      "label": "Arena / Hub Barrier N",
+      "position": [
+        0,
+        1,
+        -14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_006",
+      "type": "box",
+      "label": "Arena / Hub Barrier S",
+      "position": [
+        0,
+        1,
+        14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_007",
+      "type": "box",
+      "label": "Arena / Hub Barrier W",
+      "position": [
+        -14,
+        1,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2,
+        5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_008",
+      "type": "box",
+      "label": "Arena / Hub Barrier E",
+      "position": [
+        14,
+        1,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2,
+        5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_009",
+      "type": "box",
+      "label": "Arena / Metal Stair 1",
+      "position": [
+        -11,
+        0.55,
+        16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        1.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_010",
+      "type": "box",
+      "label": "Arena / Metal Stair 2",
+      "position": [
+        -3,
+        1.05,
+        16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        2.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_011",
+      "type": "box",
+      "label": "Arena / Metal Stair 3",
+      "position": [
+        5,
+        1.55,
+        16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        3.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "bla_012",
+      "type": "box",
+      "label": "Arena / Dark Stair 1",
+      "position": [
+        -5,
+        0.55,
+        -16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        1.1,
+        3.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_013",
+      "type": "box",
+      "label": "Arena / Dark Stair 2",
+      "position": [
+        3,
+        1.05,
+        -16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        2.1,
+        3.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_014",
+      "type": "box",
+      "label": "Arena / Dark Stair 3",
+      "position": [
+        11,
+        1.55,
+        -16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        3.1,
+        3.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "cra_015",
+      "type": "box",
+      "label": "Arena / NW Crate A",
+      "position": [
+        -27,
+        0.75,
+        -27
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_016",
+      "type": "box",
+      "label": "Arena / NW Crate B",
+      "position": [
+        -25.5,
+        0.75,
+        -27
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_017",
+      "type": "box",
+      "label": "Arena / NW Crate C",
+      "position": [
+        -27,
+        0.75,
+        -25.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_018",
+      "type": "box",
+      "label": "Arena / NW Crate D",
+      "position": [
+        -27,
+        1.5,
+        -27
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_019",
+      "type": "box",
+      "label": "Arena / SE Crate A",
+      "position": [
+        27,
+        0.75,
+        27
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_020",
+      "type": "box",
+      "label": "Arena / SE Crate B",
+      "position": [
+        25.5,
+        0.75,
+        27
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_021",
+      "type": "box",
+      "label": "Arena / SE Crate C",
+      "position": [
+        27,
+        0.75,
+        25.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "met_022",
+      "type": "box",
+      "label": "Arena / Mid Barrier 01",
+      "position": [
+        0,
+        0.6,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_023",
+      "type": "box",
+      "label": "Arena / Mid Barrier 02",
+      "position": [
+        14,
+        0.6,
+        9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_024",
+      "type": "box",
+      "label": "Arena / Mid Barrier 03",
+      "position": [
+        -32,
+        0.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_025",
+      "type": "box",
+      "label": "Arena / Mid Barrier 04",
+      "position": [
+        9,
+        0.6,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_026",
+      "type": "box",
+      "label": "Arena / Mid Barrier 05",
+      "position": [
+        -9,
+        0.6,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_027",
+      "type": "box",
+      "label": "Arena / Mid Barrier 06",
+      "position": [
+        22,
+        0.6,
+        -14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_028",
+      "type": "box",
+      "label": "Arena / Mid Barrier 07",
+      "position": [
+        -15,
+        0.6,
+        -36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_029",
+      "type": "box",
+      "label": "Arena / Mid Barrier 08",
+      "position": [
+        15,
+        0.6,
+        36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_030",
+      "type": "box",
+      "label": "Arena / Mid Barrier 09",
+      "position": [
+        -36,
+        0.6,
+        15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_031",
+      "type": "box",
+      "label": "Arena / Mid Barrier 10",
+      "position": [
+        36,
+        0.6,
+        -15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_032",
+      "type": "box",
+      "label": "Arena / North Bunker Wall W",
+      "position": [
+        -6,
+        1.2,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2.4,
+        9
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_033",
+      "type": "box",
+      "label": "Arena / North Bunker Wall E",
+      "position": [
+        6,
+        1.2,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2.4,
+        9
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_034",
+      "type": "box",
+      "label": "Arena / North Bunker Back",
+      "position": [
+        0,
+        1.2,
+        -54
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        2.4,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "cra_035",
+      "type": "box",
+      "label": "Arena / North Bunker Crate",
+      "position": [
+        0,
+        0.75,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "met_036",
+      "type": "box",
+      "label": "Arena / South Bunker Wall W",
+      "position": [
+        -6,
+        1.2,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2.4,
+        9
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_037",
+      "type": "box",
+      "label": "Arena / South Bunker Wall E",
+      "position": [
+        6,
+        1.2,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        2.4,
+        9
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_038",
+      "type": "box",
+      "label": "Arena / South Bunker Back",
+      "position": [
+        0,
+        1.2,
+        54
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        2.4,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "bla_039",
+      "type": "box",
+      "label": "Arena / East Tower Base",
+      "position": [
+        50,
+        0.7,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4.5,
+        1.4,
+        4.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_040",
+      "type": "box",
+      "label": "Arena / East Tower Mid",
+      "position": [
+        50,
+        2.3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        4.6,
+        3.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_041",
+      "type": "box",
+      "label": "Arena / East Tower Top",
+      "position": [
+        50,
+        5.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.2,
+        11,
+        2.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_042",
+      "type": "box",
+      "label": "Arena / West Tower Base",
+      "position": [
+        -50,
+        0.7,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4.5,
+        1.4,
+        4.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_043",
+      "type": "box",
+      "label": "Arena / West Tower Mid",
+      "position": [
+        -50,
+        2.3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        4.6,
+        3.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_044",
+      "type": "box",
+      "label": "Arena / West Tower Top",
+      "position": [
+        -50,
+        5.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.2,
+        11,
+        2.2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_045",
+      "type": "box",
+      "label": "Arena / NE Dark Stair 1",
+      "position": [
+        36,
+        0.7,
+        -36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.6,
+        1.4,
+        3.6
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_046",
+      "type": "box",
+      "label": "Arena / NE Dark Stair 2",
+      "position": [
+        44,
+        1.15,
+        -36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.6,
+        2.3,
+        3.6
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_047",
+      "type": "box",
+      "label": "Arena / NE Dark Stair 3",
+      "position": [
+        52,
+        1.55,
+        -36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.6,
+        3.1,
+        3.6
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "cra_048",
+      "type": "box",
+      "label": "Arena / SW Crate Stair 1",
+      "position": [
+        -40,
+        0.5,
+        36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        1,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_049",
+      "type": "box",
+      "label": "Arena / SW Crate Stair 2",
+      "position": [
+        -33,
+        0.95,
+        36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        1.9,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_050",
+      "type": "box",
+      "label": "Arena / SW Crate Stair 3",
+      "position": [
+        -27,
+        1.35,
+        36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        2.7,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_051",
+      "type": "box",
+      "label": "Arena / NW Crate Stair 1",
+      "position": [
+        -40,
+        0.5,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        1,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_052",
+      "type": "box",
+      "label": "Arena / NW Crate Stair 2",
+      "position": [
+        -33,
+        0.95,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        1.9,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_053",
+      "type": "box",
+      "label": "Arena / NW Crate Stair 3",
+      "position": [
+        -27,
+        1.35,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.6,
+        2.7,
+        2.6
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "met_054",
+      "type": "box",
+      "label": "Arena / SE Metal Stair 1",
+      "position": [
+        28,
+        0.55,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        1.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_055",
+      "type": "box",
+      "label": "Arena / SE Metal Stair 2",
+      "position": [
+        36,
+        1.05,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        2.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_056",
+      "type": "box",
+      "label": "Arena / SE Metal Stair 3",
+      "position": [
+        44,
+        1.55,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.2,
+        3.1,
+        3.2
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_057",
+      "type": "box",
+      "label": "Arena / Diag Cover SW",
+      "position": [
+        -28,
+        0.6,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_058",
+      "type": "box",
+      "label": "Arena / Diag Cover NE",
+      "position": [
+        28,
+        0.6,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_059",
+      "type": "box",
+      "label": "Arena / Diag Cover NW",
+      "position": [
+        -28,
+        0.6,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_060",
+      "type": "box",
+      "label": "Arena / Diag Cover SE",
+      "position": [
+        28,
+        0.6,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_061",
+      "type": "box",
+      "label": "Arena / Wall Barrier E1",
+      "position": [
+        60,
+        0.6,
+        -24
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_062",
+      "type": "box",
+      "label": "Arena / Wall Barrier W1",
+      "position": [
+        -60,
+        0.6,
+        24
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_063",
+      "type": "box",
+      "label": "Arena / Wall Barrier S1",
+      "position": [
+        24,
+        0.6,
+        62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_064",
+      "type": "box",
+      "label": "Arena / Wall Barrier N1",
+      "position": [
+        -24,
+        0.6,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1.2,
+        0.4
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_065",
+      "type": "box",
+      "label": "Arena / Wall Barrier W2",
+      "position": [
+        -62,
+        0.6,
+        -24
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_066",
+      "type": "box",
+      "label": "Arena / Wall Barrier E2",
+      "position": [
+        62,
+        0.6,
+        24
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.2,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "bla_067",
+      "type": "box",
+      "label": "Arena / Sniper Perch NE",
+      "position": [
+        58,
+        5,
+        -58
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        10,
+        5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_068",
+      "type": "box",
+      "label": "Arena / Sniper Perch SW",
+      "position": [
+        -58,
+        5,
+        58
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        10,
+        5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_069",
+      "type": "box",
+      "label": "Arena / Sniper Perch SE",
+      "position": [
+        58,
+        5,
+        58
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        10,
+        5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_070",
+      "type": "box",
+      "label": "Arena / Sniper Perch NW",
+      "position": [
+        -58,
+        5,
+        -58
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        10,
+        5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "ldr_071",
+      "type": "ladder",
+      "label": "Arena / Tower Ladder NE",
+      "position": [
+        58,
+        5.15,
+        -54.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.8,
+        10.3,
+        2.1
+      ],
+      "bounds": {
+        "xMin": 56.6,
+        "xMax": 59.4,
+        "zMin": -55.8,
+        "zMax": -53.7,
+        "yMax": 10.3
+      }
+    },
+    {
+      "id": "ldr_072",
+      "type": "ladder",
+      "label": "Arena / Tower Ladder NW",
+      "position": [
+        -58,
+        5.15,
+        -54.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.8,
+        10.3,
+        2.1
+      ],
+      "bounds": {
+        "xMin": -59.4,
+        "xMax": -56.6,
+        "zMin": -55.8,
+        "zMax": -53.7,
+        "yMax": 10.3
+      }
+    },
+    {
+      "id": "ldr_073",
+      "type": "ladder",
+      "label": "Arena / Tower Ladder SE",
+      "position": [
+        58,
+        5.15,
+        54.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.8,
+        10.3,
+        2.1
+      ],
+      "bounds": {
+        "xMin": 56.6,
+        "xMax": 59.4,
+        "zMin": 53.7,
+        "zMax": 55.8,
+        "yMax": 10.3
+      }
+    },
+    {
+      "id": "ldr_074",
+      "type": "ladder",
+      "label": "Arena / Tower Ladder SW",
+      "position": [
+        -58,
+        5.15,
+        54.75
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.8,
+        10.3,
+        2.1
+      ],
+      "bounds": {
+        "xMin": -59.4,
+        "xMax": -56.6,
+        "zMin": 53.7,
+        "zMax": 55.8,
+        "yMax": 10.3
+      }
+    },
+    {
+      "id": "cra_075",
+      "type": "box",
+      "label": "Arena / Mid Crate NW A",
+      "position": [
+        -35,
+        0.75,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_076",
+      "type": "box",
+      "label": "Arena / Mid Crate NW B",
+      "position": [
+        -33.5,
+        0.75,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_077",
+      "type": "box",
+      "label": "Arena / Mid Crate NW C",
+      "position": [
+        -35,
+        1.5,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_078",
+      "type": "box",
+      "label": "Arena / Mid Crate SE A",
+      "position": [
+        35,
+        0.75,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_079",
+      "type": "box",
+      "label": "Arena / Mid Crate SE B",
+      "position": [
+        33.5,
+        0.75,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_080",
+      "type": "box",
+      "label": "Arena / Mid Crate S A",
+      "position": [
+        20,
+        0.75,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_081",
+      "type": "box",
+      "label": "Arena / Mid Crate S B",
+      "position": [
+        21.5,
+        0.75,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_082",
+      "type": "box",
+      "label": "Arena / Mid Crate N A",
+      "position": [
+        -20,
+        0.75,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "cra_083",
+      "type": "box",
+      "label": "Arena / Mid Crate N B",
+      "position": [
+        -21.5,
+        0.75,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "crate",
+      "collidable": true
+    },
+    {
+      "id": "dst_084",
+      "type": "destructible",
+      "label": "Arena / Barrel NW",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -28,
+        0,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_085",
+      "type": "destructible",
+      "label": "Arena / Barrel SE",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        28,
+        0,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_086",
+      "type": "destructible",
+      "label": "Arena / Barrel NE",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -20,
+        0,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_087",
+      "type": "destructible",
+      "label": "Arena / Barrel SW",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        20,
+        0,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_088",
+      "type": "destructible",
+      "label": "Arena / Gas Tank E",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
+      "position": [
+        48,
+        0,
+        -4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_089",
+      "type": "destructible",
+      "label": "Arena / Gas Tank W",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
+      "position": [
+        -48,
+        0,
+        4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_090",
+      "type": "prop",
+      "label": "Arena / Water Tank E",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb",
+      "position": [
+        52,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_091",
+      "type": "prop",
+      "label": "Arena / Water Tank W",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb",
+      "position": [
+        -52,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_092",
+      "type": "prop",
+      "label": "Arena / Pallet SW",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        -42,
+        0,
+        36
+      ],
+      "rotation": [
+        0,
+        0.785,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_093",
+      "type": "prop",
+      "label": "Arena / Pallet NE",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        42,
+        0,
+        -36
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_094",
+      "type": "prop",
+      "label": "Arena / Tires N",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        0,
+        0,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_095",
+      "type": "prop",
+      "label": "Arena / Tires S",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        0,
+        0,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_096",
+      "type": "prop",
+      "label": "Arena / Tires W",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        -30,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_097",
+      "type": "prop",
+      "label": "Arena / Crate N",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        0,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_098",
+      "type": "prop",
+      "label": "Arena / Crate S",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        0,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_099",
+      "type": "prop",
+      "label": "Arena / Sack Trench NW",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        -18,
+        0,
+        -26
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_100",
+      "type": "prop",
+      "label": "Arena / Sack Trench SE",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        18,
+        0,
+        26
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_101",
+      "type": "prop",
+      "label": "Arena / Dumpster NW",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        -10,
+        0,
+        -51
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_102",
+      "type": "prop",
+      "label": "Arena / Dumpster SE",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        10,
+        0,
+        51
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_103",
+      "type": "prop",
+      "label": "Arena / Debris E",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        8,
+        0,
+        -16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_104",
+      "type": "prop",
+      "label": "Arena / Debris W",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -8,
+        0,
+        16
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_105",
+      "type": "prop",
+      "label": "Arena / Cardboard NW",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        -35,
+        0,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_106",
+      "type": "prop",
+      "label": "Arena / Cardboard SE",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        35,
+        0,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "collidable": true
+    }
+  ]
+}

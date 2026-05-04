@@ -1,0 +1,2652 @@
+{
+  "version": 2,
+  "id": "blacksite",
+  "name": "BLACKSITE",
+  "subtitle": "Abandoned Research Compound",
+  "theme": "blacksite",
+  "arenaSize": 144,
+  "fog": {
+    "color": "#071210",
+    "density": 0.005
+  },
+  "background": "#071210",
+  "ground": {
+    "type": "procedural",
+    "material": "blacksiteFloor"
+  },
+  "objects": [
+    {
+      "id": "met_001",
+      "type": "box",
+      "label": "Blacksite / Wall North",
+      "position": [
+        0,
+        3,
+        -72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_002",
+      "type": "box",
+      "label": "Blacksite / Wall South",
+      "position": [
+        0,
+        3,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_003",
+      "type": "box",
+      "label": "Blacksite / Wall West",
+      "position": [
+        -72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_004",
+      "type": "box",
+      "label": "Blacksite / Wall East",
+      "position": [
+        72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_005",
+      "type": "box",
+      "label": "BS / Hub Pillar NW",
+      "position": [
+        -20,
+        3.5,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        7,
+        3.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_006",
+      "type": "box",
+      "label": "BS / Hub Pillar NE",
+      "position": [
+        20,
+        3.5,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        7,
+        3.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_007",
+      "type": "box",
+      "label": "BS / Hub Pillar SW",
+      "position": [
+        -20,
+        3.5,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        7,
+        3.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_008",
+      "type": "box",
+      "label": "BS / Hub Pillar SE",
+      "position": [
+        20,
+        3.5,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        7,
+        3.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "con_009",
+      "type": "box",
+      "label": "BS / N Corridor Wall W",
+      "position": [
+        -13,
+        3.5,
+        -37
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        30
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_010",
+      "type": "box",
+      "label": "BS / N Corridor Wall E",
+      "position": [
+        13,
+        3.5,
+        -37
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        30
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_011",
+      "type": "box",
+      "label": "BS / S Corridor Wall W",
+      "position": [
+        -13,
+        3.5,
+        37
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        30
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_012",
+      "type": "box",
+      "label": "BS / S Corridor Wall E",
+      "position": [
+        13,
+        3.5,
+        37
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        30
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_013",
+      "type": "box",
+      "label": "BS / E Corridor Wall N",
+      "position": [
+        37,
+        3.5,
+        -13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_014",
+      "type": "box",
+      "label": "BS / E Corridor Wall S",
+      "position": [
+        37,
+        3.5,
+        13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_015",
+      "type": "box",
+      "label": "BS / W Corridor Wall N",
+      "position": [
+        -37,
+        3.5,
+        -13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_016",
+      "type": "box",
+      "label": "BS / W Corridor Wall S",
+      "position": [
+        -37,
+        3.5,
+        13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_017",
+      "type": "box",
+      "label": "BS / N Wing Door W",
+      "position": [
+        -25,
+        3.5,
+        -52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        26,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_018",
+      "type": "box",
+      "label": "BS / N Wing Door E",
+      "position": [
+        25,
+        3.5,
+        -52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        26,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_019",
+      "type": "box",
+      "label": "BS / N Wing Mass W",
+      "position": [
+        -55,
+        3.5,
+        -61
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        36,
+        7,
+        18
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_020",
+      "type": "box",
+      "label": "BS / N Wing Mass E",
+      "position": [
+        55,
+        3.5,
+        -61
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        36,
+        7,
+        18
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_021",
+      "type": "box",
+      "label": "BS / S Wing Door W",
+      "position": [
+        -25,
+        3.5,
+        52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        26,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_022",
+      "type": "box",
+      "label": "BS / S Wing Door E",
+      "position": [
+        25,
+        3.5,
+        52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        26,
+        7,
+        2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_023",
+      "type": "box",
+      "label": "BS / S Wing Mass W",
+      "position": [
+        -55,
+        3.5,
+        61
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        36,
+        7,
+        18
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_024",
+      "type": "box",
+      "label": "BS / S Wing Mass E",
+      "position": [
+        55,
+        3.5,
+        61
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        36,
+        7,
+        18
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_025",
+      "type": "box",
+      "label": "BS / E Wing Wall N",
+      "position": [
+        52,
+        3.5,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        26
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_026",
+      "type": "box",
+      "label": "BS / E Wing Wall S",
+      "position": [
+        52,
+        3.5,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        26
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_027",
+      "type": "box",
+      "label": "BS / E Wing Mass N",
+      "position": [
+        61,
+        3.5,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        7,
+        36
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_028",
+      "type": "box",
+      "label": "BS / E Wing Mass S",
+      "position": [
+        61,
+        3.5,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        7,
+        36
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_029",
+      "type": "box",
+      "label": "BS / W Wing Wall N",
+      "position": [
+        -52,
+        3.5,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        26
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_030",
+      "type": "box",
+      "label": "BS / W Wing Wall S",
+      "position": [
+        -52,
+        3.5,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        26
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_031",
+      "type": "box",
+      "label": "BS / W Wing Mass N",
+      "position": [
+        -61,
+        3.5,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        7,
+        36
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_032",
+      "type": "box",
+      "label": "BS / W Wing Mass S",
+      "position": [
+        -61,
+        3.5,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        7,
+        36
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "bla_033",
+      "type": "box",
+      "label": "BS / Corner NW Div N",
+      "position": [
+        -55,
+        3.5,
+        -66
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        12
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_034",
+      "type": "box",
+      "label": "BS / Corner NW Div S",
+      "position": [
+        -55,
+        3.5,
+        -45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        10
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_035",
+      "type": "box",
+      "label": "BS / Corner NE Div N",
+      "position": [
+        55,
+        3.5,
+        -66
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        12
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_036",
+      "type": "box",
+      "label": "BS / Corner NE Div S",
+      "position": [
+        55,
+        3.5,
+        -45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        10
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_037",
+      "type": "box",
+      "label": "BS / Corner SW Div N",
+      "position": [
+        -55,
+        3.5,
+        66
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        12
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_038",
+      "type": "box",
+      "label": "BS / Corner SW Div S",
+      "position": [
+        -55,
+        3.5,
+        45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        10
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_039",
+      "type": "box",
+      "label": "BS / Corner SE Div N",
+      "position": [
+        55,
+        3.5,
+        66
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        12
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_040",
+      "type": "box",
+      "label": "BS / Corner SE Div S",
+      "position": [
+        55,
+        3.5,
+        45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        7,
+        10
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "met_041",
+      "type": "box",
+      "label": "BS / Catwalk N Floor",
+      "position": [
+        0,
+        4.6,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        0.35,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_042",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -14.4,
+        2.3,
+        -66.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_043",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        14.4,
+        2.3,
+        -66.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_044",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -14.4,
+        2.3,
+        -57.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_045",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        14.4,
+        2.3,
+        -57.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_046",
+      "type": "box",
+      "label": "BS / Catwalk Rail",
+      "position": [
+        0,
+        5.2,
+        -57.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        0.8,
+        0.35
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_047",
+      "type": "ladder",
+      "label": "BS / Catwalk N Ladder",
+      "position": [
+        0,
+        2.45,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        4.9,
+        6
+      ],
+      "bounds": {
+        "xMin": -4,
+        "xMax": 4,
+        "zMin": -58,
+        "zMax": -52,
+        "yMax": 4.9
+      }
+    },
+    {
+      "id": "met_048",
+      "type": "box",
+      "label": "BS / Catwalk S Floor",
+      "position": [
+        0,
+        4.6,
+        62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        0.35,
+        10
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_049",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -14.4,
+        2.3,
+        57.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_050",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        14.4,
+        2.3,
+        57.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_051",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -14.4,
+        2.3,
+        66.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_052",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        14.4,
+        2.3,
+        66.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_053",
+      "type": "box",
+      "label": "BS / Catwalk Rail",
+      "position": [
+        0,
+        5.2,
+        57.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        0.8,
+        0.35
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_054",
+      "type": "ladder",
+      "label": "BS / Catwalk S Ladder",
+      "position": [
+        0,
+        2.45,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        4.9,
+        6
+      ],
+      "bounds": {
+        "xMin": -4,
+        "xMax": 4,
+        "zMin": 52,
+        "zMax": 58,
+        "yMax": 4.9
+      }
+    },
+    {
+      "id": "met_055",
+      "type": "box",
+      "label": "BS / Catwalk E Floor",
+      "position": [
+        62,
+        4.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        0.35,
+        30
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_056",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        57.6,
+        2.3,
+        -14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_057",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        66.4,
+        2.3,
+        -14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_058",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        57.6,
+        2.3,
+        14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_059",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        66.4,
+        2.3,
+        14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_060",
+      "type": "box",
+      "label": "BS / Catwalk Rail",
+      "position": [
+        57.2,
+        5.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.35,
+        0.8,
+        30
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_061",
+      "type": "ladder",
+      "label": "BS / Catwalk E Ladder",
+      "position": [
+        60,
+        2.45,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4,
+        4.9,
+        8
+      ],
+      "bounds": {
+        "xMin": 58,
+        "xMax": 62,
+        "zMin": -4,
+        "zMax": 4,
+        "yMax": 4.9
+      }
+    },
+    {
+      "id": "met_062",
+      "type": "box",
+      "label": "BS / Catwalk W Floor",
+      "position": [
+        -62,
+        4.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        0.35,
+        30
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_063",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -66.4,
+        2.3,
+        -14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_064",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -57.6,
+        2.3,
+        -14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_065",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -66.4,
+        2.3,
+        14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_066",
+      "type": "box",
+      "label": "BS / Catwalk Pillar",
+      "position": [
+        -57.6,
+        2.3,
+        14.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.5,
+        4.6,
+        0.5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_067",
+      "type": "box",
+      "label": "BS / Catwalk Rail",
+      "position": [
+        -57.2,
+        5.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.35,
+        0.8,
+        30
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_068",
+      "type": "ladder",
+      "label": "BS / Catwalk W Ladder",
+      "position": [
+        -60,
+        2.45,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4,
+        4.9,
+        8
+      ],
+      "bounds": {
+        "xMin": -62,
+        "xMax": -58,
+        "zMin": -4,
+        "zMax": 4,
+        "yMax": 4.9
+      }
+    },
+    {
+      "id": "met_069",
+      "type": "box",
+      "label": "BS / Obs Deck",
+      "position": [
+        0,
+        4,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        8,
+        12
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_070",
+      "type": "box",
+      "label": "BS / Obs Rail N",
+      "position": [
+        0,
+        8.5,
+        -6.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1,
+        0.35
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_071",
+      "type": "box",
+      "label": "BS / Obs Rail S",
+      "position": [
+        0,
+        8.5,
+        6.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1,
+        0.35
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_072",
+      "type": "box",
+      "label": "BS / Obs Rail W",
+      "position": [
+        -6.2,
+        8.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.35,
+        1,
+        12
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_073",
+      "type": "box",
+      "label": "BS / Obs Rail E",
+      "position": [
+        6.2,
+        8.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.35,
+        1,
+        12
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_074",
+      "type": "ladder",
+      "label": "BS / Obs Deck Ladder",
+      "position": [
+        0,
+        4.05,
+        -7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        6,
+        8.1,
+        2
+      ],
+      "bounds": {
+        "xMin": -3,
+        "xMax": 3,
+        "zMin": -8,
+        "zMax": -6,
+        "yMax": 8.1
+      }
+    },
+    {
+      "id": "prp_075",
+      "type": "prop",
+      "label": "BS / Cover N",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
+      "position": [
+        0,
+        0,
+        -37
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.4,
+        1.4,
+        1.4
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_076",
+      "type": "prop",
+      "label": "BS / Cover S",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
+      "position": [
+        0,
+        0,
+        37
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.4,
+        1.4,
+        1.4
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_077",
+      "type": "prop",
+      "label": "BS / Cover W",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
+      "position": [
+        -37,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.4,
+        1.4,
+        1.4
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_078",
+      "type": "prop",
+      "label": "BS / Cover E",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
+      "position": [
+        37,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.4,
+        1.4,
+        1.4
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_079",
+      "type": "prop",
+      "label": "BS / Server Rack W",
+      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb",
+      "position": [
+        -30,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": false
+    },
+    {
+      "id": "prp_080",
+      "type": "prop",
+      "label": "BS / Server Rack E",
+      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb",
+      "position": [
+        30,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": false
+    },
+    {
+      "id": "dst_081",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -6,
+        0,
+        -42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_082",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        6,
+        0,
+        -42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_083",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -6,
+        0,
+        42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_084",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        6,
+        0,
+        42
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_085",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -42,
+        0,
+        -6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_086",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -42,
+        0,
+        6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_087",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        42,
+        0,
+        -6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_088",
+      "type": "destructible",
+      "label": "BS / Corridor Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        42,
+        0,
+        6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_089",
+      "type": "prop",
+      "label": "BS / N Water Tank W",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb",
+      "position": [
+        -20,
+        0,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_090",
+      "type": "prop",
+      "label": "BS / N Water Tank E",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb",
+      "position": [
+        20,
+        0,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_091",
+      "type": "prop",
+      "label": "BS / N Gas Tank W",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
+      "position": [
+        -10,
+        0,
+        -65
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_092",
+      "type": "prop",
+      "label": "BS / N Gas Tank E",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
+      "position": [
+        10,
+        0,
+        -65
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_093",
+      "type": "prop",
+      "label": "BS / N Crate W",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        -30,
+        0,
+        -64
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_094",
+      "type": "prop",
+      "label": "BS / N Crate E",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        30,
+        0,
+        -64
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_095",
+      "type": "prop",
+      "label": "BS / N Pallet",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        0,
+        0,
+        -67
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.1,
+        1.1,
+        1.1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_096",
+      "type": "prop",
+      "label": "BS / S Cardboard W",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        -20,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_097",
+      "type": "prop",
+      "label": "BS / S Cardboard E",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        20,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_098",
+      "type": "prop",
+      "label": "BS / S Pallet Broken",
+      "model": "/assets/models/shooter asset pack/Pallet Broken.glb",
+      "position": [
+        -5,
+        0,
+        65
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_099",
+      "type": "prop",
+      "label": "BS / S Pallet",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        5,
+        0,
+        65
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_100",
+      "type": "prop",
+      "label": "BS / S Gas Can W",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "position": [
+        -28,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_101",
+      "type": "prop",
+      "label": "BS / S Gas Can E",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "position": [
+        28,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_102",
+      "type": "prop",
+      "label": "BS / E Sack Trench N",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        62,
+        0,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_103",
+      "type": "prop",
+      "label": "BS / E Sack Trench S",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        62,
+        0,
+        20
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_104",
+      "type": "prop",
+      "label": "BS / E Crate",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        65,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_105",
+      "type": "prop",
+      "label": "BS / W Barrier N",
+      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb",
+      "position": [
+        -60,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_106",
+      "type": "prop",
+      "label": "BS / W Barrier S",
+      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb",
+      "position": [
+        -60,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_107",
+      "type": "prop",
+      "label": "BS / W Dumpster",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        -63,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.1,
+        1.1,
+        1.1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "dst_108",
+      "type": "destructible",
+      "label": "BS / Corner Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -62,
+        0,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_109",
+      "type": "prop",
+      "label": "BS / Corner Debris",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -57,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0.2,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "dst_110",
+      "type": "destructible",
+      "label": "BS / Corner Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        62,
+        0,
+        -62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_111",
+      "type": "prop",
+      "label": "BS / Corner Debris",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        67,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0.6,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "dst_112",
+      "type": "destructible",
+      "label": "BS / Corner Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -62,
+        0,
+        62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_113",
+      "type": "prop",
+      "label": "BS / Corner Debris",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -57,
+        0,
+        67
+      ],
+      "rotation": [
+        0,
+        1.4,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "dst_114",
+      "type": "destructible",
+      "label": "BS / Corner Barrel",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        62,
+        0,
+        62
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_115",
+      "type": "prop",
+      "label": "BS / Corner Debris",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        67,
+        0,
+        67
+      ],
+      "rotation": [
+        0,
+        1.8,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_116",
+      "type": "prop",
+      "label": "BS / Hub Barrier W",
+      "model": "/assets/models/shooter asset pack/Barrier Single.glb",
+      "position": [
+        -8,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_117",
+      "type": "prop",
+      "label": "BS / Hub Barrier E",
+      "model": "/assets/models/shooter asset pack/Barrier Single.glb",
+      "position": [
+        8,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_118",
+      "type": "prop",
+      "label": "BS / Hub Debris",
+      "model": "/assets/models/shooter asset pack/Debris Pile.glb",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.1,
+        1.1,
+        1.1
+      ],
+      "collidable": false
+    }
+  ]
+}

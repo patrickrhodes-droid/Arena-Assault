@@ -5,6 +5,7 @@ import { join, dirname } from 'path';
 import { networkInterfaces } from 'os';
 import { fileURLToPath } from 'url';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFile } from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -121,67 +122,59 @@ const BOSS_WINDUP = 0.2;
 const BOSS_SWING = 0.22;
 const MAX_LIVE_ENEMIES = 60;
 
-// ── Per-map obstacle AABBs (used for enemy collision and LOS checks) ──────────
-// Only solid, large structures are listed — small crates are omitted for perf.
-// Format: { min: {x, z}, max: {x, z} }  (ground-plane only; y ignored server-side)
+// ── JSON-driven map data ──────────────────────────────────────────────────────
+// Replaces the old hard-coded MAP_OBSTACLES table.
+// Maps are loaded from public/maps/<id>.json on first use and cached.
 
-const MAP_OBSTACLES = {
-    arena: [
-        // North bunker
-        { min:{x:-6.2,z:-54.5}, max:{x:-5.8,z:-45.5} },
-        { min:{x: 5.8,z:-54.5}, max:{x: 6.2,z:-45.5} },
-        { min:{x:-6.0,z:-54.2}, max:{x: 6.0,z:-53.8} },
-        // South bunker
-        { min:{x:-6.2,z: 45.5}, max:{x:-5.8,z: 54.5} },
-        { min:{x: 5.8,z: 45.5}, max:{x: 6.2,z: 54.5} },
-        { min:{x:-6.0,z: 53.8}, max:{x: 6.0,z: 54.2} },
-        // East / West towers
-        { min:{x: 47.75,z:-2.25}, max:{x: 52.25,z: 2.25} },
-        { min:{x:-52.25,z:-2.25}, max:{x:-47.75,z: 2.25} },
-        // Corner sniper perches
-        { min:{x: 55.5,z:-60.5}, max:{x: 60.5,z:-55.5} },
-        { min:{x:-60.5,z: 55.5}, max:{x:-55.5,z: 60.5} },
-        { min:{x: 55.5,z: 55.5}, max:{x: 60.5,z: 60.5} },
-        { min:{x:-60.5,z:-60.5}, max:{x:-55.5,z:-55.5} },
-    ],
-    dustbowl: [
-        // Central archway pillars
-        { min:{x:-7.25,z:-1.25}, max:{x:-4.75,z:1.25} },
-        { min:{x: 4.75,z:-1.25}, max:{x: 7.25,z:1.25} },
-        // North oasis compound walls
-        { min:{x:-8.3,z:-52}, max:{x:-7.7,z:-40} },
-        { min:{x: 7.7,z:-52}, max:{x: 8.3,z:-40} },
-        { min:{x:-9.0,z:-52.3},max:{x: 9.0,z:-51.7} },
-        // South oasis compound walls
-        { min:{x:-8.3,z: 40}, max:{x:-7.7,z: 52} },
-        { min:{x: 7.7,z: 40}, max:{x: 8.3,z: 52} },
-        { min:{x:-9.0,z: 51.7},max:{x: 9.0,z: 52.3} },
-        // Stone pillar clusters
-        { min:{x:-39.5,z: 8.5}, max:{x:-36.5,z:11.5} },
-        { min:{x:-43.0,z:13.0}, max:{x:-41.0,z:15.0} },
-        { min:{x: 36.5,z:-11.5},max:{x: 39.5,z:-8.5} },
-        { min:{x: 41.0,z:-15.0},max:{x: 43.0,z:-13.0} },
-        { min:{x: 10.5,z: 36.5},max:{x: 13.5,z: 39.5} },
-        { min:{x:-13.5,z:-39.5},max:{x:-10.5,z:-36.5} },
-        // Stepped pyramid bases
-        { min:{x: 46,z:-54}, max:{x:54,z:-46} },
-        { min:{x:-54,z: 46}, max:{x:-46,z: 54} },
-    ],
-    downtown: [
-        // Four large corner buildings
-        { min:{x:-46,z:-46}, max:{x:-30,z:-30} },
-        { min:{x: 30,z:-46}, max:{x: 46,z:-30} },
-        { min:{x:-46,z: 30}, max:{x:-30,z: 46} },
-        { min:{x: 30,z: 30}, max:{x: 46,z: 46} },
-        // Central plaza
-        { min:{x:-4,z:-4}, max:{x:4,z:4} },
-        // Dumpsters
-        { min:{x:-21,z:-10.25},max:{x:-19,z:-5.75} },
-        { min:{x: 19,z:  5.75},max:{x: 21,z:10.25} },
-        { min:{x:  5.25,z:-21},max:{x:10.75,z:-19} },
-        { min:{x:-10.75,z: 19},max:{x:-5.25,z: 21} },
-    ],
-};
+const _mapJsonCache = new Map();  // mapId → parsed JSON
+const _mapsDir = join(__dirname, 'public', 'maps');
+
+async function loadMapJson(mapId) {
+    if (_mapJsonCache.has(mapId)) return _mapJsonCache.get(mapId);
+    try {
+        const text = await readFile(join(_mapsDir, `${mapId}.json`), 'utf8');
+        const data = JSON.parse(text);
+        _mapJsonCache.set(mapId, data);
+        return data;
+    } catch {
+        _mapJsonCache.set(mapId, null);
+        return null;
+    }
+}
+
+/** Derives a flat AABB obstacle list from a map JSON definition. */
+function buildObstaclesFromJson(mapDef) {
+    if (!mapDef?.objects) return [];
+    const obs = [];
+    for (const obj of mapDef.objects) {
+        if (!obj.collidable) continue;
+        if (obj.type === 'box') {
+            const [x, , z] = obj.position;
+            const [w, , d] = obj.size;
+            obs.push({ min: { x: x - w / 2, z: z - d / 2 }, max: { x: x + w / 2, z: z + d / 2 } });
+        } else if ((obj.type === 'prop' || obj.type === 'destructible') && obj.collider) {
+            const c = obj.collider;
+            const [cx, , cz] = c.position || obj.position;
+            const [cw, , cd] = c.size || [1, 1, 1];
+            obs.push({ min: { x: cx - cw / 2, z: cz - cd / 2 }, max: { x: cx + cw / 2, z: cz + cd / 2 } });
+        }
+    }
+    return obs;
+}
+
+/** Returns the pre-built obstacle array for the current map (sync after preload). */
+function getMapObstacles(mapId) {
+    const def = _mapJsonCache.get(mapId);
+    return def ? buildObstaclesFromJson(def) : [];
+}
+
+/** Returns enemy spawn zones from JSON, or null if map has none. */
+function getMapSpawnZones(mapId) {
+    const def = _mapJsonCache.get(mapId);
+    if (!def?.objects) return null;
+    const zones = def.objects.filter(o => o.type === 'spawn' && o.spawnType === 'enemy');
+    return zones.length > 0 ? zones : null;
+}
 
 // ── Math helpers ──────────────────────────────────────────────────────────────
 
@@ -495,13 +488,22 @@ function makeBoss(x, z, hpMult) {
 // Returns false if the spawn position lands inside a known solid/blocked area
 // for the current map. Prevents enemies from spawning trapped in geometry.
 function isOpenSpawnPos(sx, sz) {
-    if (selectedMap !== 'blacksite') return true;
-    // Blacksite: solid masses fill the diagonal corners between wings.
-    // On each edge, only the wing opening (±37 on the perpendicular axis) is accessible.
-    // West/East edge spawns (|sx| > 50): block if |sz| > 37 (inside corner solid masses).
-    if (Math.abs(sx) > 50 && Math.abs(sz) > 37) return false;
-    // North/South edge spawns (|sz| > 50): block if |sx| > 37.
-    if (Math.abs(sz) > 50 && Math.abs(sx) > 37) return false;
+    // Check JSON-derived spawn zones first (blocked areas from box objects near edges)
+    const def = _mapJsonCache.get(selectedMap);
+    if (def) {
+        // Blacksite geometry creates solid corner masses — derive from JSON if possible,
+        // otherwise keep the hard-coded guard for backward compatibility.
+        if (selectedMap === 'blacksite') {
+            if (Math.abs(sx) > 50 && Math.abs(sz) > 37) return false;
+            if (Math.abs(sz) > 50 && Math.abs(sx) > 37) return false;
+        }
+        return true;
+    }
+    // Fallback when JSON not loaded
+    if (selectedMap === 'blacksite') {
+        if (Math.abs(sx) > 50 && Math.abs(sz) > 37) return false;
+        if (Math.abs(sz) > 50 && Math.abs(sx) > 37) return false;
+    }
     return true;
 }
 
@@ -711,7 +713,7 @@ function spawnHealthPack(x, z) {
 
 function tickEnemies(dt) {
     const alive = getAlivePlayers();
-    const obstacles = MAP_OBSTACLES[selectedMap] || [];
+    const obstacles = getMapObstacles(selectedMap);
 
     for (const enemy of gameState.enemies) {
         // Boss escape arc (parabolic jump)
@@ -1092,6 +1094,8 @@ io.on('connection', (socket) => {
             p.hp = effectiveMaxHP;
         });
         resetGameState('COOP', startingWave);
+        // Pre-load map JSON so obstacle lookups during tickEnemies are synchronous.
+        loadMapJson(selectedMap).catch(() => {});
         startGameLoop();
         io.emit('matchStarted', { mode: 'COOP', map: selectedMap });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
@@ -1123,7 +1127,8 @@ io.on('connection', (socket) => {
             p.hp = P_MAX_HP;
         });
         gameState.invincibility = false;
-        resetGameState('PVP', 1); // clears any leftover COOP state
+        resetGameState('PVP', 1);
+        loadMapJson(selectedMap).catch(() => {});
         io.emit('matchStarted', { mode: 'PVP', map: selectedMap, spawnAssignments });
         io.emit('invincibilityChanged', { enabled: false });
         broadcastPauseState();

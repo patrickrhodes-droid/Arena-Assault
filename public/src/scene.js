@@ -4,6 +4,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, WALL_H } from "./config.js";
 import { game } from "./state.js";
 import { disposeObject3D } from "./utils.js";
+import { buildMapFromJson } from "./mapLoader.js";
 
 export function applyCharacterHead(headGroup, characterId, options = {}) {
   for (let i = headGroup.children.length - 1; i >= 0; i -= 1) {
@@ -116,7 +117,7 @@ export function initScene() {
   buildWeaponVisuals();
   buildGrappleVisuals();
   buildSharedRuntimeAssets();
-  rebuildArena("arena"); // default lobby scene
+  rebuildArena("arena"); // default lobby scene — async, fire-and-forget on init
 }
 
 function buildGrappleVisuals() {
@@ -141,7 +142,7 @@ function buildGrappleVisuals() {
   game.visuals.grapple = { hookMesh, rope };
 }
 
-export function rebuildArena(mapId) {
+export async function rebuildArena(mapId) {
   // Remove old arena objects.
   if (game.arenaGroup) {
     game.scene.remove(game.arenaGroup);
@@ -158,7 +159,15 @@ export function rebuildArena(mapId) {
   game.arenaGroup = new THREE.Group();
   game.scene.add(game.arenaGroup);
 
-  const map = MAP_DEFS[mapId] || MAP_DEFS.arena;
+  // Try JSON-based loading first; fall back to legacy builders if unavailable.
+  const result = await buildMapFromJson(mapId);
+  if (result.ok) {
+    console.log(`[mapLoader] Loaded ${mapId}.json`);
+    return;
+  }
+
+  // ── Legacy fallback ──────────────────────────────────────────────────────
+  console.warn(`[mapLoader] Could not load /maps/${mapId}.json — using legacy builder`);
   if (mapId === "desert") {
     buildArenaDesert();
   } else if (mapId === "city") {

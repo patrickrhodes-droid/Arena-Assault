@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "name": "testmap",
+  "theme": "arena",
+  "objects": [
+    {
+      "id": "box_center_cover",
+      "type": "box",
+      "label": "Center Cover",
+      "position": [
+        12,
+        1,
+        -16.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        2,
+        1
+      ],
+      "material": "sandstone",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player"
+    },
+    {
+      "id": "spawn_player_1",
+      "type": "spawn",
+      "label": "Player Spawn",
+      "position": [
+        0,
+        0.05,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.4,
+        0.1,
+        1.4
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player"
+    },
+    {
+      "id": "prop_ud6o19",
+      "type": "ladder",
+      "label": "prop 3",
+      "position": [
+        -17.5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "material": "crate",
+      "model": "/assets/models/shooter asset pack/Bear Trap.glb",
+      "collidable": true,
+      "spawnType": "player"
+    },
+    {
+      "id": "spawn_5h90u2",
+      "type": "spawn",
+      "label": "spawn 4",
+      "position": [
+        34,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.4,
+        0.1,
+        1.4
+      ],
+      "material": "crate",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player"
+    }
+  ],
+  "updatedAt": "2026-05-04T20:46:22.983Z"
+}

@@ -1,0 +1,1532 @@
+{
+  "version": 2,
+  "id": "desert",
+  "name": "DUST BOWL",
+  "subtitle": "Abandoned Desert Outpost",
+  "theme": "desert",
+  "arenaSize": 144,
+  "fog": {
+    "color": "#dbb07d",
+    "density": 0.004
+  },
+  "background": "#e3c4a1",
+  "ground": {
+    "type": "procedural",
+    "material": "sandGround"
+  },
+  "objects": [
+    {
+      "id": "san_001",
+      "type": "box",
+      "label": "Desert / Wall North",
+      "position": [
+        0,
+        3,
+        -72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_002",
+      "type": "box",
+      "label": "Desert / Wall South",
+      "position": [
+        0,
+        3,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_003",
+      "type": "box",
+      "label": "Desert / Wall West",
+      "position": [
+        -72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_004",
+      "type": "box",
+      "label": "Desert / Wall East",
+      "position": [
+        72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_005",
+      "type": "box",
+      "label": "Desert / Archway Pillar W",
+      "position": [
+        -6,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        6,
+        2.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_006",
+      "type": "box",
+      "label": "Desert / Archway Pillar E",
+      "position": [
+        6,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        6,
+        2.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_007",
+      "type": "box",
+      "label": "Desert / Archway Top",
+      "position": [
+        0,
+        6.5,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        15,
+        1.2,
+        2.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_008",
+      "type": "box",
+      "label": "Desert / Dune NW",
+      "position": [
+        -22,
+        0.8,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        14,
+        1.6,
+        3.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_009",
+      "type": "box",
+      "label": "Desert / Dune SE",
+      "position": [
+        22,
+        0.8,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        14,
+        1.6,
+        3.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_010",
+      "type": "box",
+      "label": "Desert / Dune NE",
+      "position": [
+        -18,
+        0.8,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.6,
+        14
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_011",
+      "type": "box",
+      "label": "Desert / Dune SW",
+      "position": [
+        18,
+        0.8,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.6,
+        14
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_012",
+      "type": "box",
+      "label": "Desert / Dune S",
+      "position": [
+        0,
+        0.6,
+        32
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1.2,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_013",
+      "type": "box",
+      "label": "Desert / Dune N",
+      "position": [
+        0,
+        0.6,
+        -32
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1.2,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_014",
+      "type": "box",
+      "label": "Desert / Dune E",
+      "position": [
+        32,
+        0.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        10
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_015",
+      "type": "box",
+      "label": "Desert / Dune W",
+      "position": [
+        -32,
+        0.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        10
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_016",
+      "type": "box",
+      "label": "Desert / Oasis N Wall W",
+      "position": [
+        -8,
+        1.4,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.6,
+        2.8,
+        12
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_017",
+      "type": "box",
+      "label": "Desert / Oasis N Wall E",
+      "position": [
+        8,
+        1.4,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.6,
+        2.8,
+        12
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_018",
+      "type": "box",
+      "label": "Desert / Oasis N Back",
+      "position": [
+        0,
+        1.4,
+        -52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        2.8,
+        0.6
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_019",
+      "type": "box",
+      "label": "Desert / Oasis S Wall W",
+      "position": [
+        -8,
+        1.4,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.6,
+        2.8,
+        12
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_020",
+      "type": "box",
+      "label": "Desert / Oasis S Wall E",
+      "position": [
+        8,
+        1.4,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.6,
+        2.8,
+        12
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_021",
+      "type": "box",
+      "label": "Desert / Oasis S Back",
+      "position": [
+        0,
+        1.4,
+        52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        18,
+        2.8,
+        0.6
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_022",
+      "type": "box",
+      "label": "Desert / Pillar NW A",
+      "position": [
+        -38,
+        2,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_023",
+      "type": "box",
+      "label": "Desert / Pillar NW B",
+      "position": [
+        -42,
+        2,
+        14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        4,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_024",
+      "type": "box",
+      "label": "Desert / Pillar SE A",
+      "position": [
+        38,
+        2,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_025",
+      "type": "box",
+      "label": "Desert / Pillar SE B",
+      "position": [
+        42,
+        2,
+        -14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        4,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_026",
+      "type": "box",
+      "label": "Desert / Pillar SW",
+      "position": [
+        12,
+        2,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_027",
+      "type": "box",
+      "label": "Desert / Pillar NE",
+      "position": [
+        -12,
+        2,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4,
+        3
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_028",
+      "type": "box",
+      "label": "Desert / Pyramid NE Base",
+      "position": [
+        50,
+        1.1,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        2.2,
+        8
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_029",
+      "type": "box",
+      "label": "Desert / Pyramid NE Mid",
+      "position": [
+        52,
+        3.3,
+        -52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4.5,
+        2.2,
+        4.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_030",
+      "type": "box",
+      "label": "Desert / Pyramid NE Top",
+      "position": [
+        53,
+        5.4,
+        -53
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        2.2,
+        2.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "ldr_031",
+      "type": "ladder",
+      "label": "Desert / Pyramid NE Ladder",
+      "position": [
+        50,
+        3.25,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        6.5,
+        8
+      ],
+      "bounds": {
+        "xMin": 46,
+        "xMax": 54,
+        "zMin": -54,
+        "zMax": -46,
+        "yMax": 6.5
+      }
+    },
+    {
+      "id": "san_032",
+      "type": "box",
+      "label": "Desert / Pyramid SW Base",
+      "position": [
+        -50,
+        1.1,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        2.2,
+        8
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_033",
+      "type": "box",
+      "label": "Desert / Pyramid SW Mid",
+      "position": [
+        -52,
+        3.3,
+        52
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4.5,
+        2.2,
+        4.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_034",
+      "type": "box",
+      "label": "Desert / Pyramid SW Top",
+      "position": [
+        -53,
+        5.4,
+        53
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        2.2,
+        2.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "ldr_035",
+      "type": "ladder",
+      "label": "Desert / Pyramid SW Ladder",
+      "position": [
+        -50,
+        3.25,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        6.5,
+        8
+      ],
+      "bounds": {
+        "xMin": -54,
+        "xMax": -46,
+        "zMin": 46,
+        "zMax": 54,
+        "yMax": 6.5
+      }
+    },
+    {
+      "id": "san_036",
+      "type": "box",
+      "label": "Desert / Rubble W1",
+      "position": [
+        -55,
+        0.5,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_037",
+      "type": "box",
+      "label": "Desert / Rubble E1",
+      "position": [
+        55,
+        0.5,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_038",
+      "type": "box",
+      "label": "Desert / Rubble S1",
+      "position": [
+        -14,
+        0.5,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_039",
+      "type": "box",
+      "label": "Desert / Rubble N1",
+      "position": [
+        14,
+        0.5,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1,
+        2
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_040",
+      "type": "box",
+      "label": "Desert / Rubble SW1",
+      "position": [
+        -30,
+        0.5,
+        45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1,
+        1.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_041",
+      "type": "box",
+      "label": "Desert / Rubble NE1",
+      "position": [
+        30,
+        0.5,
+        -45
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1,
+        1.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_042",
+      "type": "box",
+      "label": "Desert / Rubble E2",
+      "position": [
+        45,
+        0.5,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1,
+        1.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "san_043",
+      "type": "box",
+      "label": "Desert / Rubble W2",
+      "position": [
+        -45,
+        0.5,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1,
+        1.5
+      ],
+      "material": "sandstone",
+      "collidable": true
+    },
+    {
+      "id": "dst_044",
+      "type": "destructible",
+      "label": "Desert / Barrel Oasis N W",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -12,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_045",
+      "type": "destructible",
+      "label": "Desert / Barrel Oasis N E",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        12,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_046",
+      "type": "destructible",
+      "label": "Desert / Barrel Oasis S W",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        -12,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_047",
+      "type": "destructible",
+      "label": "Desert / Barrel Oasis S E",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "position": [
+        12,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_048",
+      "type": "destructible",
+      "label": "Desert / Gas Can NW",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "position": [
+        -25,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_049",
+      "type": "destructible",
+      "label": "Desert / Gas Can SE",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "position": [
+        25,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "dst_050",
+      "type": "destructible",
+      "label": "Desert / Gas Can NE",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "position": [
+        10,
+        0,
+        -35
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "triggerRadius": 2.2,
+      "collidable": true
+    },
+    {
+      "id": "prp_051",
+      "type": "prop",
+      "label": "Desert / Tires NE",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        46,
+        0,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_052",
+      "type": "prop",
+      "label": "Desert / Tires SW",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        -46,
+        0,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_053",
+      "type": "prop",
+      "label": "Desert / Crate N1",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        -4,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_054",
+      "type": "prop",
+      "label": "Desert / Crate S1",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        4,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_055",
+      "type": "prop",
+      "label": "Desert / Crate N2",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        4,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_056",
+      "type": "prop",
+      "label": "Desert / Sack Trench W",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        -30,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_057",
+      "type": "prop",
+      "label": "Desert / Sack Trench E",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "position": [
+        30,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_058",
+      "type": "prop",
+      "label": "Desert / Sack Trench Sm N",
+      "model": "/assets/models/shooter asset pack/Sack Trench Small.glb",
+      "position": [
+        0,
+        0,
+        35
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_059",
+      "type": "prop",
+      "label": "Desert / Sack Trench Sm S",
+      "model": "/assets/models/shooter asset pack/Sack Trench Small.glb",
+      "position": [
+        0,
+        0,
+        -35
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_060",
+      "type": "prop",
+      "label": "Desert / Pallet N",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        -12,
+        0,
+        -44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_061",
+      "type": "prop",
+      "label": "Desert / Pallet S",
+      "model": "/assets/models/shooter asset pack/Pallet.glb",
+      "position": [
+        12,
+        0,
+        44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_062",
+      "type": "prop",
+      "label": "Desert / Broken Car NW",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "position": [
+        20,
+        0,
+        20
+      ],
+      "rotation": [
+        0,
+        0.942,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_063",
+      "type": "prop",
+      "label": "Desert / Broken Car SE",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "position": [
+        -20,
+        0,
+        -20
+      ],
+      "rotation": [
+        0,
+        2.199,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_064",
+      "type": "prop",
+      "label": "Desert / Tank NE",
+      "model": "/assets/models/shooter asset pack/Tank.glb",
+      "position": [
+        52,
+        0,
+        -52
+      ],
+      "rotation": [
+        0,
+        0.785,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_065",
+      "type": "prop",
+      "label": "Desert / Trash N",
+      "model": "/assets/models/shooter asset pack/Trash Container Open.glb",
+      "position": [
+        -5,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_066",
+      "type": "prop",
+      "label": "Desert / Trash S",
+      "model": "/assets/models/shooter asset pack/Trash Container Open.glb",
+      "position": [
+        5,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_067",
+      "type": "prop",
+      "label": "Desert / Debris C",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_068",
+      "type": "prop",
+      "label": "Desert / Debris NW",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -15,
+        0,
+        15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    }
+  ]
+}

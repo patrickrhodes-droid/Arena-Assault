@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arena Assault Map Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/editor/styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="app">
+    <aside id="left-panel">
+      <header class="brand">
+        <div class="brand-kicker">Arena Assault</div>
+        <h1>Map Editor</h1>
+        <button id="fullscreen-btn" type="button" title="Toggle fullscreen" class="fullscreen-btn">⛶</button>
+      </header>
+
+      <section class="tool-section">
+        <label for="map-name">Map</label>
+        <div class="inline">
+          <select id="map-select"></select>
+          <button id="load-map" type="button">Load</button>
+        </div>
+        <div class="inline">
+          <input id="map-name" type="text" value="sandbox" maxlength="64">
+          <button id="save-map" type="button" class="primary">Save</button>
+          <button id="save-as-map" type="button">Save As</button>
+        </div>
+      </section>
+
+      <section class="tool-section">
+        <div class="section-title">Create</div>
+        <div class="button-grid">
+          <button data-add="box" type="button">Box</button>
+          <button data-add="prop" type="button">Prop</button>
+          <button data-add="ladder" type="button">Ladder</button>
+          <button data-add="spawn" type="button">Spawn</button>
+          <button data-add="destructible" type="button">Barrel</button>
+        </div>
+      </section>
+
+      <section class="tool-section">
+        <div class="section-title">Transform</div>
+        <div class="button-grid">
+          <button data-mode="translate" type="button" class="selected">Move</button>
+          <button data-mode="rotate" type="button">Rotate</button>
+          <button data-mode="scale" type="button">Scale</button>
+        </div>
+        <label class="check-row"><input id="snap-toggle" type="checkbox" checked> Snap</label>
+      </section>
+
+      <section class="tool-section grow">
+        <div class="section-title">Objects</div>
+        <select id="object-filter">
+          <option value="all">All</option>
+          <option value="box">Boxes</option>
+          <option value="prop">Props</option>
+          <option value="ladder">Ladders</option>
+          <option value="destructible">Destructibles</option>
+          <option value="spawn">Spawns</option>
+          <option value="collidable">Collidable</option>
+        </select>
+        <div id="object-list"></div>
+      </section>
+    </aside>
+
+    <section id="viewport-wrap">
+      <canvas id="viewport"></canvas>
+      <div id="status-bar">
+        <span id="status-text">Ready</span>
+        <span id="object-count">0 objects</span>
+      </div>
+    </section>
+
+    <aside id="right-panel">
+      <section class="tool-section">
+        <div class="section-title">Selected</div>
+        <input id="selected-label" type="text" placeholder="No selection">
+
+        <div class="field-grid">
+          <label>X<input data-field="position" data-index="0" type="number" step="0.1"></label>
+          <label>Y<input data-field="position" data-index="1" type="number" step="0.1"></label>
+          <label>Z<input data-field="position" data-index="2" type="number" step="0.1"></label>
+          <label>RX<input data-field="rotation" data-index="0" type="number" step="1"></label>
+          <label>RY<input data-field="rotation" data-index="1" type="number" step="1"></label>
+          <label>RZ<input data-field="rotation" data-index="2" type="number" step="1"></label>
+          <label>W<input data-field="size" data-index="0" type="number" step="0.1" min="0.1"></label>
+          <label>H<input data-field="size" data-index="1" type="number" step="0.1" min="0.1"></label>
+          <label>D<input data-field="size" data-index="2" type="number" step="0.1" min="0.1"></label>
+        </div>
+
+        <div id="collider-row" style="display:none">
+          <div class="section-title">Collision Box</div>
+          <div class="field-grid">
+            <label>CW<input data-collider="0" type="number" step="0.1" min="0.1"></label>
+            <label>CH<input data-collider="1" type="number" step="0.1" min="0.1"></label>
+            <label>CD<input data-collider="2" type="number" step="0.1" min="0.1"></label>
+          </div>
+        </div>
+
+        <label for="object-type">Type</label>
+        <select id="object-type">
+          <option value="box">Box</option>
+          <option value="prop">Prop</option>
+          <option value="ladder">Ladder</option>
+          <option value="spawn">Spawn</option>
+          <option value="destructible">Destructible</option>
+        </select>
+
+        <label for="material-select">Material</label>
+        <select id="material-select">
+          <option value="metal">Metal</option>
+          <option value="crate">Crate</option>
+          <option value="concrete">Concrete</option>
+          <option value="sandstone">Sandstone</option>
+          <option value="blacksite">Blacksite</option>
+        </select>
+
+        <label for="asset-select">Model</label>
+        <select id="asset-select"></select>
+
+        <label for="spawn-type">Spawn</label>
+        <select id="spawn-type">
+          <option value="player">Player</option>
+          <option value="enemy">Enemy</option>
+          <option value="boss">Boss</option>
+          <option value="health">Health</option>
+        </select>
+
+        <label id="trigger-radius-label" for="trigger-radius" style="display:none">Trigger Radius</label>
+        <input id="trigger-radius" type="number" step="0.1" min="0" value="2.2" style="display:none">
+
+        <label class="check-row"><input id="collidable-toggle" type="checkbox"> Collidable</label>
+        <label class="check-row"><input id="collision-vis-toggle" type="checkbox"> Show Collision</label>
+
+        <div class="inline">
+          <button id="duplicate-object" type="button">Duplicate</button>
+          <button id="delete-object" type="button" class="danger">Delete</button>
+        </div>
+      </section>
+
+      <section class="tool-section">
+        <div class="section-title">JSON</div>
+        <div class="inline">
+          <button id="copy-json" type="button">Copy</button>
+          <button id="download-json" type="button">Download</button>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="/editor/editor.js"></script>
+</body>
+</html>

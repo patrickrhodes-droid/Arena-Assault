@@ -1,0 +1,3625 @@
+{
+  "version": 2,
+  "id": "city",
+  "name": "DOWNTOWN",
+  "subtitle": "Sunlit Urban Warzone",
+  "theme": "city",
+  "arenaSize": 144,
+  "fog": {
+    "color": "#c9d8e4",
+    "density": 0.0018
+  },
+  "background": "#87b8e8",
+  "ground": {
+    "type": "procedural",
+    "material": "asphaltGround"
+  },
+  "objects": [
+    {
+      "id": "con_001",
+      "type": "box",
+      "label": "City / Wall North",
+      "position": [
+        0,
+        3,
+        -72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_002",
+      "type": "box",
+      "label": "City / Wall South",
+      "position": [
+        0,
+        3,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_003",
+      "type": "box",
+      "label": "City / Wall West",
+      "position": [
+        -72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_004",
+      "type": "box",
+      "label": "City / Wall East",
+      "position": [
+        72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_005",
+      "type": "box",
+      "label": "City / Plaza Base",
+      "position": [
+        0,
+        0.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        1.2,
+        8
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "met_006",
+      "type": "box",
+      "label": "City / Fountain Lip",
+      "position": [
+        0,
+        1.3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        0.2,
+        5
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "con_007",
+      "type": "box",
+      "label": "City / Fountain W",
+      "position": [
+        -3.5,
+        1.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.8,
+        3.5
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_008",
+      "type": "box",
+      "label": "City / Fountain E",
+      "position": [
+        3.5,
+        1.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.8,
+        3.5
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_009",
+      "type": "box",
+      "label": "City / Fountain N",
+      "position": [
+        0,
+        1.2,
+        -3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.8,
+        0.4
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_010",
+      "type": "box",
+      "label": "City / Fountain S",
+      "position": [
+        0,
+        1.2,
+        3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.8,
+        0.4
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_011",
+      "type": "box",
+      "label": "City / Building NW",
+      "position": [
+        -38,
+        5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_012",
+      "type": "box",
+      "label": "City / Building NW Roof",
+      "position": [
+        -38,
+        10.5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_013",
+      "type": "box",
+      "label": "City / Building NE",
+      "position": [
+        38,
+        5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_014",
+      "type": "box",
+      "label": "City / Building NE Roof",
+      "position": [
+        38,
+        10.5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_015",
+      "type": "box",
+      "label": "City / Building SW",
+      "position": [
+        -38,
+        5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_016",
+      "type": "box",
+      "label": "City / Building SW Roof",
+      "position": [
+        -38,
+        10.5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_017",
+      "type": "box",
+      "label": "City / Building SE",
+      "position": [
+        38,
+        5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_018",
+      "type": "box",
+      "label": "City / Building SE Roof",
+      "position": [
+        38,
+        10.5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "met_019",
+      "type": "box",
+      "label": "City / Fire Escape NW 1",
+      "position": [
+        -30.5,
+        0.7,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_020",
+      "type": "box",
+      "label": "City / Fire Escape NW 2",
+      "position": [
+        -30.5,
+        2.1,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_021",
+      "type": "ladder",
+      "label": "City / Ladder NW",
+      "position": [
+        -30.5,
+        5.25,
+        -29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "bounds": {
+        "xMin": -32,
+        "xMax": -29,
+        "zMin": -32,
+        "zMax": -26,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_022",
+      "type": "box",
+      "label": "City / Fire Escape NE 1",
+      "position": [
+        30.5,
+        0.7,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_023",
+      "type": "box",
+      "label": "City / Fire Escape NE 2",
+      "position": [
+        30.5,
+        2.1,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_024",
+      "type": "ladder",
+      "label": "City / Ladder NE",
+      "position": [
+        30.5,
+        5.25,
+        -29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "bounds": {
+        "xMin": 29,
+        "xMax": 32,
+        "zMin": -32,
+        "zMax": -26,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_025",
+      "type": "box",
+      "label": "City / Fire Escape SW 1",
+      "position": [
+        -30.5,
+        0.7,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_026",
+      "type": "box",
+      "label": "City / Fire Escape SW 2",
+      "position": [
+        -30.5,
+        2.1,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_027",
+      "type": "ladder",
+      "label": "City / Ladder SW",
+      "position": [
+        -30.5,
+        5.25,
+        29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "bounds": {
+        "xMin": -32,
+        "xMax": -29,
+        "zMin": 26,
+        "zMax": 32,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_028",
+      "type": "box",
+      "label": "City / Fire Escape SE 1",
+      "position": [
+        30.5,
+        0.7,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "met_029",
+      "type": "box",
+      "label": "City / Fire Escape SE 2",
+      "position": [
+        30.5,
+        2.1,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "ldr_030",
+      "type": "ladder",
+      "label": "City / Ladder SE",
+      "position": [
+        30.5,
+        5.25,
+        29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "bounds": {
+        "xMin": 29,
+        "xMax": 32,
+        "zMin": 26,
+        "zMax": 32,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "con_031",
+      "type": "box",
+      "label": "City / Barrier NW",
+      "position": [
+        -14,
+        0.65,
+        -14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_032",
+      "type": "box",
+      "label": "City / Barrier NE",
+      "position": [
+        14,
+        0.65,
+        -14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_033",
+      "type": "box",
+      "label": "City / Barrier SW",
+      "position": [
+        -14,
+        0.65,
+        14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_034",
+      "type": "box",
+      "label": "City / Barrier SE",
+      "position": [
+        14,
+        0.65,
+        14
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_035",
+      "type": "box",
+      "label": "City / Barrier W",
+      "position": [
+        -14,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        5
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_036",
+      "type": "box",
+      "label": "City / Barrier E",
+      "position": [
+        14,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        5
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_037",
+      "type": "box",
+      "label": "City / Barrier N",
+      "position": [
+        0,
+        0.65,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_038",
+      "type": "box",
+      "label": "City / Barrier S",
+      "position": [
+        0,
+        0.65,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1.3,
+        1.2
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_039",
+      "type": "box",
+      "label": "City / Barrier Wl",
+      "position": [
+        -48,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        12
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "con_040",
+      "type": "box",
+      "label": "City / Barrier El",
+      "position": [
+        48,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        12
+      ],
+      "material": "concrete",
+      "collidable": true
+    },
+    {
+      "id": "bla_041",
+      "type": "box",
+      "label": "City / Dumpster NW",
+      "position": [
+        -20,
+        0.7,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1.4,
+        3.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_042",
+      "type": "box",
+      "label": "City / Dumpster SE",
+      "position": [
+        20,
+        0.7,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1.4,
+        3.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_043",
+      "type": "box",
+      "label": "City / Dumpster NE",
+      "position": [
+        8,
+        0.7,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.4,
+        2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_044",
+      "type": "box",
+      "label": "City / Dumpster SW",
+      "position": [
+        -8,
+        0.7,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.4,
+        2
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_045",
+      "type": "box",
+      "label": "City / Dumpster Ow1",
+      "position": [
+        -55,
+        0.7,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_046",
+      "type": "box",
+      "label": "City / Dumpster Oe1",
+      "position": [
+        55,
+        0.7,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_047",
+      "type": "box",
+      "label": "City / Dumpster On1",
+      "position": [
+        20,
+        0.7,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "bla_048",
+      "type": "box",
+      "label": "City / Dumpster Os1",
+      "position": [
+        -20,
+        0.7,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "material": "blacksite",
+      "collidable": true
+    },
+    {
+      "id": "prp_049",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -20,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_050",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        20,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_051",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -20,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_052",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        20,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_053",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -55,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_054",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -55,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_055",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        55,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_056",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        55,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_057",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -20,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_058",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        20,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_059",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        -20,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_060",
+      "type": "prop",
+      "label": "City / Street Light",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "position": [
+        20,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_061",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        -60,
+        0,
+        -60
+      ],
+      "rotation": [
+        0,
+        1.656,
+        0
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_062",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        60,
+        0,
+        -60
+      ],
+      "rotation": [
+        0,
+        1.029,
+        0
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_063",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        -60,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        1.917,
+        0
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_064",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        60,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        6.156,
+        0
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_065",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        -50,
+        0,
+        -38
+      ],
+      "rotation": [
+        0,
+        0.594,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_066",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        50,
+        0,
+        -38
+      ],
+      "rotation": [
+        0,
+        4.402,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_067",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        -50,
+        0,
+        38
+      ],
+      "rotation": [
+        0,
+        3.875,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_068",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "position": [
+        50,
+        0,
+        38
+      ],
+      "rotation": [
+        0,
+        2.387,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_069",
+      "type": "prop",
+      "label": "City / Tree",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "position": [
+        -28,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_070",
+      "type": "prop",
+      "label": "City / Tree",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "position": [
+        28,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_071",
+      "type": "prop",
+      "label": "City / Tree",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "position": [
+        -28,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_072",
+      "type": "prop",
+      "label": "City / Tree",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "position": [
+        28,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_073",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        -46,
+        0,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_074",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        46,
+        0,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_075",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        -46,
+        0,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_076",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        46,
+        0,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_077",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        -25,
+        0,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_078",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        25,
+        0,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_079",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        -25,
+        0,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_080",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "position": [
+        25,
+        0,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_081",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        -8,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_082",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        8,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_083",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        -8,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_084",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        8,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_085",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        -22,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_086",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "position": [
+        22,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_087",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        -5,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_088",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        5,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_089",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        -5,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_090",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        5,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_091",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        -5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_092",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_093",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        0,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_094",
+      "type": "prop",
+      "label": "City / Bollard",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "position": [
+        0,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_095",
+      "type": "prop",
+      "label": "City / Bench W",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "position": [
+        -9,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_096",
+      "type": "prop",
+      "label": "City / Bench E",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "position": [
+        9,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_097",
+      "type": "prop",
+      "label": "City / Bench N",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "position": [
+        0,
+        0,
+        -9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_098",
+      "type": "prop",
+      "label": "City / Bench S",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "position": [
+        0,
+        0,
+        9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_099",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        -12,
+        0,
+        -15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_100",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        -14,
+        0,
+        -13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_101",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        12,
+        0,
+        -15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_102",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        14,
+        0,
+        -13
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_103",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        -12,
+        0,
+        15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_104",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "position": [
+        14,
+        0,
+        15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_105",
+      "type": "prop",
+      "label": "City / Traffic Light NW",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "position": [
+        -22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_106",
+      "type": "prop",
+      "label": "City / Traffic Light SE",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "position": [
+        22,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_107",
+      "type": "prop",
+      "label": "City / Traffic Light NE",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "position": [
+        22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        4.712,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_108",
+      "type": "prop",
+      "label": "City / Stop Sign SW",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
+      "position": [
+        -22,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_109",
+      "type": "prop",
+      "label": "City / Stop Sign NE",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
+      "position": [
+        22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_110",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        -8,
+        0.01,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_111",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        8,
+        0.01,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_112",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        0,
+        0.01,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_113",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        0,
+        0.01,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_114",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        25,
+        0.01,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_115",
+      "type": "prop",
+      "label": "City / Manhole",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "position": [
+        -25,
+        0.01,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_116",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        -21,
+        0,
+        -9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_117",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        21,
+        0,
+        9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_118",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        9,
+        0,
+        -21
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_119",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        -9,
+        0,
+        21
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_120",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        -55,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_121",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "position": [
+        55,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_122",
+      "type": "prop",
+      "label": "City / Bike Rack W",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
+      "position": [
+        -44,
+        0,
+        -30
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_123",
+      "type": "prop",
+      "label": "City / Bike Rack E",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
+      "position": [
+        44,
+        0,
+        30
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_124",
+      "type": "prop",
+      "label": "City / Concrete Barrier W",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
+      "position": [
+        -55,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_125",
+      "type": "prop",
+      "label": "City / Concrete Barrier E",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
+      "position": [
+        55,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_126",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "position": [
+        -48,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_127",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "position": [
+        48,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_128",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "position": [
+        -48,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_129",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "position": [
+        48,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_130",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "position": [
+        -30,
+        0,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_131",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "position": [
+        30,
+        0,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_132",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "position": [
+        -10,
+        0,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_133",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "position": [
+        10,
+        0,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_134",
+      "type": "prop",
+      "label": "City / Long Bush W",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb",
+      "position": [
+        -46,
+        0,
+        -44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_135",
+      "type": "prop",
+      "label": "City / Long Bush E",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb",
+      "position": [
+        46,
+        0,
+        44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_136",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "position": [
+        -12,
+        0,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_137",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "position": [
+        12,
+        0,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_138",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "position": [
+        -12,
+        0,
+        12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_139",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "position": [
+        12,
+        0,
+        12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_140",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "position": [
+        -57,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_141",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "position": [
+        63,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_142",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "position": [
+        -57,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_143",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "position": [
+        63,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_144",
+      "type": "prop",
+      "label": "City / Dumpster SA NW",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        -21,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_145",
+      "type": "prop",
+      "label": "City / Dumpster SA SE",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        21,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_146",
+      "type": "prop",
+      "label": "City / Dumpster SA NE",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "position": [
+        9,
+        0,
+        -21
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_147",
+      "type": "prop",
+      "label": "City / Broken Car NW",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "position": [
+        -26,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0.314,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_148",
+      "type": "prop",
+      "label": "City / Broken Car SE",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "position": [
+        26,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        3.456,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_149",
+      "type": "prop",
+      "label": "City / Container SW",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "position": [
+        -55,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_150",
+      "type": "prop",
+      "label": "City / Container NE",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "position": [
+        55,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_151",
+      "type": "prop",
+      "label": "City / Container NW",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "position": [
+        -48,
+        0,
+        55
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_152",
+      "type": "prop",
+      "label": "City / Tires W",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        -44,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_153",
+      "type": "prop",
+      "label": "City / Tires E",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "position": [
+        44,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_154",
+      "type": "prop",
+      "label": "City / Crate W",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        -55,
+        0,
+        -40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_155",
+      "type": "prop",
+      "label": "City / Crate E",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "position": [
+        55,
+        0,
+        40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_156",
+      "type": "prop",
+      "label": "City / Cardboard SW",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        -40,
+        0,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_157",
+      "type": "prop",
+      "label": "City / Cardboard NE",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "position": [
+        40,
+        0,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_158",
+      "type": "prop",
+      "label": "City / Sign NW",
+      "model": "/assets/models/shooter asset pack/Sign.glb",
+      "position": [
+        -18,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_159",
+      "type": "prop",
+      "label": "City / Sign SE",
+      "model": "/assets/models/shooter asset pack/Sign.glb",
+      "position": [
+        18,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_160",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -5,
+        0,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_161",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        5,
+        0,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_162",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        -28,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    },
+    {
+      "id": "prp_163",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "position": [
+        28,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "collidable": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "sandbox",
+  "theme": "arena",
+  "objects": [
+    {
+      "id": "box_center_cover",
+      "type": "box",
+      "label": "Center Cover",
+      "position": [0, 1, 0],
+      "rotation": [0, 0, 0],
+      "size": [8, 2, 1],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "spawn_player_1",
+      "type": "spawn",
+      "label": "Player Spawn",
+      "position": [0, 0.05, 18],
+      "rotation": [0, 0, 0],
+      "size": [1.4, 0.1, 1.4],
+      "spawnType": "player"
+    }
+  ]
+}

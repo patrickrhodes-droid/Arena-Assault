@@ -203,7 +203,7 @@ function hideAllLobbyScreens() {
   });
 }
 
-function startGame() {
+async function startGame() {
   game.mode = "COOP";
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
@@ -212,7 +212,7 @@ function startGame() {
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
   game.dom.pvpScore.hidden = true;
-  rebuildArena(game.selectedMap);
+  await rebuildArena(game.selectedMap);
 
   const playerCount = 1 + Object.keys(game.remotePlayers).length;
   game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
@@ -243,12 +243,12 @@ function startGame() {
   game.lastTime = performance.now();
 }
 
-function startPvPGame() {
+async function startPvPGame() {
   game.mode = "PVP";
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  rebuildArena(game.selectedMap);
+  await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";

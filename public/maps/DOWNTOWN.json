@@ -1,0 +1,4728 @@
+{
+  "version": 2,
+  "id": "city",
+  "name": "DOWNTOWN",
+  "subtitle": "Sunlit Urban Warzone",
+  "theme": "city",
+  "arenaSize": 144,
+  "fog": {
+    "color": "#c9d8e4",
+    "density": 0.0018
+  },
+  "background": "#87b8e8",
+  "ground": {
+    "type": "procedural",
+    "material": "asphaltGround"
+  },
+  "objects": [
+    {
+      "id": "con_001",
+      "type": "box",
+      "label": "City / Wall North",
+      "position": [
+        0,
+        3,
+        -72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_002",
+      "type": "box",
+      "label": "City / Wall South",
+      "position": [
+        0,
+        3,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        144,
+        6,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_003",
+      "type": "box",
+      "label": "City / Wall West",
+      "position": [
+        -72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_004",
+      "type": "box",
+      "label": "City / Wall East",
+      "position": [
+        72,
+        3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1,
+        6,
+        144
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_005",
+      "type": "box",
+      "label": "City / Plaza Base",
+      "position": [
+        0,
+        0.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        1.2,
+        8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_006",
+      "type": "box",
+      "label": "City / Fountain Lip",
+      "position": [
+        0,
+        1.3,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        0.2,
+        5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_007",
+      "type": "box",
+      "label": "City / Fountain W",
+      "position": [
+        -3.5,
+        1.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.8,
+        3.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_008",
+      "type": "box",
+      "label": "City / Fountain E",
+      "position": [
+        3.5,
+        1.2,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.4,
+        1.8,
+        3.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_009",
+      "type": "box",
+      "label": "City / Fountain N",
+      "position": [
+        0,
+        1.2,
+        -3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.8,
+        0.4
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_010",
+      "type": "box",
+      "label": "City / Fountain S",
+      "position": [
+        0,
+        1.2,
+        3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.8,
+        0.4
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_011",
+      "type": "box",
+      "label": "City / Building NW",
+      "position": [
+        -38,
+        5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_012",
+      "type": "box",
+      "label": "City / Building NW Roof",
+      "position": [
+        -38,
+        10.5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_013",
+      "type": "box",
+      "label": "City / Building NE",
+      "position": [
+        38,
+        5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_014",
+      "type": "box",
+      "label": "City / Building NE Roof",
+      "position": [
+        38,
+        10.5,
+        -38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_015",
+      "type": "box",
+      "label": "City / Building SW",
+      "position": [
+        -38,
+        5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_016",
+      "type": "box",
+      "label": "City / Building SW Roof",
+      "position": [
+        -38,
+        10.5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_017",
+      "type": "box",
+      "label": "City / Building SE",
+      "position": [
+        38,
+        5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        10,
+        16
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_018",
+      "type": "box",
+      "label": "City / Building SE Roof",
+      "position": [
+        38,
+        10.5,
+        38
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        1,
+        10
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_019",
+      "type": "box",
+      "label": "City / Fire Escape NW 1",
+      "position": [
+        -30.5,
+        0.7,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_020",
+      "type": "box",
+      "label": "City / Fire Escape NW 2",
+      "position": [
+        -30.5,
+        2.1,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "ldr_021",
+      "type": "ladder",
+      "label": "City / Ladder NW",
+      "position": [
+        -30.5,
+        5.25,
+        -29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2,
+      "bounds": {
+        "xMin": -32,
+        "xMax": -29,
+        "zMin": -32,
+        "zMax": -26,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_022",
+      "type": "box",
+      "label": "City / Fire Escape NE 1",
+      "position": [
+        30.5,
+        0.7,
+        8.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_023",
+      "type": "box",
+      "label": "City / Fire Escape NE 2",
+      "position": [
+        30.5,
+        2.1,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "ldr_024",
+      "type": "ladder",
+      "label": "City / Ladder NE",
+      "position": [
+        30.5,
+        5.25,
+        -29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2,
+      "bounds": {
+        "xMin": 29,
+        "xMax": 32,
+        "zMin": -32,
+        "zMax": -26,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_025",
+      "type": "box",
+      "label": "City / Fire Escape SW 1",
+      "position": [
+        -30.5,
+        0.7,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_026",
+      "type": "box",
+      "label": "City / Fire Escape SW 2",
+      "position": [
+        -30.5,
+        2.1,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "ldr_027",
+      "type": "ladder",
+      "label": "City / Ladder SW",
+      "position": [
+        -32.5,
+        5.25,
+        29
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2,
+      "bounds": {
+        "xMin": -32,
+        "xMax": -29,
+        "zMin": 26,
+        "zMax": 32,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "met_028",
+      "type": "box",
+      "label": "City / Fire Escape SE 1",
+      "position": [
+        30.5,
+        0.7,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.4,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "met_029",
+      "type": "box",
+      "label": "City / Fire Escape SE 2",
+      "position": [
+        30.5,
+        2.1,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        4.2,
+        3
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "ldr_030",
+      "type": "ladder",
+      "label": "City / Ladder SE",
+      "position": [
+        31,
+        5.25,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        10.5,
+        6
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2,
+      "bounds": {
+        "xMin": 29,
+        "xMax": 32,
+        "zMin": 26,
+        "zMax": 32,
+        "yMax": 10.5
+      }
+    },
+    {
+      "id": "con_037",
+      "type": "box",
+      "label": "City / Barrier N",
+      "position": [
+        0,
+        0.65,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1.3,
+        1.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_038",
+      "type": "box",
+      "label": "City / Barrier S",
+      "position": [
+        0,
+        0.65,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        1.3,
+        1.2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_039",
+      "type": "box",
+      "label": "City / Barrier Wl",
+      "position": [
+        -48,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        12
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "con_040",
+      "type": "box",
+      "label": "City / Barrier El",
+      "position": [
+        48,
+        0.65,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        12
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "concrete",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_041",
+      "type": "box",
+      "label": "City / Dumpster NW",
+      "position": [
+        -20,
+        0.7,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1.4,
+        3.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_042",
+      "type": "box",
+      "label": "City / Dumpster SE",
+      "position": [
+        20,
+        0.7,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1.4,
+        3.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_043",
+      "type": "box",
+      "label": "City / Dumpster NE",
+      "position": [
+        8,
+        0.7,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.4,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_044",
+      "type": "box",
+      "label": "City / Dumpster SW",
+      "position": [
+        -8,
+        0.7,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        3.5,
+        1.4,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_045",
+      "type": "box",
+      "label": "City / Dumpster Ow1",
+      "position": [
+        -55,
+        0.7,
+        -20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_046",
+      "type": "box",
+      "label": "City / Dumpster Oe1",
+      "position": [
+        55,
+        0.7,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_047",
+      "type": "box",
+      "label": "City / Dumpster On1",
+      "position": [
+        20,
+        0.7,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "bla_048",
+      "type": "box",
+      "label": "City / Dumpster Os1",
+      "position": [
+        -20,
+        0.7,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2.5,
+        1.4,
+        2.5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "blacksite",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_049",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -20,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_050",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        20,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_051",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -20,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_052",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        20,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_053",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -55,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_054",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -55,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_055",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        55,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_056",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        55,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_057",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -20,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_058",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        20,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_059",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        -20,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_060",
+      "type": "prop",
+      "label": "City / Street Light",
+      "position": [
+        20,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_061",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        -60,
+        0,
+        -60
+      ],
+      "rotation": [
+        0,
+        1.656,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_062",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        60,
+        0,
+        -60
+      ],
+      "rotation": [
+        0,
+        1.029,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_063",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        -60,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        1.917,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_064",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        60,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        6.156,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2.5,
+        2.5,
+        2.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_065",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        -50,
+        0,
+        -38
+      ],
+      "rotation": [
+        0,
+        0.594,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_066",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        50,
+        0,
+        -38
+      ],
+      "rotation": [
+        0,
+        4.402,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_067",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        -50,
+        0,
+        38
+      ],
+      "rotation": [
+        0,
+        3.875,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_068",
+      "type": "prop",
+      "label": "City / Tree Long",
+      "position": [
+        50,
+        0,
+        38
+      ],
+      "rotation": [
+        0,
+        2.387,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_069",
+      "type": "prop",
+      "label": "City / Tree",
+      "position": [
+        -21,
+        0,
+        -55.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_070",
+      "type": "prop",
+      "label": "City / Tree",
+      "position": [
+        28,
+        0,
+        -50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_071",
+      "type": "prop",
+      "label": "City / Tree",
+      "position": [
+        -28,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_072",
+      "type": "prop",
+      "label": "City / Tree",
+      "position": [
+        28,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_073",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        -46,
+        0,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_074",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        46,
+        0,
+        -25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_075",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        -46,
+        0,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_076",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        46,
+        0,
+        25
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_077",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        -25,
+        0,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_078",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        25,
+        0,
+        -46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_079",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        -25,
+        0,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_080",
+      "type": "prop",
+      "label": "City / Trash Can",
+      "position": [
+        25,
+        0,
+        46
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_081",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        -8,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_082",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        8,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_083",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        -8,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_084",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        8,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_085",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        -22,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_086",
+      "type": "prop",
+      "label": "City / Fire Hydrant",
+      "position": [
+        22,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_087",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        -5,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_088",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        5,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_089",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        -5,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_090",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        5,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_091",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        -5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_092",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        5,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_093",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        0,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_094",
+      "type": "prop",
+      "label": "City / Bollard",
+      "position": [
+        0,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_095",
+      "type": "prop",
+      "label": "City / Bench W",
+      "position": [
+        -9,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_096",
+      "type": "prop",
+      "label": "City / Bench E",
+      "position": [
+        8,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_097",
+      "type": "prop",
+      "label": "City / Bench N",
+      "position": [
+        0,
+        0,
+        -9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_098",
+      "type": "prop",
+      "label": "City / Bench S",
+      "position": [
+        0,
+        0,
+        9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_099",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "position": [
+        -12,
+        0,
+        -15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_101",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "position": [
+        12,
+        0,
+        -15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_103",
+      "type": "prop",
+      "label": "City / Traffic Cone",
+      "position": [
+        -12,
+        0,
+        15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_105",
+      "type": "prop",
+      "label": "City / Traffic Light NW",
+      "position": [
+        -22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_106",
+      "type": "prop",
+      "label": "City / Traffic Light SE",
+      "position": [
+        22,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_107",
+      "type": "prop",
+      "label": "City / Traffic Light NE",
+      "position": [
+        22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        4.712,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_108",
+      "type": "prop",
+      "label": "City / Stop Sign SW",
+      "position": [
+        -22,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_109",
+      "type": "prop",
+      "label": "City / Stop Sign NE",
+      "position": [
+        22,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_110",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        -8,
+        0.01,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_111",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        8.5,
+        0.01,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_112",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        0,
+        0.01,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_113",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        0,
+        0.01,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_114",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        25,
+        0.01,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_115",
+      "type": "prop",
+      "label": "City / Manhole",
+      "position": [
+        -25,
+        0.01,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_116",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        -21,
+        0,
+        -9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_117",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        21,
+        0,
+        9
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_118",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        9,
+        0,
+        -21
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_119",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        -9,
+        0,
+        21
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_120",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        -55,
+        0,
+        -22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_121",
+      "type": "prop",
+      "label": "City / Trash Bag",
+      "position": [
+        55,
+        0,
+        22
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_122",
+      "type": "prop",
+      "label": "City / Bike Rack W",
+      "position": [
+        -44,
+        0,
+        -30
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_123",
+      "type": "prop",
+      "label": "City / Bike Rack E",
+      "position": [
+        44,
+        0,
+        30
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_124",
+      "type": "prop",
+      "label": "City / Concrete Barrier W",
+      "position": [
+        -55,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_125",
+      "type": "prop",
+      "label": "City / Concrete Barrier E",
+      "position": [
+        55,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_126",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "position": [
+        -48,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_127",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "position": [
+        48,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_128",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "position": [
+        -48,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_129",
+      "type": "prop",
+      "label": "City / Box Pile",
+      "position": [
+        48,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_130",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "position": [
+        -30,
+        0,
+        -10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_131",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "position": [
+        30,
+        0,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_132",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "position": [
+        -10,
+        0,
+        30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_133",
+      "type": "prop",
+      "label": "City / Floor Trash",
+      "position": [
+        10,
+        0,
+        -30
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_134",
+      "type": "prop",
+      "label": "City / Long Bush W",
+      "position": [
+        -46,
+        0,
+        -44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_135",
+      "type": "prop",
+      "label": "City / Long Bush E",
+      "position": [
+        46,
+        0,
+        44
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_136",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "position": [
+        -12,
+        0,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_137",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "position": [
+        12,
+        0,
+        -12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_138",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "position": [
+        -12,
+        0,
+        12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_139",
+      "type": "prop",
+      "label": "City / Small Bush",
+      "position": [
+        12,
+        0,
+        12
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_140",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "position": [
+        -57,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "collidable": false,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_141",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "position": [
+        63,
+        0,
+        -57
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_142",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "position": [
+        -57,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_143",
+      "type": "prop",
+      "label": "City / Fallen Leaves",
+      "position": [
+        63,
+        0,
+        63
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_144",
+      "type": "prop",
+      "label": "City / Dumpster SA NW",
+      "position": [
+        -21,
+        0,
+        -8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_145",
+      "type": "prop",
+      "label": "City / Dumpster SA SE",
+      "position": [
+        21,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_146",
+      "type": "prop",
+      "label": "City / Dumpster SA NE",
+      "position": [
+        9,
+        0,
+        -21
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_147",
+      "type": "prop",
+      "label": "City / Broken Car NW",
+      "position": [
+        25.5,
+        0,
+        -0.5
+      ],
+      "rotation": [
+        0,
+        0.314,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_148",
+      "type": "prop",
+      "label": "City / Broken Car SE",
+      "position": [
+        26,
+        0,
+        8
+      ],
+      "rotation": [
+        0,
+        3.456,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_149",
+      "type": "prop",
+      "label": "City / Container SW",
+      "position": [
+        -55,
+        0,
+        -48
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_150",
+      "type": "prop",
+      "label": "City / Container NE",
+      "position": [
+        55,
+        0,
+        48
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_151",
+      "type": "prop",
+      "label": "City / Container NW",
+      "position": [
+        -48,
+        0,
+        55
+      ],
+      "rotation": [
+        0,
+        1.571,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_152",
+      "type": "prop",
+      "label": "City / Tires W",
+      "position": [
+        -44,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_153",
+      "type": "prop",
+      "label": "City / Tires E",
+      "position": [
+        44,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Tires.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_154",
+      "type": "prop",
+      "label": "City / Crate W",
+      "position": [
+        -55,
+        0,
+        -40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_155",
+      "type": "prop",
+      "label": "City / Crate E",
+      "position": [
+        55,
+        0,
+        40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_156",
+      "type": "prop",
+      "label": "City / Cardboard SW",
+      "position": [
+        -40,
+        0,
+        -55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_158",
+      "type": "prop",
+      "label": "City / Sign NW",
+      "position": [
+        -18,
+        0,
+        -18
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sign.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_159",
+      "type": "prop",
+      "label": "City / Sign SE",
+      "position": [
+        18,
+        0,
+        18
+      ],
+      "rotation": [
+        0,
+        3.142,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sign.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_160",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "position": [
+        -5,
+        0,
+        -28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_161",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "position": [
+        5,
+        0,
+        28
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_162",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "position": [
+        -28,
+        0,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prp_163",
+      "type": "prop",
+      "label": "City / Debris Papers",
+      "position": [
+        28,
+        0,
+        -5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "destructible_znc50j",
+      "type": "destructible",
+      "label": "destructible 164",
+      "position": [
+        25,
+        0,
+        -6.5
+      ],
+      "rotation": [
+        -3.142,
+        0.785,
+        -3.142
+      ],
+      "size": [
+        9.375,
+        7.5,
+        5
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "crate",
+      "model": "/assets/models/WillHead.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prop_c0br61",
+      "type": "prop",
+      "label": "prop 165",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "crate",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    },
+    {
+      "id": "prop_a2tqvu",
+      "type": "prop",
+      "label": "prop 166",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": "crate",
+      "model": "/assets/models/Assault Rifle.glb",
+      "collidable": true,
+      "spawnType": "player",
+      "triggerRadius": 2.2
+    }
+  ],
+  "updatedAt": "2026-05-04T21:47:31.319Z"
+}
