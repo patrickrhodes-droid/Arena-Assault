@@ -155,7 +155,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 
     if (!shouldRemove && bulletHitObstacle(position.x, position.y, position.z)) {
       shouldRemove = true;
-      spawnParticles(position, bullet.splashRadius > 0 ? 24 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 10 : 2);
+      spawnParticles(position, bullet.splashRadius > 0 ? 72 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 30 : 2, bullet.splashRadius > 0);
       if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
         applySplashDamage(bullet, position, processHit);
       }
@@ -182,7 +182,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
           processHit?.(enemy, bulletDamageAtDistance(bullet), _hitPosVec);
           shouldRemove = true;
           if (bullet.splashRadius > 0) {
-            spawnParticles(position, 24, 0xff6600, 10);
+            spawnParticles(position, 72, 0xff6600, 30, true);
             applySplashDamage(bullet, position, processHit, enemy);
           }
           break;
@@ -285,7 +285,7 @@ export function processHit(enemy, damage, particlePosition) {
 
 const MAX_PARTICLES = 200;
 
-export function spawnParticles(position, count, color, speed) {
+export function spawnParticles(position, count, color, speed, big = false) {
   // Drop oldest particles if we're at the cap to prevent mass-death frame spikes.
   while (game.particles.length + count > MAX_PARTICLES && game.particles.length > 0) {
     const old = game.particles.shift();
@@ -293,9 +293,10 @@ export function spawnParticles(position, count, color, speed) {
     old.mesh.geometry.dispose();
     old.mesh.material.dispose();
   }
+  const geo = (big && game.shared.bigPartGeo) ? game.shared.bigPartGeo : game.shared.partGeo;
   for (let index = 0; index < count; index += 1) {
     const mesh = new THREE.Mesh(
-      game.shared.partGeo,
+      geo,
       new THREE.MeshBasicMaterial({ color, transparent: true }),
     );
     mesh.position.copy(position);
@@ -364,9 +365,9 @@ export function triggerDestructible(propId, origin, processHit) {
   if (d.mesh?.parent) d.mesh.parent.remove(d.mesh);
   // Deactivate collision entry (push it out of reach)
   if (d.obsEntry) { d.obsEntry.h = -9999; }
-  // Big explosion particles
-  spawnParticles(origin, 32, 0xff5500, 14);
-  spawnParticles(origin, 16, 0xffcc00, 8);
+  // Big explosion particles — 3× size cubes for dramatic barrel explosions
+  spawnParticles(origin, 32, 0xff5500, 14, true);
+  spawnParticles(origin, 16, 0xffcc00, 8, true);
   // AOE damage to enemies within 7 units
   for (const enemy of game.enemies) {
     const dx = enemy.group.position.x - origin.x;

@@ -793,35 +793,38 @@ function buildArenaCity() {
 // ─── Blacksite: multi-room indoor building map ───────────────────────────────
 
 function buildArenaBlacksite() {
-  game.scene.fog = new THREE.FogExp2(0x0d1018, 0.006);  // less dense fog so you can see further
-  game.scene.background = new THREE.Color(0x0d1018);
+  game.scene.fog = new THREE.FogExp2(0x071210, 0.005);
+  game.scene.background = new THREE.Color(0x071210);
 
-  // Strong hemisphere base — makes everything visible
-  const hemi = new THREE.HemisphereLight(0x5a7aaa, 0x1a1a28, 1.4);
+  // Very strong hemisphere — sky tinted bright green for the "reactor glow" feel
+  const hemi = new THREE.HemisphereLight(0x44ff88, 0x1a4030, 2.2);
   game.scene.add(hemi);
   game.arenaLights.push(hemi);
 
-  // Overhead fluorescent clusters — bright, wide radius
+  // Simulated fill light from below — bounces the green off the floor
+  addSun(0x33ff77, 1.6, 0, -10, 0);
+
+  // Grid of overhead green point lights — one every ~24 units, very bright and wide
   for (const [x, z] of [
-    [0, 0], [-20, 0], [20, 0], [0, -20], [0, 20],
-    [-14, -14], [14, -14], [-14, 14], [14, 14],
-    [0, -37], [0, 37], [-37, 0], [37, 0],
-    [0, -62], [0, 62], [-62, 0], [62, 0],
-    [-50, -50], [50, -50], [-50, 50], [50, 50],
-    [-25, -62], [25, -62], [-25, 62], [25, 62],
-    [-62, -25], [-62, 25], [62, -25], [62, 25],
+    [0, 0], [-24, 0], [24, 0], [0, -24], [0, 24],
+    [-24, -24], [24, -24], [-24, 24], [24, 24],
+    [0, -48], [0, 48], [-48, 0], [48, 0],
+    [-48, -48], [48, -48], [-48, 48], [48, 48],
+    [-24, -62], [24, -62], [-24, 62], [24, 62],
+    [-62, -24], [-62, 24], [62, -24], [62, 24],
   ]) {
-    const fl = new THREE.PointLight(0xd0e8ff, 3.2, 45);
+    const fl = new THREE.PointLight(0x55ffaa, 4.5, 55);
     fl.position.set(x, 6.5, z);
     game.scene.add(fl); game.arenaLights.push(fl);
   }
 
-  // Red emergency accent lights at low height for atmosphere
+  // Red emergency accent lights — warm contrast with the green
   for (const [x, z] of [
     [-60, -60], [60, -60], [-60, 60], [60, 60],
     [0, -50], [0, 50], [-50, 0], [50, 0],
+    [-37, -37], [37, -37], [-37, 37], [37, 37],
   ]) {
-    const el = new THREE.PointLight(0xff2010, 1.6, 22);
+    const el = new THREE.PointLight(0xff2010, 2.0, 26);
     el.position.set(x, 1.5, z);
     game.scene.add(el); game.arenaLights.push(el);
   }
@@ -846,18 +849,18 @@ function buildArenaBlacksite() {
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
   game.arenaGroup.add(ground);
 
-  // ── Materials ──
+  // ── Materials (polygonOffset prevents z-fighting where walls share faces) ──
   const wallTex = makeMetalPanelTexture(); wallTex.repeat.set(18, 4);
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.84, map: wallTex });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.84, map: wallTex, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   const concWallTex = makeConcreteBrickTexture(); concWallTex.repeat.set(4, 2);
-  const innerWallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: concWallTex });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.35, metalness: 0.7 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x111620, roughness: 0.92 });
+  const innerWallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: concWallTex, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.35, metalness: 0.7, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x0d1a14, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   const accentMat = new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 1.1 });
-  const lightPanelMat = new THREE.MeshStandardMaterial({ color: 0xb8d8ff, emissive: 0xb8d8ff, emissiveIntensity: 1.8 });
-  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x151a20, roughness: 0.95 });
-  const catwalkMat = new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.4, metalness: 0.65 });
-  const glowMat = new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 0.6 });
+  const lightPanelMat = new THREE.MeshStandardMaterial({ color: 0x88ffcc, emissive: 0x55ffaa, emissiveIntensity: 2.2 });
+  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x0d1a14, roughness: 0.95 });
+  const catwalkMat = new THREE.MeshStandardMaterial({ color: 0x1a3028, roughness: 0.4, metalness: 0.65, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const glowMat = new THREE.MeshStandardMaterial({ color: 0x22ff88, emissive: 0x22ff88, emissiveIntensity: 1.2 });
 
   buildWalls(wallMat, accentMat);
 
@@ -950,50 +953,63 @@ function buildArenaBlacksite() {
   addWorldBox(55, WH / 2, 66, W, WH, 12, darkMat);
   addWorldBox(55, WH / 2, 45, W, WH, 10, darkMat);
 
-  // ── SECOND FLOOR: 4 catwalks overlooking the hub ──
-  // Each catwalk is a raised platform accessible by ladder, looking into the hub.
-  // N catwalk (z=-35 to -22, x=-18 to 18, top at y=4.5)
-  addWorldBox(0, 2.25, -28.5, 36, 4.5, 13, catwalkMat);
-  // Railing (low wall along the south face of N catwalk, toward hub)
-  addWorldBox(0, 4.9, -22.2, 36, 0.8, 0.4, metalMat);
-  game.ladders.push({ xMin: -4, xMax: 4, zMin: -36, zMax: -28, yMax: 4.8 });
-
-  // S catwalk (z=22 to 35)
-  addWorldBox(0, 2.25, 28.5, 36, 4.5, 13, catwalkMat);
-  addWorldBox(0, 4.9, 22.2, 36, 0.8, 0.4, metalMat);
-  game.ladders.push({ xMin: -4, xMax: 4, zMin: 28, zMax: 36, yMax: 4.8 });
-
-  // E catwalk (x=22 to 35)
-  addWorldBox(28.5, 2.25, 0, 13, 4.5, 36, catwalkMat);
-  addWorldBox(22.2, 4.9, 0, 0.4, 0.8, 36, metalMat);
-  game.ladders.push({ xMin: 28, xMax: 36, zMin: -4, zMax: 4, yMax: 4.8 });
-
-  // W catwalk (x=-35 to -22)
-  addWorldBox(-28.5, 2.25, 0, 13, 4.5, 36, catwalkMat);
-  addWorldBox(-22.2, 4.9, 0, 0.4, 0.8, 36, metalMat);
-  game.ladders.push({ xMin: -36, xMax: -28, zMin: -4, zMax: 4, yMax: 4.8 });
-
-  // Central raised observation deck (x=-8 to 8, z=-8 to 8, top at y=8 — bonus sniper perch)
-  addWorldBox(0, 6.5, 0, 16, 13, 16, metalMat);
-  // Ladder to top
-  game.ladders.push({ xMin: -5, xMax: 5, zMin: -10, zMax: -7, yMax: 13.1 });
-  // Railing on observation deck
-  for (const [rx, rz, rw, rd] of [
-    [0, -8.2, 16, 0.4], [0, 8.2, 16, 0.4], [-8.2, 0, 0.4, 16], [8.2, 0, 0.4, 16],
-  ]) {
-    addWorldBox(rx, 13.6, rz, rw, 1.2, rd, metalMat);
+  // ── SECOND FLOOR: 4 catwalks inside the wings (NOT blocking corridors) ──
+  // Each catwalk sits inside its wing room. The visual floor is non-collidable so
+  // players can walk under it freely; only the top surface is registered in game.oBs.
+  function addCatwalk(cx, cz, w, d, lxMin, lxMax, lzMin, lzMax) {
+    // Visual floor mesh (non-collidable so players can walk beneath it)
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, d), catwalkMat);
+    floor.position.set(cx, 4.6, cz);
+    floor.castShadow = true; floor.receiveShadow = true;
+    game.arenaGroup.add(floor);
+    // Support pillars at each corner (collidable, thin)
+    const hw = w / 2 - 0.6, hd = d / 2 - 0.6;
+    for (const [ox, oz] of [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd]]) {
+      addWorldBox(cx + ox, 2.3, cz + oz, 0.5, 4.6, 0.5, metalMat);
+    }
+    // Top-only oBs entry so players can stand on top (via getSupportHeight)
+    game.oBs.push({ min: { x: cx - w / 2, z: cz - d / 2 }, max: { x: cx + w / 2, z: cz + d / 2 }, h: 4.78 });
+    // Railing on hub-facing edge (collidable so players don't fall)
+    const railX = (cx > 0) ? cx - w / 2 + 0.2 : cx + w / 2 - 0.2;
+    const railZ = (cz < 0) ? cz + d / 2 - 0.2 : cz - d / 2 + 0.2;
+    if (Math.abs(cz) > Math.abs(cx)) {
+      addWorldBox(cx, 5.2, railZ, w, 0.8, 0.35, metalMat);
+    } else {
+      addWorldBox(railX, 5.2, cz, 0.35, 0.8, d, metalMat);
+    }
+    game.ladders.push({ xMin: lxMin, xMax: lxMax, zMin: lzMin, zMax: lzMax, yMax: 4.9 });
   }
 
-  // Emergency light strips along corridor walls
+  // N catwalk: inside north wing, center at z=-62, not overlapping the N corridor
+  addCatwalk(0, -62, 30, 10,   -4, 4, -58, -52);
+  // S catwalk: inside south wing
+  addCatwalk(0,  62, 30, 10,   -4, 4,  52,  58);
+  // E catwalk: inside east wing
+  addCatwalk(62,  0, 10, 30,   58, 62,  -4,  4);
+  // W catwalk: inside west wing
+  addCatwalk(-62, 0, 10, 30,  -62,-58,  -4,  4);
+
+  // Central raised observation deck — solid block in hub centre
+  addWorldBox(0, 4.0, 0, 12, 8, 12, metalMat);
+  // Ladder on north face
+  game.ladders.push({ xMin: -3, xMax: 3, zMin: -8, zMax: -6, yMax: 8.1 });
+  // Railings on top
+  for (const [rx, rz, rw, rd] of [
+    [0, -6.2, 12, 0.35], [0, 6.2, 12, 0.35], [-6.2, 0, 0.35, 12], [6.2, 0, 0.35, 12],
+  ]) {
+    addWorldBox(rx, 8.5, rz, rw, 1.0, rd, metalMat);
+  }
+
+  // Green glow strips along corridor floor edges
   for (const [rx, ry, rz, rw, rh, rd] of [
-    [-CW, 1.0, -37, 0.1, 0.2, 28],  // N corridor W strip
-    [CW, 1.0, -37, 0.1, 0.2, 28],
-    [-CW, 1.0, 37, 0.1, 0.2, 28],
-    [CW, 1.0, 37, 0.1, 0.2, 28],
-    [37, 1.0, -CW, 28, 0.2, 0.1],
-    [37, 1.0, CW, 28, 0.2, 0.1],
-    [-37, 1.0, -CW, 28, 0.2, 0.1],
-    [-37, 1.0, CW, 28, 0.2, 0.1],
+    [-CW + 0.5, 0.05, -37, 0.15, 0.08, 28],  // N corridor W strip
+    [CW - 0.5,  0.05, -37, 0.15, 0.08, 28],
+    [-CW + 0.5, 0.05, 37,  0.15, 0.08, 28],
+    [CW - 0.5,  0.05, 37,  0.15, 0.08, 28],
+    [37,  0.05, -CW + 0.5, 28, 0.08, 0.15],
+    [37,  0.05,  CW - 0.5, 28, 0.08, 0.15],
+    [-37, 0.05, -CW + 0.5, 28, 0.08, 0.15],
+    [-37, 0.05,  CW - 0.5, 28, 0.08, 0.15],
   ]) {
     const strip = new THREE.Mesh(new THREE.BoxGeometry(rw, rh, rd), glowMat);
     strip.position.set(rx, ry, rz); game.arenaGroup.add(strip);
@@ -1628,6 +1644,7 @@ function buildSharedRuntimeAssets() {
   game.shared.playerBulletMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
   game.shared.enemyBulletMat = new THREE.MeshBasicMaterial({ color: 0xff5533 });
   game.shared.partGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+  game.shared.bigPartGeo = new THREE.BoxGeometry(0.38, 0.38, 0.38); // 3× size for explosions
   game.shared.hpBgGeo = new THREE.PlaneGeometry(1.2, 0.1);
   game.shared.hpFgGeo = new THREE.PlaneGeometry(1.2, 0.08);
   game.shared.hpFgGeo.translate(0.6, 0, 0);
