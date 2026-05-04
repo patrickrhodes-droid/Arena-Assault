@@ -484,112 +484,109 @@ export function showBossImperviousAlert() {
   el.classList.add("show");
 }
 
+// World units visible from the player in each direction on the minimap.
+const MINIMAP_VIEW_RADIUS = 48;
+
 export function drawMinimap() {
-  const context = game.dom.minimapContext;
-  // Use the actual canvas pixel dimensions so nothing is clipped.
-  const width = context.canvas.width;
-  const height = context.canvas.height;
-  const scale = width / ARENA_SIZE;
+  const ctx = game.dom.minimapContext;
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const cx = W / 2;
+  const cy = H / 2;
+  // Pixels per world unit: canvas half-size / view radius
+  const scale = cx / MINIMAP_VIEW_RADIUS;
 
   if (game.teammateAlertPulse > 0) {
     game.teammateAlertPulse = Math.max(0, game.teammateAlertPulse - game.dt);
   }
 
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = "rgba(5,10,15,0.85)";
-  context.fillRect(0, 0, width, height);
+  const playerPos = game.visuals.player.playerGroup.position;
+  // Convert a world position to canvas pixel coordinates (player-centred).
+  const toCanvas = (wx, wz) => ({
+    x: cx + (wx - playerPos.x) * scale,
+    y: cy + (wz - playerPos.z) * scale,
+  });
 
-  context.fillStyle = "#2a3344";
-  for (const obstacle of game.oBs) {
-    context.fillRect(
-      (obstacle.min.x + HALF) * scale,
-      (obstacle.min.z + HALF) * scale,
-      (obstacle.max.x - obstacle.min.x) * scale,
-      (obstacle.max.z - obstacle.min.z) * scale,
-    );
+  ctx.clearRect(0, 0, W, H);
+
+  // Circular clip so nothing bleeds outside the round minimap feel.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, cx, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.fillStyle = "rgba(5,10,15,0.88)";
+  ctx.fillRect(0, 0, W, H);
+
+  // Obstacles
+  ctx.fillStyle = "#2a3344";
+  for (const obs of game.oBs) {
+    const topLeft = toCanvas(obs.min.x, obs.min.z);
+    const w = (obs.max.x - obs.min.x) * scale;
+    const h = (obs.max.z - obs.min.z) * scale;
+    ctx.fillRect(topLeft.x, topLeft.y, w, h);
   }
 
+  // Enemies
+  const pingActive = game.enemyPingTmr > 0;
+  const ping = pingActive ? 0.5 + 0.5 * Math.sin((4 - game.enemyPingTmr) * 12) : 0;
   for (const enemy of game.enemies) {
-    const pingActive = game.enemyPingTmr > 0;
-    const pulse = pingActive ? 0.5 + 0.5 * Math.sin((4 - game.enemyPingTmr) * 12) : 0;
-    const radius = pingActive ? 3.5 + pulse * 2.5 : 3;
-    context.fillStyle = pingActive
+    const ep = toCanvas(enemy.group.position.x, enemy.group.position.z);
+    const r = pingActive ? 3.5 + ping * 2.5 : 3;
+    ctx.fillStyle = pingActive
       ? (enemy.type === "dog" ? "rgba(255,200,90,0.95)" : enemy.type === "skeleton" ? "rgba(220,230,255,0.95)" : "rgba(255,120,120,0.98)")
       : (enemy.type === "dog" ? "#ff8833" : enemy.type === "skeleton" ? "#c8d4f0" : "#ff3344");
-
-    context.beginPath();
-    context.arc((enemy.group.position.x + HALF) * scale, (enemy.group.position.z + HALF) * scale, radius, 0, Math.PI * 2);
-    context.fill();
-
+    ctx.beginPath(); ctx.arc(ep.x, ep.y, r, 0, Math.PI * 2); ctx.fill();
     if (pingActive) {
-      context.strokeStyle = enemy.type === "dog" ? "rgba(255,190,80,0.6)" : "rgba(255,90,90,0.65)";
-      context.lineWidth = 1.25;
-      context.beginPath();
-      context.arc(
-        (enemy.group.position.x + HALF) * scale,
-        (enemy.group.position.z + HALF) * scale,
-        radius + 2 + pulse * 3,
-        0,
-        Math.PI * 2,
-      );
-      context.stroke();
+      ctx.strokeStyle = enemy.type === "dog" ? "rgba(255,190,80,0.6)" : "rgba(255,90,90,0.65)";
+      ctx.lineWidth = 1.25;
+      ctx.beginPath(); ctx.arc(ep.x, ep.y, r + 2 + ping * 3, 0, Math.PI * 2); ctx.stroke();
     }
   }
 
-  for (const player of Object.values(game.remotePlayers)) {
-    const x = (player.group.position.x + HALF) * scale;
-    const y = (player.group.position.z + HALF) * scale;
-    const alertActive = game.teammateAlertPulse > 0 && player.isDowned;
-    const pulse = alertActive ? 0.5 + 0.5 * Math.sin((4 - game.teammateAlertPulse) * 10) : 0;
-    const dotRadius = 3.5 + (alertActive ? pulse * 2.5 : 0);
-    context.fillStyle = player.isSpectating
-      ? "#9aa7b5"
-      : player.isDowned
-        ? (alertActive ? `rgba(255,${140 + Math.round(pulse * 60)},80,0.95)` : "#ffbb55")
-        : "#66b3ff";
-    context.beginPath();
-    context.arc(x, y, dotRadius, 0, Math.PI * 2);
-    context.fill();
+  // Remote players
+  for (const rp of Object.values(game.remotePlayers)) {
+    const rpos = toCanvas(rp.group.position.x, rp.group.position.z);
+    const alertActive = game.teammateAlertPulse > 0 && rp.isDowned;
+    const apulse = alertActive ? 0.5 + 0.5 * Math.sin((4 - game.teammateAlertPulse) * 10) : 0;
+    const dr = 3.5 + (alertActive ? apulse * 2.5 : 0);
+    ctx.fillStyle = rp.isSpectating ? "#9aa7b5"
+      : rp.isDowned ? (alertActive ? `rgba(255,${140 + Math.round(apulse * 60)},80,0.95)` : "#ffbb55")
+      : "#66b3ff";
+    ctx.beginPath(); ctx.arc(rpos.x, rpos.y, dr, 0, Math.PI * 2); ctx.fill();
     if (alertActive) {
-      context.strokeStyle = "rgba(255,120,60,0.7)";
-      context.lineWidth = 1.2;
-      context.beginPath();
-      context.arc(x, y, dotRadius + 3 + pulse * 3, 0, Math.PI * 2);
-      context.stroke();
+      ctx.strokeStyle = "rgba(255,120,60,0.7)"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(rpos.x, rpos.y, dr + 3 + apulse * 3, 0, Math.PI * 2); ctx.stroke();
     }
-    const initial = (player.playerName || "?").charAt(0).toUpperCase();
-    context.fillStyle = "#dfe8f1";
-    context.font = "9px Rajdhani";
-    context.textAlign = "center";
-    context.fillText(initial, x, y - 6);
+    ctx.fillStyle = "#dfe8f1"; ctx.font = "9px Rajdhani"; ctx.textAlign = "center";
+    ctx.fillText((rp.playerName || "?").charAt(0).toUpperCase(), rpos.x, rpos.y - 6);
   }
 
   // Health packs
   if (game.healthPacks?.length > 0) {
     const bob = 0.5 + 0.5 * Math.sin(performance.now() / 400);
-    context.fillStyle = `rgba(80,255,140,${0.65 + bob * 0.3})`;
+    ctx.fillStyle = `rgba(80,255,140,${0.65 + bob * 0.3})`;
     for (const pack of game.healthPacks) {
-      const hx = (pack.mesh.position.x + HALF) * scale;
-      const hz = (pack.mesh.position.z + HALF) * scale;
-      context.fillRect(hx - 3, hz - 1.5, 6, 3);
-      context.fillRect(hx - 1.5, hz - 3, 3, 6);
+      const hp = toCanvas(pack.mesh.position.x, pack.mesh.position.z);
+      ctx.fillRect(hp.x - 3, hp.y - 1.5, 6, 3);
+      ctx.fillRect(hp.x - 1.5, hp.y - 3, 3, 6);
     }
   }
 
-  const player = game.visuals.player.playerGroup.position;
-  const px = (player.x + HALF) * scale;
-  const py = (player.z + HALF) * scale;
-  context.fillStyle = "#00ffaa";
-  context.beginPath();
-  context.arc(px, py, 4, 0, Math.PI * 2);
-  context.fill();
+  // Local player (always at centre)
+  ctx.fillStyle = "#00ffaa";
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#00ffaa"; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx - Math.sin(game.camTheta) * 9, cy - Math.cos(game.camTheta) * 9);
+  ctx.stroke();
 
-  context.strokeStyle = "#00ffaa";
-  context.lineWidth = 1.5;
-  context.beginPath();
-  context.moveTo(px, py);
-  context.lineTo(px - Math.sin(game.camTheta) * 8, py - Math.cos(game.camTheta) * 8);
-  context.stroke();
+  ctx.restore();
+
+  // Border ring
+  ctx.strokeStyle = "rgba(0,204,170,0.35)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, cx - 0.5, 0, Math.PI * 2); ctx.stroke();
 }
 
 export function showRankings(rankings) {

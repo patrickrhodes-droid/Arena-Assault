@@ -675,6 +675,10 @@ function gameOver(rankings = null) {
 function animate(time) {
   game.dt = Math.min(0.03, (time - game.lastTime) / 1000);
   game.lastTime = time;
+  game.frameIndex = (game.frameIndex + 1) % 120;
+  // Stagger slow updates: HUD every 2 frames, minimap every 3 frames.
+  const doHUD      = game.frameIndex % 2 === 0;
+  const doMinimap  = game.frameIndex % 3 === 0;
 
   if (game.state === "PLAYING") {
     updatePlayer(actions);
@@ -683,13 +687,12 @@ function animate(time) {
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });
     updateParticles();
-    updateHealthPacks(updateHUD);
+    updateHealthPacks(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();
-    updateHUD();
-    updateStatusIndicators();
-    drawMinimap();
+    if (doHUD) { updateHUD(); updateStatusIndicators(); }
+    if (doMinimap) drawMinimap();
   } else if (game.state === "PAUSED") {
     if (!game.worldPaused) {
       updateEnemies(actions);
@@ -700,35 +703,32 @@ function animate(time) {
     }
     updateRemotePlayerVisuals();
     updateCamera();
-    updateHUD();
-    updateStatusIndicators();
-    drawMinimap();
+    if (doHUD) { updateHUD(); updateStatusIndicators(); }
+    if (doMinimap) drawMinimap();
   } else if (game.state === "DOWNED") {
     syncLocalPlayerState();
     game.downedTime += game.dt;
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });
     updateParticles();
-    updateHealthPacks(updateHUD);
+    updateHealthPacks(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();
-    updateHUD();
-    updateStatusIndicators();
-    drawMinimap();
+    if (doHUD) { updateHUD(); updateStatusIndicators(); }
+    if (doMinimap) drawMinimap();
     game.dom.reviveBarFill.style.width = `${Math.min(100, (game.downedTime / 45) * 100)}%`;
   } else if (game.state === "SPECTATING") {
     syncLocalPlayerState();
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });
     updateParticles();
-    updateHealthPacks(updateHUD);
+    updateHealthPacks(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();
-    updateHUD();
-    updateStatusIndicators();
-    drawMinimap();
+    if (doHUD) { updateHUD(); updateStatusIndicators(); }
+    if (doMinimap) drawMinimap();
   }
 
   game.renderer.render(game.scene, game.camera);

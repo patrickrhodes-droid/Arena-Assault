@@ -595,7 +595,7 @@ function handleFiring(actions) {
   const weapon = getWeapon();
   game.fireTmr -= game.dt;
 
-  const triggerDown = weapon.mode === "pistol" || weapon.mode === "grapple"
+  const triggerDown = weapon.mode === "pistol" || weapon.mode === "grapple" || weapon.mode === "bazooka"
     ? game.mouseClicked
     : game.mouseDown;
   if (
@@ -610,10 +610,10 @@ function handleFiring(actions) {
     return;
   }
 
-  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && game.currentWeapon !== "grapple" && Boolean(getBossEnemy());
+  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && game.currentWeapon !== "grapple" && game.currentWeapon !== "bazooka" && Boolean(getBossEnemy());
 
   game.fireTmr = weapon.fireRate;
-  if (weapon.mode === "pistol" || weapon.mode === "grapple") game.mouseClicked = false;
+  if (weapon.mode === "pistol" || weapon.mode === "grapple" || weapon.mode === "bazooka") game.mouseClicked = false;
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
@@ -663,6 +663,8 @@ function handleFiring(actions) {
         minDamage: weapon.minDamage,
         falloffStart: weapon.falloffStart,
         falloffEnd: weapon.falloffEnd,
+        splashRadius: weapon.splashRadius ?? 0,
+        splashDamage: weapon.splashDamage ?? 0,
         shooterId: game.socket?.id,
         weapon: game.currentWeapon,
       });

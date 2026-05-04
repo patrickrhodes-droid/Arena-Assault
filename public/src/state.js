@@ -90,6 +90,7 @@ export const game = {
   reviveTimeout: null,
   downedTime: 0,
   netSyncTmr: 0,
+  frameIndex: 0, // increments each animate() call; used to decouple slow updates
   swordSwingProgress: 0,
   muzzleTmr: 0,
   knockbackX: 0,

@@ -102,7 +102,7 @@ export function initScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap; // faster than PCFSoft; indistinguishable at play distance
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.28;
   game.dom.gameContainer.appendChild(renderer.domElement);
@@ -162,6 +162,8 @@ export function rebuildArena(mapId) {
     buildArenaDesert();
   } else if (mapId === "city") {
     buildArenaCity();
+  } else if (mapId === "blacksite") {
+    buildArenaBlacksite();
   } else {
     buildArenaOriginal();
   }
@@ -176,7 +178,7 @@ function addSun(color, intensity, px, py, pz) {
   const dirLight = new THREE.DirectionalLight(color, intensity);
   dirLight.position.set(px, py, pz);
   dirLight.castShadow = true;
-  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.mapSize.set(1024, 1024);
   dirLight.shadow.camera.left = -80;
   dirLight.shadow.camera.right = 80;
   dirLight.shadow.camera.top = 80;
@@ -787,6 +789,271 @@ function buildArenaCity() {
   }
 }
 
+// ─── Blacksite: multi-room indoor building map ───────────────────────────────
+
+function buildArenaBlacksite() {
+  game.scene.fog = new THREE.FogExp2(0x080a0d, 0.012);
+  game.scene.background = new THREE.Color(0x080a0d);
+
+  // Dim hemisphere — interior only
+  const hemi = new THREE.HemisphereLight(0x1a2535, 0x060810, 0.35);
+  game.scene.add(hemi);
+  game.arenaLights.push(hemi);
+
+  // Overhead fluorescent clusters in hub and wings
+  for (const [x, z] of [
+    [0, 0], [-28, 0], [28, 0], [0, -28], [0, 28],
+    [0, -62], [0, 62], [-62, 0], [62, 0],
+    [-50, -50], [50, -50], [-50, 50], [50, 50],
+  ]) {
+    const fl = new THREE.PointLight(0xb8d8ff, 2.2, 34);
+    fl.position.set(x, 7, z);
+    game.scene.add(fl); game.arenaLights.push(fl);
+  }
+
+  // Red emergency lights in corridors and room corners
+  for (const [x, z] of [
+    [-60, -60], [60, -60], [-60, 60], [60, 60],
+    [0, -50], [0, 50], [-50, 0], [50, 0],
+    [-30, -30], [30, -30], [-30, 30], [30, 30],
+  ]) {
+    const el = new THREE.PointLight(0xff1a10, 1.0, 18);
+    el.position.set(x, 1.2, z);
+    game.scene.add(el); game.arenaLights.push(el);
+  }
+
+  // ── Floor ──
+  const floorCanvas = document.createElement("canvas");
+  floorCanvas.width = 512; floorCanvas.height = 512;
+  const fc = floorCanvas.getContext("2d");
+  fc.fillStyle = "#1c2028"; fc.fillRect(0, 0, 512, 512);
+  fc.strokeStyle = "#13171c"; fc.lineWidth = 1.5;
+  for (let i = 0; i <= 512; i += 32) {
+    fc.beginPath(); fc.moveTo(i, 0); fc.lineTo(i, 512); fc.stroke();
+    fc.beginPath(); fc.moveTo(0, i); fc.lineTo(512, i); fc.stroke();
+  }
+  fc.strokeStyle = "rgba(255,26,16,0.08)"; fc.lineWidth = 1;
+  [64, 192, 320, 448].forEach((y) => { fc.beginPath(); fc.moveTo(0, y); fc.lineTo(512, y); fc.stroke(); });
+  const floorTex = new THREE.CanvasTexture(floorCanvas);
+  floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+  floorTex.repeat.set(14, 14);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
+    new THREE.MeshStandardMaterial({ map: floorTex, color: 0xaabbcc, roughness: 0.9 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+  game.arenaGroup.add(ground);
+
+  // ── Materials ──
+  const wallTex = makeMetalPanelTexture(); wallTex.repeat.set(18, 4);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.84, map: wallTex });
+  const concWallTex = makeConcreteBrickTexture(); concWallTex.repeat.set(4, 2);
+  const innerWallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: concWallTex });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.35, metalness: 0.7 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x111620, roughness: 0.92 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 1.1 });
+  const lightPanelMat = new THREE.MeshStandardMaterial({ color: 0xb8d8ff, emissive: 0xb8d8ff, emissiveIntensity: 1.8 });
+  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x151a20, roughness: 0.95 });
+  const catwalkMat = new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.4, metalness: 0.65 });
+  const glowMat = new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 0.6 });
+
+  buildWalls(wallMat, accentMat);
+
+  const WH = 7;  // wall height
+  const W  = 2;  // wall thickness
+  const CW = 12; // half-width of corridors (full width = 24)
+
+  // ── Hub pillars (central cross area) ──
+  for (const [px, pz] of [[-20, -20], [20, -20], [-20, 20], [20, 20]]) {
+    addWorldBox(px, WH / 2, pz, 3.5, WH, 3.5, metalMat);
+  }
+  // Hub ceiling light panels
+  for (const [px, pz] of [[0, 0], [-14, 0], [14, 0], [0, -14], [0, 14]]) {
+    const lp = new THREE.Mesh(new THREE.BoxGeometry(8, 0.12, 2.5), lightPanelMat);
+    lp.position.set(px, WH - 0.06, pz); game.arenaGroup.add(lp);
+  }
+
+  // ── Hub partial ceiling ──
+  function addCeiling(x, y, z, w, d) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.35, d), ceilMat);
+    m.position.set(x, y, z); m.receiveShadow = true; game.arenaGroup.add(m);
+  }
+  addCeiling(0, WH, 0, 46, 46); // hub ceiling
+
+  // ── NORTH CORRIDOR (z=-22 → -52, x=-CW to CW) ──
+  addWorldBox(-CW - 1, WH / 2, -37, W, WH, 30, innerWallMat); // W wall
+  addWorldBox(CW + 1, WH / 2, -37, W, WH, 30, innerWallMat);  // E wall
+  addCeiling(0, WH, -37, CW * 2 + 2, 30);
+
+  // ── SOUTH CORRIDOR (z=22 → 52) ──
+  addWorldBox(-CW - 1, WH / 2, 37, W, WH, 30, innerWallMat);
+  addWorldBox(CW + 1, WH / 2, 37, W, WH, 30, innerWallMat);
+  addCeiling(0, WH, 37, CW * 2 + 2, 30);
+
+  // ── EAST CORRIDOR (x=22 → 52, z=-CW to CW) ──
+  addWorldBox(37, WH / 2, -CW - 1, 30, WH, W, innerWallMat);
+  addWorldBox(37, WH / 2, CW + 1, 30, WH, W, innerWallMat);
+  addCeiling(37, WH, 0, 30, CW * 2 + 2);
+
+  // ── WEST CORRIDOR (x=-52 → -22) ──
+  addWorldBox(-37, WH / 2, -CW - 1, 30, WH, W, innerWallMat);
+  addWorldBox(-37, WH / 2, CW + 1, 30, WH, W, innerWallMat);
+  addCeiling(-37, WH, 0, 30, CW * 2 + 2);
+
+  // ── NORTH WING room (x=-38 to 38, z=-52 to -70) ──
+  // South wall with doorway gap at x=-CW to CW
+  addWorldBox(-25, WH / 2, -52, 26, WH, W, innerWallMat); // W section
+  addWorldBox(25, WH / 2, -52, 26, WH, W, innerWallMat);  // E section
+  addWorldBox(-55, WH / 2, -61, 36, WH, 18, innerWallMat); // W solid mass
+  addWorldBox(55, WH / 2, -61, 36, WH, 18, innerWallMat);  // E solid mass
+  addCeiling(0, WH, -61, 76, 18);
+
+  // ── SOUTH WING ──
+  addWorldBox(-25, WH / 2, 52, 26, WH, W, innerWallMat);
+  addWorldBox(25, WH / 2, 52, 26, WH, W, innerWallMat);
+  addWorldBox(-55, WH / 2, 61, 36, WH, 18, innerWallMat);
+  addWorldBox(55, WH / 2, 61, 36, WH, 18, innerWallMat);
+  addCeiling(0, WH, 61, 76, 18);
+
+  // ── EAST WING (x=52 to 70, z=-38 to 38) ──
+  addWorldBox(52, WH / 2, -25, W, WH, 26, innerWallMat);
+  addWorldBox(52, WH / 2, 25, W, WH, 26, innerWallMat);
+  addWorldBox(61, WH / 2, -55, 18, WH, 36, innerWallMat);
+  addWorldBox(61, WH / 2, 55, 18, WH, 36, innerWallMat);
+  addCeiling(61, WH, 0, 18, 76);
+
+  // ── WEST WING ──
+  addWorldBox(-52, WH / 2, -25, W, WH, 26, innerWallMat);
+  addWorldBox(-52, WH / 2, 25, W, WH, 26, innerWallMat);
+  addWorldBox(-61, WH / 2, -55, 18, WH, 36, innerWallMat);
+  addWorldBox(-61, WH / 2, 55, 18, WH, 36, innerWallMat);
+  addCeiling(-61, WH, 0, 18, 76);
+
+  // ── CORNER ROOMS (NW, NE, SW, SE) each ~26×26 ──
+  // Each has one internal dividing wall with a doorway creating two sub-rooms.
+  // NW CORNER: x=-72 to -40, z=-72 to -40 (accessible from both N and W corridors)
+  // Internal wall at x=-55, with doorway at z=-58 to -50 (8-wide gap)
+  addWorldBox(-55, WH / 2, -66, W, WH, 12, darkMat); // N section of divider
+  addWorldBox(-55, WH / 2, -45, W, WH, 10, darkMat); // S section of divider
+
+  // NE CORNER (mirrored)
+  addWorldBox(55, WH / 2, -66, W, WH, 12, darkMat);
+  addWorldBox(55, WH / 2, -45, W, WH, 10, darkMat);
+
+  // SW CORNER
+  addWorldBox(-55, WH / 2, 66, W, WH, 12, darkMat);
+  addWorldBox(-55, WH / 2, 45, W, WH, 10, darkMat);
+
+  // SE CORNER
+  addWorldBox(55, WH / 2, 66, W, WH, 12, darkMat);
+  addWorldBox(55, WH / 2, 45, W, WH, 10, darkMat);
+
+  // ── SECOND FLOOR: 4 catwalks overlooking the hub ──
+  // Each catwalk is a raised platform accessible by ladder, looking into the hub.
+  // N catwalk (z=-35 to -22, x=-18 to 18, top at y=4.5)
+  addWorldBox(0, 2.25, -28.5, 36, 4.5, 13, catwalkMat);
+  // Railing (low wall along the south face of N catwalk, toward hub)
+  addWorldBox(0, 4.9, -22.2, 36, 0.8, 0.4, metalMat);
+  game.ladders.push({ xMin: -4, xMax: 4, zMin: -36, zMax: -28, yMax: 4.8 });
+
+  // S catwalk (z=22 to 35)
+  addWorldBox(0, 2.25, 28.5, 36, 4.5, 13, catwalkMat);
+  addWorldBox(0, 4.9, 22.2, 36, 0.8, 0.4, metalMat);
+  game.ladders.push({ xMin: -4, xMax: 4, zMin: 28, zMax: 36, yMax: 4.8 });
+
+  // E catwalk (x=22 to 35)
+  addWorldBox(28.5, 2.25, 0, 13, 4.5, 36, catwalkMat);
+  addWorldBox(22.2, 4.9, 0, 0.4, 0.8, 36, metalMat);
+  game.ladders.push({ xMin: 28, xMax: 36, zMin: -4, zMax: 4, yMax: 4.8 });
+
+  // W catwalk (x=-35 to -22)
+  addWorldBox(-28.5, 2.25, 0, 13, 4.5, 36, catwalkMat);
+  addWorldBox(-22.2, 4.9, 0, 0.4, 0.8, 36, metalMat);
+  game.ladders.push({ xMin: -36, xMax: -28, zMin: -4, zMax: 4, yMax: 4.8 });
+
+  // Central raised observation deck (x=-8 to 8, z=-8 to 8, top at y=8 — bonus sniper perch)
+  addWorldBox(0, 6.5, 0, 16, 13, 16, metalMat);
+  // Ladder to top
+  game.ladders.push({ xMin: -5, xMax: 5, zMin: -10, zMax: -7, yMax: 13.1 });
+  // Railing on observation deck
+  for (const [rx, rz, rw, rd] of [
+    [0, -8.2, 16, 0.4], [0, 8.2, 16, 0.4], [-8.2, 0, 0.4, 16], [8.2, 0, 0.4, 16],
+  ]) {
+    addWorldBox(rx, 13.6, rz, rw, 1.2, rd, metalMat);
+  }
+
+  // Emergency light strips along corridor walls
+  for (const [rx, ry, rz, rw, rh, rd] of [
+    [-CW, 1.0, -37, 0.1, 0.2, 28],  // N corridor W strip
+    [CW, 1.0, -37, 0.1, 0.2, 28],
+    [-CW, 1.0, 37, 0.1, 0.2, 28],
+    [CW, 1.0, 37, 0.1, 0.2, 28],
+    [37, 1.0, -CW, 28, 0.2, 0.1],
+    [37, 1.0, CW, 28, 0.2, 0.1],
+    [-37, 1.0, -CW, 28, 0.2, 0.1],
+    [-37, 1.0, CW, 28, 0.2, 0.1],
+  ]) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(rw, rh, rd), glowMat);
+    strip.position.set(rx, ry, rz); game.arenaGroup.add(strip);
+  }
+
+  // ── Shooter pack props ──
+  const SA = "/assets/models/shooter asset pack/";
+
+  // Hub: server racks / equipment along walls
+  loadProp(SA + "Shipping Container Structure.glb", -30, 0, -18, 1.5, 0, false);
+  loadProp(SA + "Shipping Container Structure.glb", 30, 0, -18, 1.5, Math.PI, false);
+
+  // Corridor cover (mid-corridor barriers and barrels)
+  loadProp(SA + "Concrete Barrier.glb", 0, 0, -37, 1.4, Math.PI * 0.5);
+  loadProp(SA + "Concrete Barrier.glb", 0, 0, 37, 1.4, Math.PI * 0.5);
+  loadProp(SA + "Concrete Barrier.glb", -37, 0, 0, 1.4);
+  loadProp(SA + "Concrete Barrier.glb", 37, 0, 0, 1.4);
+
+  // Barrels in corridors
+  for (const [bx, bz] of [[-6, -42], [6, -42], [-6, 42], [6, 42], [-42, -6], [-42, 6], [42, -6], [42, 6]]) {
+    loadProp(SA + "Exploding Barrel.glb", bx, 0, bz, 0.9);
+  }
+
+  // North wing: lab equipment
+  loadProp(SA + "Water Tank.glb", -20, 0, -62, 1.2);
+  loadProp(SA + "Water Tank.glb", 20, 0, -62, 1.2);
+  loadProp(SA + "Gas Tank.glb", -10, 0, -65, 1.0);
+  loadProp(SA + "Gas Tank.glb", 10, 0, -65, 1.0);
+  loadProp(SA + "Crate.glb", -30, 0, -64, 1.0);
+  loadProp(SA + "Crate.glb", 30, 0, -64, 1.0);
+  loadProp(SA + "Pallet.glb", 0, 0, -67, 1.1);
+
+  // South wing: storage
+  loadProp(SA + "Cardboard Boxes.glb", -20, 0, 60, 0.9);
+  loadProp(SA + "Cardboard Boxes.glb", 20, 0, 60, 0.9);
+  loadProp(SA + "Pallet Broken.glb", -5, 0, 65, 1.0);
+  loadProp(SA + "Pallet.glb", 5, 0, 65, 1.0);
+  loadProp(SA + "Gas Can.glb", -28, 0, 63, 0.8);
+  loadProp(SA + "Gas Can.glb", 28, 0, 63, 0.8);
+
+  // East wing: weapons storage
+  loadProp(SA + "Sack Trench.glb", 62, 0, -20, 1.3);
+  loadProp(SA + "Sack Trench.glb", 62, 0, 20, 1.3, Math.PI);
+  loadProp(SA + "Crate.glb", 65, 0, 0, 1.0);
+
+  // West wing: barricaded area
+  loadProp(SA + "Barrier Fixed.glb", -60, 0, -18, 1.2);
+  loadProp(SA + "Barrier Fixed.glb", -60, 0, 18, 1.2, Math.PI);
+  loadProp(SA + "Dumpster.glb", -63, 0, 0, 1.1, Math.PI * 0.5);
+
+  // Corner rooms
+  for (const [rx, rz, rot] of [
+    [-62, -62, 0.2], [62, -62, 0.6], [-62, 62, 1.4], [62, 62, 1.8],
+  ]) {
+    loadProp(SA + "Exploding Barrel.glb", rx, 0, rz, 1.0);
+    loadProp(SA + "Debris Papers.glb", rx + 5, 0, rz + 5, 1.0, rot);
+  }
+
+  // Hub centre: wreckage / barricades
+  loadProp(SA + "Barrier Single.glb", -8, 0, 0, 1.3);
+  loadProp(SA + "Barrier Single.glb", 8, 0, 0, 1.3, Math.PI);
+  loadProp(SA + "Debris Pile.glb", 0, 0, 0, 1.1, false);
+}
+
 // ─── Canvas texture generators ───────────────────────────────────────────────
 
 function makeMetalPanelTexture() {
@@ -1169,6 +1436,15 @@ function buildWeaponVisuals() {
         fpScale: [0.8, 0.8, 0.72],
         fpMuzzleZ: -0.38,
       },
+      bazooka: {
+        tpPos: [0.55, 1.32, -0.32],
+        tpScale: [1, 1, 1],
+        tpMuzzleZ: -0.9,
+        fpPos: [0.3, -0.22, -0.65],
+        fpAdsPos: [0.0, -0.1, -0.4],
+        fpScale: [1, 1, 1],
+        fpMuzzleZ: -0.9,
+      },
     },
   };
 
@@ -1179,6 +1455,7 @@ function buildWeaponVisuals() {
     sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
     grapple: { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
+    bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.13,  rotY: 0 },
   };
 
   const glbGroups = {};

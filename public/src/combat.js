@@ -126,18 +126,26 @@ export function spawnBullet(position, direction, isPlayer, options = {}, fromRem
     minDamage: options.minDamage,
     falloffStart: options.falloffStart,
     falloffEnd: options.falloffEnd,
+    splashRadius: options.splashRadius ?? 0,
+    splashDamage: options.splashDamage ?? 0,
     distance: 0,
+    prevPos: position.clone(), // cached to avoid clone() each frame
     shooterId,
     fromRemote,
     weapon: options.weapon ?? null,
   });
 }
 
+// Reused each frame to avoid per-bullet/per-enemy allocations.
+const _enemyCenterVec = new THREE.Vector3();
+const _hitPosVec = new THREE.Vector3();
+
 export function updateBullets({ processHit, playerDiedLocal, showDamage, addShake, updateHUD } = {}) {
   for (let index = game.bullets.length - 1; index >= 0; index -= 1) {
     const bullet = game.bullets[index];
     const step = bullet.spd * game.dt;
-    const previousPosition = bullet.mesh.position.clone();
+    // Store previous position in the bullet's own cached vector (avoids clone()).
+    bullet.prevPos.copy(bullet.mesh.position);
     bullet.mesh.position.addScaledVector(bullet.dir, step);
     bullet.distance += step;
     bullet.life -= game.dt;
@@ -147,7 +155,10 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 
     if (!shouldRemove && bulletHitObstacle(position.x, position.y, position.z)) {
       shouldRemove = true;
-      spawnParticles(position, 2, 0xff8844, 2);
+      spawnParticles(position, bullet.splashRadius > 0 ? 24 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 10 : 2);
+      if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
+        applySplashDamage(bullet, position, processHit);
+      }
     }
 
     if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote) {
@@ -155,15 +166,20 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
         const enemy = game.enemies[enemyIndex];
         const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
         const hitRadiusSq = enemy.type === "boss" ? 5.2 : enemy.type === "skeleton" ? 2.2 : 1.0;
-        const enemyCenter = new THREE.Vector3(
+        _enemyCenterVec.set(
           enemy.group.position.x,
           enemy.group.position.y + enemyHeight,
           enemy.group.position.z,
         );
 
-        if (distanceSqPointToSegment(enemyCenter, previousPosition, position) < hitRadiusSq) {
-          processHit?.(enemy, bulletDamageAtDistance(bullet), position.clone());
+        if (distanceSqPointToSegment(_enemyCenterVec, bullet.prevPos, position) < hitRadiusSq) {
+          _hitPosVec.copy(position);
+          processHit?.(enemy, bulletDamageAtDistance(bullet), _hitPosVec);
           shouldRemove = true;
+          if (bullet.splashRadius > 0) {
+            spawnParticles(position, 24, 0xff6600, 10);
+            applySplashDamage(bullet, position, processHit, enemy);
+          }
           break;
         }
       }
@@ -321,6 +337,21 @@ export function updateParticles() {
       particle.mesh.material.dispose();
       game.particles.splice(index, 1);
     }
+  }
+}
+
+function applySplashDamage(bullet, origin, processHit, directHitEnemy = null) {
+  const r = bullet.splashRadius;
+  const rSq = r * r;
+  for (const enemy of game.enemies) {
+    if (enemy === directHitEnemy) continue; // direct hit already processed
+    const dx = enemy.group.position.x - origin.x;
+    const dz = enemy.group.position.z - origin.z;
+    const distSq = dx * dx + dz * dz;
+    if (distSq >= rSq) continue;
+    const frac = 1 - Math.sqrt(distSq) / r; // 1 at centre, 0 at edge
+    const dmg = Math.round(bullet.splashDamage * frac);
+    if (dmg > 0) processHit?.(enemy, dmg, origin.clone());
   }
 }
 

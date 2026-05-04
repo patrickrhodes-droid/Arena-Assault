@@ -922,8 +922,8 @@ canvas {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  width: 360px;
-  height: 360px;
+  width: 220px;
+  height: 220px;
   border: 1px solid var(--border);
   border-radius: 4px;
 }
@@ -1441,8 +1441,8 @@ canvas {
   }
 
   #minimap {
-    width: 270px;
-    height: 270px;
+    width: 180px;
+    height: 180px;
   }
 
   .controls-box {
@@ -1464,7 +1464,7 @@ canvas {
 /* ── Status indicators: sprint / crouch / grapple ── */
 #status-indicators {
   position: absolute;
-  bottom: 395px;
+  bottom: 252px;
   left: 20px;
   display: flex;
   align-items: center;

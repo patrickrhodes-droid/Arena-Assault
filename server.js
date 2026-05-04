@@ -48,7 +48,7 @@ app.get('/arenatest.html', (req, res) => res.redirect('/'));
 const PVP_WIN_KILLS = 13;
 const PVP_KILLS_PER_WEAPON = 2;
 const PVP_SWORD_KILLS_TO_WIN = 5;
-const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'grapple'];
+const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'grapple', 'bazooka'];
 const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
 
 // ── Game simulation constants ─────────────────────────────────────────────────
@@ -1060,7 +1060,7 @@ io.on('connection', (socket) => {
         damage = Math.min(damage, 10000);           // clamp runaway values
         const enemy = gameState.enemies.find(e => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
-        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple') return;
+        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple' && weapon !== 'bazooka') return;
         enemy.hp = Math.max(0, enemy.hp - damage);
         io.emit('enemyDamaged', { id: enemyId, damage });
         if (enemy.hp <= 0) killEnemy(enemy, socket.id);
@@ -1073,7 +1073,7 @@ io.on('connection', (socket) => {
         if (!WEAPON_ORDER.includes(weapon)) return;
         const enemy = gameState.enemies.find((e) => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
-        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple') return;
+        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple' && weapon !== 'bazooka') return;
         enemy.x = Math.max(-HALF + 1, Math.min(HALF - 1, x));
         enemy.y = Math.max(0, y);
         enemy.z = Math.max(-HALF + 1, Math.min(HALF - 1, z));

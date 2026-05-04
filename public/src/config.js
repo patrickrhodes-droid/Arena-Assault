@@ -201,6 +201,26 @@ export const WEAPON_DEFS = {
     shake: 0.05,
     mode: "grapple",
   },
+  bazooka: {
+    label: "BAZOOKA",
+    mag: 4,
+    fireRate: 1.8,
+    reload: 3.2,
+    pellets: 1,
+    damage: 500,        // direct-hit damage (same as sniper)
+    splashRadius: 6.0,  // world units of splash damage reach
+    splashDamage: 180,  // damage at splash edge (falls off with distance)
+    spreadHip: 0.008,
+    spreadAim: 0.004,
+    bulletSpeed: 55,
+    bulletLife: 3.5,
+    aimFov: 48,
+    aimCamDist: 6.5,
+    recoilZ: 0.22,
+    recoilRX: 0.18,
+    shake: 0.18,
+    mode: "bazooka",
+  },
 };
 
 export const CHARACTERS = {
@@ -241,9 +261,15 @@ export const MAP_DEFS = {
     accentColor: "#ff8a3d",
     previewGradient: "linear-gradient(135deg,#8ec5f4 0%,#d8b27a 52%,#f2dfbf 100%)",
   },
+  blacksite: {
+    name: "BLACKSITE",
+    subtitle: "Abandoned Research Compound",
+    accentColor: "#ff2a1a",
+    previewGradient: "linear-gradient(135deg,#0a0d12 0%,#1a0808 52%,#0d0a0f 100%)",
+  },
 };
 
-export const MAP_ORDER = ["arena", "desert", "city"];
+export const MAP_ORDER = ["arena", "desert", "city", "blacksite"];
 
 export function createWeaponAmmo() {
   return Object.fromEntries(

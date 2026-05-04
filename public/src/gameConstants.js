@@ -16,7 +16,7 @@ export const EYE_H = 2.15;
 export const LAND_SNAP = 0.18;
 export const EPS = 1e-6;
 
-export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "grapple"];
+export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "grapple", "bazooka"];
 
 export const PVP_WIN_KILLS = 6;
 export const PVP_KILLS_PER_WEAPON = 1;

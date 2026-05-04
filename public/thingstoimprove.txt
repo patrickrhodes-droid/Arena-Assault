@@ -71,11 +71,6 @@
     unique. A proper fix requires a persistent session token (cookie/localStorage).
 
 
-Ladder shooting bug:
-  Cannot shoot while standing on top of structures that have ladders attached.
-  The ladder collision zone extends above the structure top, blocking shots.
-  Fix: cap the ladder yMax to the structure surface height, or exclude ladder
-  volumes from the bullet-hit-obstacle check when the player is above them.
 
 -- KNOWN RELIABILITY ISSUES --
 
@@ -104,6 +99,33 @@ after having selected map change background map preview to selected map
 when on floor player looks like hes floating and his shadow is to the left (3rd person)
 desert and city look very similar now colours wise
 
+-- PERFORMANCE IMPROVEMENTS IMPLEMENTED --
+- Shadow map: PCFSoftShadowMap → PCFShadowMap (4-tap instead of 9-tap; same look at
+  play distance, meaningful GPU cost reduction).
+- Shadow map resolution: 2048×2048 → 1024×1024 (4× fewer shadow pixels to compute).
+- HUD + status indicators: updated every 2nd frame instead of every frame.
+- Minimap: redrawn every 3rd frame instead of every frame (canvas 2D ops are expensive).
+- Bullet loop: eliminated per-bullet position.clone() each frame; previous position is
+  now stored directly on the bullet. Eliminated per-bullet×per-enemy Vector3 allocation
+  by reusing module-level _enemyCenterVec/_hitPosVec cached vectors.
+
+-- PERFORMANCE IMPROVEMENTS NEEDING COMPROMISE OR LARGER EFFORT --
+- Geometry instancing: identical props (barrels, crates, bollards) are separate draw
+  calls. THREE.InstancedMesh would reduce draw calls by 30-50% on prop-heavy maps.
+  Requires refactoring loadProp to collect instances before rendering.
+- Shared material caching: each map creates new MeshStandardMaterial objects; caching
+  across rebuilds would cut shader compilation pauses on map change.
+- Occlusion culling: Three.js has no per-object occlusion culling. For Blacksite with
+  its many interior walls, a BVH-based system (three-mesh-bvh) could skip rendering
+  objects in other corridors. Significant third-party integration needed.
+- Web Workers for AI: enemy AI runs on the main thread and spikes on large waves.
+  Moving to a Worker would keep the render thread smooth but requires a complex state-
+  sharing refactor.
+- Texture atlassing: each GLB prop loads its own textures; atlassing would reduce GPU
+  texture-swap overhead but needs an asset pipeline change.
+- FXAA instead of MSAA: the renderer uses antialias:true (MSAA), which is expensive.
+  Switching to FXAA postprocessing would be faster but softer-looking at edges.
+
 -- IDEAS NEEDING EXTERNAL CHANGES OR LARGER EFFORT --
 
 Sound effects (currently just music + basic tones):
@@ -115,9 +137,6 @@ Sound effects (currently just music + basic tones):
   - Wave-clear victory sting
   Needs: real audio files (WAV/OGG) per weapon/surface.
 
-Custom soldier and dog GLB models:
-  Code is ready — place soldier.glb and dog.glb in public/assets/models/
-  and mirror the Skeleton GLB loading pattern in createSoldier/createDog.
 
 Character cosmetics / skins:
   Currently all characters share the same body mesh; adding per-character
