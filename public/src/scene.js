@@ -937,8 +937,9 @@ function makeAsphaltTexture() {
   return tex;
 }
 
-// Loads a GLB prop decoratively (no collision). Aborts if the arena was rebuilt before load completes.
-function loadProp(file, x, y, z, scale = 1, rotY = 0) {
+// Loads a GLB prop and (by default) adds an AABB to game.oBs for player/enemy collision.
+// Aborts silently if the arena is rebuilt before the load completes.
+function loadProp(file, x, y, z, scale = 1, rotY = 0, collidable = true) {
   const targetGroup = game.arenaGroup;
   new GLTFLoader().load(file, (gltf) => {
     if (game.arenaGroup !== targetGroup) return;
@@ -950,6 +951,17 @@ function loadProp(file, x, y, z, scale = 1, rotY = 0) {
       if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
     });
     targetGroup.add(model);
+    if (collidable) {
+      model.updateWorldMatrix(true, true);
+      const bbox = new THREE.Box3().setFromObject(model);
+      if (bbox.min.x < bbox.max.x && bbox.min.z < bbox.max.z) {
+        game.oBs.push({
+          min: { x: bbox.min.x, z: bbox.min.z },
+          max: { x: bbox.max.x, z: bbox.max.z },
+          h: bbox.max.y,
+        });
+      }
+    }
   });
 }
 
