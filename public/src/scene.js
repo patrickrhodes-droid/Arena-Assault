@@ -1504,7 +1504,7 @@ function buildWeaponVisuals() {
     shotgun: { file: "/assets/models/Shotgun.glb",       scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
-    grapple: { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
+    grapple: { file: "/assets/models/Lure.glb",           scale: 0.375, rotY: 0 },
     bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.38,  rotY: 0 },
   };
 

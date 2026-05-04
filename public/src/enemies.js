@@ -788,6 +788,7 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
     (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2,
     SOLDIER_TUNING.kiteRetreatDistance,
   );
+  trackStuck(enemy, pos, closest.pos);
   enemy.walkT = (enemy.walkT || 0) + game.dt * 8;
 
   // Tick shoot animation timer; blend back to run when it expires
@@ -829,6 +830,31 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
   }
 }
 
+// Teleports a hopelessly stuck non-boss enemy to a clear position near its closest target.
+function unstuckTeleport(enemy, pos, targetPos) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 6 + Math.random() * 6;
+  pos.x = Math.max(-HALF + 2, Math.min(HALF - 2, targetPos.x + Math.cos(angle) * radius));
+  pos.z = Math.max(-HALF + 2, Math.min(HALF - 2, targetPos.z + Math.sin(angle) * radius));
+  enemy._stuckSecs = 0;
+  enemy._stuckCheckX = pos.x;
+  enemy._stuckCheckZ = pos.z;
+}
+
+// Accumulates per-second movement checks; calls unstuckTeleport after 15 s without progress.
+function trackStuck(enemy, pos, targetPos) {
+  enemy._stuckCheckTmr = (enemy._stuckCheckTmr || 0) + game.dt;
+  if (enemy._stuckCheckTmr < 1.0) return;
+  enemy._stuckCheckTmr = 0;
+  const cx = enemy._stuckCheckX ?? pos.x;
+  const cz = enemy._stuckCheckZ ?? pos.z;
+  const movedSq = (pos.x - cx) ** 2 + (pos.z - cz) ** 2;
+  enemy._stuckCheckX = pos.x;
+  enemy._stuckCheckZ = pos.z;
+  enemy._stuckSecs = movedSq < 0.5 ? (enemy._stuckSecs || 0) + 1 : 0;
+  if (enemy._stuckSecs >= 15) unstuckTeleport(enemy, pos, targetPos);
+}
+
 function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult) {
   const prevX = pos.x;
   const prevZ = pos.z;
@@ -836,6 +862,7 @@ function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult
   const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
   moveEnemyWithCollision(pos, dirX, dirZ, enemy.spd);
   updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, range);
+  trackStuck(enemy, pos, closest.pos);
   enemy.walkT = (enemy.walkT || 0) + game.dt * walkMult;
   enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
 

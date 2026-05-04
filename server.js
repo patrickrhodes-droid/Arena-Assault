@@ -492,9 +492,22 @@ function makeBoss(x, z, hpMult) {
 
 // ── Spawn helpers ─────────────────────────────────────────────────────────────
 
+// Returns false if the spawn position lands inside a known solid/blocked area
+// for the current map. Prevents enemies from spawning trapped in geometry.
+function isOpenSpawnPos(sx, sz) {
+    if (selectedMap !== 'blacksite') return true;
+    // Blacksite: solid masses fill the diagonal corners between wings.
+    // On each edge, only the wing opening (±37 on the perpendicular axis) is accessible.
+    // West/East edge spawns (|sx| > 50): block if |sz| > 37 (inside corner solid masses).
+    if (Math.abs(sx) > 50 && Math.abs(sz) > 37) return false;
+    // North/South edge spawns (|sz| > 50): block if |sx| > 37.
+    if (Math.abs(sz) > 50 && Math.abs(sx) > 37) return false;
+    return true;
+}
+
 function pickSpawnPos(minDistFromPlayer, extraCheck) {
     const alive = getAlivePlayers();
-    for (let attempt = 0; attempt < 30; attempt++) {
+    for (let attempt = 0; attempt < 40; attempt++) {
         const side = Math.floor(Math.random() * 4);
         const offset = (Math.random() - 0.5) * (ARENA_SIZE - 6);
         let sx, sz;
@@ -506,11 +519,13 @@ function pickSpawnPos(minDistFromPlayer, extraCheck) {
         const tooCloseToPlayer = alive.some(p => dist2(sx, sz, p.x, p.z) < minDistFromPlayer);
         // Also keep a minimum gap from existing enemies so skeleton groups don't stack.
         const tooCloseToEnemy = gameState.enemies.some(e => dist2(sx, sz, e.x, e.z) < 6);
-        if (!tooCloseToPlayer && !tooCloseToEnemy && (!extraCheck || extraCheck(sx, sz))) return [sx, sz];
+        if (!tooCloseToPlayer && !tooCloseToEnemy && isOpenSpawnPos(sx, sz) && (!extraCheck || extraCheck(sx, sz))) {
+            return [sx, sz];
+        }
     }
-    // Fallback: any edge position
-    const offset = (Math.random() - 0.5) * (ARENA_SIZE - 6);
-    return [HALF - 1, offset];
+    // Fallback: safe edge position (always valid: centre of an edge)
+    const fallbackOffset = (Math.random() - 0.5) * 60; // stay within ±30 to avoid corners
+    return [HALF - 1, fallbackOffset];
 }
 
 function emitEnemySpawned(e) {

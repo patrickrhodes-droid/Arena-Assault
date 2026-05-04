@@ -583,10 +583,23 @@ export function drawMinimap() {
     ctx.fillRect(topLeft.x, topLeft.y, w, h);
   }
 
-  // Enemies
+  // Enemies — dots for visible, directional arc on rim for off-screen
   const pingActive = game.enemyPingTmr > 0;
   const ping = pingActive ? 0.5 + 0.5 * Math.sin((4 - game.enemyPingTmr) * 12) : 0;
+
+  // Pre-collect off-screen enemies to draw their rim arcs after the dots
+  const offScreenEnemies = [];
+
   for (const enemy of game.enemies) {
+    const dx = enemy.group.position.x - playerPos.x;
+    const dz = enemy.group.position.z - playerPos.z;
+    const worldDist = Math.sqrt(dx * dx + dz * dz);
+
+    if (worldDist > MINIMAP_VIEW_RADIUS) {
+      offScreenEnemies.push({ enemy, dx, dz });
+      continue;
+    }
+
     const ep = toCanvas(enemy.group.position.x, enemy.group.position.z);
     const r = pingActive ? 3.5 + ping * 2.5 : 3;
     ctx.fillStyle = pingActive
@@ -598,6 +611,40 @@ export function drawMinimap() {
       ctx.lineWidth = 1.25;
       ctx.beginPath(); ctx.arc(ep.x, ep.y, r + 2 + ping * 3, 0, Math.PI * 2); ctx.stroke();
     }
+  }
+
+  // Directional rim arcs for off-screen enemies.
+  // Each arc illuminates a ~12° segment of the minimap circumference in the
+  // direction of the enemy, so you always know where threats are lurking.
+  if (offScreenEnemies.length > 0) {
+    const rimR = cx - 7;         // just inside the border ring
+    const arcHalf = 0.105;       // half-arc ≈ 6°
+    const pulse = 0.65 + 0.35 * Math.sin(performance.now() / 320);
+    for (const { enemy, dx, dz } of offScreenEnemies) {
+      // Canvas angle: +x=east=right, +z=south=down → atan2(dz, dx) is correct.
+      const angle = Math.atan2(dz, dx);
+      const isBoss = enemy.type === "boss";
+      const baseColor = isBoss ? [255, 179, 71]
+        : enemy.type === "dog"      ? [255, 136, 51]
+        : enemy.type === "skeleton" ? [200, 212, 240]
+        : [255, 51, 68];
+      const alpha = isBoss ? pulse : 0.85;
+      ctx.strokeStyle = `rgba(${baseColor[0]},${baseColor[1]},${baseColor[2]},${alpha})`;
+      ctx.lineWidth = isBoss ? 6 : 4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(cx, cy, rimR, angle - arcHalf, angle + arcHalf);
+      ctx.stroke();
+      // Boss gets a second, wider halo arc
+      if (isBoss) {
+        ctx.strokeStyle = `rgba(255,179,71,${alpha * 0.35})`;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rimR, angle - arcHalf * 2.5, angle + arcHalf * 2.5);
+        ctx.stroke();
+      }
+    }
+    ctx.lineCap = "butt"; // reset
   }
 
   // Remote players
