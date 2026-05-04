@@ -85,7 +85,6 @@ export const game = {
   oBs: [],
   healthPacks: [],
   remotePlayers: {},
-  reviveProgress: {},
   reviveHoldTime: 0,
   reviveTarget: null,
   reviveTimeout: null,

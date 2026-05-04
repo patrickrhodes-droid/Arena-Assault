@@ -88,6 +88,13 @@ export function cacheDom() {
     weaponUnlockAlert: document.getElementById("weapon-unlock-alert"),
     respawnFade: document.getElementById("respawn-fade"),
     fullscreenBtn: document.getElementById("fullscreen-btn"),
+    statusSprint: document.getElementById("status-sprint"),
+    statusCrouch: document.getElementById("status-crouch"),
+    grappleReadyLabel: document.getElementById("grapple-ready-label"),
+    grappleCooldownFill: document.getElementById("grapple-cooldown-bar-fill"),
+    killFeed: document.getElementById("kill-feed"),
+    waveClear: document.getElementById("wave-clear"),
+    giveUpBtn: document.getElementById("give-up-btn"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
@@ -183,6 +190,11 @@ export function bindMenuControls(actions) {
   game.dom.resumeBtn.addEventListener("click", actions.resumeGame);
   game.dom.exitBtn.addEventListener("click", reloadPage);
   game.dom.redeployBtn.addEventListener("click", reloadPage);
+  if (game.dom.giveUpBtn) {
+    game.dom.giveUpBtn.addEventListener("click", () => {
+      if (game.localPlayerIsDowned) actions.enterSpectatorMode?.();
+    });
+  }
   game.dom.viewBtn.addEventListener("click", toggleView);
   if (game.dom.fullscreenBtn) {
     game.dom.fullscreenBtn.addEventListener("click", () => {
@@ -397,7 +409,54 @@ export function showDamage() {
   window.clearTimeout(game.damageTimeout);
   game.damageTimeout = window.setTimeout(() => {
     game.dom.damageOverlay.style.opacity = "0";
-  }, 150);
+  }, 80);
+}
+
+// ── Kill feed ──────────────────────────────────────────────────────────────────
+const KILL_FEED_MAX = 5;
+const killFeedTimers = [];
+
+export function pushKillFeed(text, type = "") {
+  if (!game.dom.killFeed) return;
+  const entry = document.createElement("div");
+  entry.className = `kill-entry${type ? ` ${type}` : ""}`;
+  entry.textContent = text;
+  game.dom.killFeed.appendChild(entry);
+  while (game.dom.killFeed.children.length > KILL_FEED_MAX) {
+    game.dom.killFeed.removeChild(game.dom.killFeed.firstChild);
+  }
+  const t = window.setTimeout(() => {
+    entry.remove();
+  }, 4000);
+  killFeedTimers.push(t);
+}
+
+// ── Wave-clear banner ──────────────────────────────────────────────────────────
+export function showWaveClear(wave) {
+  const el = game.dom.waveClear;
+  if (!el) return;
+  el.textContent = `WAVE ${wave} CLEARED`;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  window.clearTimeout(game._waveClearTimer);
+  game._waveClearTimer = window.setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+// ── Status indicators (sprint / crouch / grapple cooldown) ────────────────────
+export function updateStatusIndicators() {
+  if (!game.dom.statusSprint) return;
+  game.dom.statusSprint.classList.toggle("active", !!game.isSprinting);
+  game.dom.statusCrouch.classList.toggle("active", !!game.isCrouching);
+
+  const cooldown = game.grappleCooldown ?? 0;
+  const maxCd = 0.8; // matches GRAPPLE_TUNING.releaseCooldown
+  const isReady = cooldown <= 0;
+  game.dom.grappleReadyLabel.classList.toggle("ready", isReady);
+  game.dom.grappleReadyLabel.textContent = isReady ? "GRAPPLE ✓" : "GRAPPLE";
+  game.dom.grappleCooldownFill.style.width = isReady
+    ? "100%"
+    : `${Math.max(0, (1 - cooldown / maxCd)) * 100}%`;
 }
 
 export function showTeammateDownAlert(name) {
@@ -503,6 +562,18 @@ export function drawMinimap() {
     context.font = "9px Rajdhani";
     context.textAlign = "center";
     context.fillText(initial, x, y - 6);
+  }
+
+  // Health packs
+  if (game.healthPacks?.length > 0) {
+    const bob = 0.5 + 0.5 * Math.sin(performance.now() / 400);
+    context.fillStyle = `rgba(80,255,140,${0.65 + bob * 0.3})`;
+    for (const pack of game.healthPacks) {
+      const hx = (pack.mesh.position.x + HALF) * scale;
+      const hz = (pack.mesh.position.z + HALF) * scale;
+      context.fillRect(hx - 3, hz - 1.5, 6, 3);
+      context.fillRect(hx - 1.5, hz - 3, 3, 6);
+    }
   }
 
   const player = game.visuals.player.playerGroup.position;

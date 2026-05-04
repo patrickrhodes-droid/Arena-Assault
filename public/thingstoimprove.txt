@@ -33,12 +33,32 @@
   and the dist<7.8 re-check at swing time was removed (wind-up entry already validated range).
 - Canvas textures added to all three maps: metal-panel walls (Arena), sandstone walls/structures
   (Desert), asphalt ground + concrete-brick buildings/walls (City).
-- Props from City Props and shooter asset packs added to all maps:
+- Props from City Props and shooter asset packs added to all maps with AABB collision:
   Arena — barrels, gas tanks, water tanks, pallets, tires, crates, sack trenches, dumpsters.
   Desert — barrels, gas cans, tires, crates, sack trenches, pallets, broken cars, tank, trash containers.
   City — street lights, trees, trash cans, fire hydrants, bollards, benches, traffic cones,
           traffic lights, stop signs, manhole covers, trash bags, bike racks, concrete barriers,
           box piles, bushes, fallen leaves, dumpsters, broken cars, shipping containers, signs.
+- Revive bug fixed: `id` was undefined in handleRevive (now uses remotePlayer.playerId).
+- Enemy pathfinding fixed: segmentIntersectsExpandedBox and getDetourDirection used
+  obs.xMin/xMax/zMin/zMax but obstacles store obs.min.x/max.x/min.z/max.z — now correct.
+  Soldiers, dogs, and skeletons will now route around obstacles instead of getting stuck.
+- Boss escape no longer fires ghost hits: windupTmr and swingTmr are cleared when the
+  boss starts a jump-escape, preventing a hit registering after the boss has teleported.
+- Ladder shooting fixed: bulletHitObstacle now uses y < obstacle.h (exclusive) instead of
+  y <= obstacle.h so bullets fired from the exact top surface of a structure aren't blocked.
+- Config constants added: PLAYER_MOVEMENT.crouchScale (0.65), PLAYER_MOVEMENT.recoilDecay (0.85),
+  PLAYER_MOVEMENT.crouchLerp (14), SOLDIER_TUNING.bulletSpreadH (0.24). All wired into code.
+- City map preview card updated to sunny gradient (was still showing old dark nighttime colors).
+- Controls list in lobby updated: added grapple (G), slot 6, double-tap W sprint, ladder, LMB.
+- Kill feed added (top-right HUD): shows enemy kills with score, boss kills in gold, wave clears.
+- Wave-clear banner added: "WAVE X CLEARED" animated banner appears when a wave ends.
+- Sprint and Crouch status pills added to HUD (above minimap, light up when active).
+- Grapple cooldown bar added to HUD: shows fill % as cooldown runs down, green ✓ when ready.
+- Minimap now shows health packs as green crosses (animated bob).
+- "Give Up" button added to the downed overlay — immediately enters spectator mode.
+- Dead reviveProgress object removed from game state (was never read, just noise).
+- Duplicate HP assignments removed in startGame / startPvPGame.
 
 -- TO DO --
 
@@ -75,12 +95,73 @@ enemyMeleeAttempt server handler does not verify the sender is the host/owner of
   enemy. Any connected client could theoretically send fake boss hits to damage other
   players. Low risk for LAN play but worth noting.
 
-Boss escape jump resets enemy.stuckTmr to 0 but never resets enemy.windupTmr or
-  enemy.swingTmr. If the boss jumps mid-windup, on landing those timers may fire
-  a hit even though the boss just teleported to a new position.
+Boss escape jump now clears windupTmr and swingTmr on launch — ghost hits fixed.
+  Remaining concern: boss atkTmr is not reset, so the first attack after landing
+  may fire immediately if atkTmr had already expired before the jump.
 
-would it be possible to have contacts between the player models and the new glb env models ?
 some ladders dont have an associated model (city and desert)
 after having selected map change background map preview to selected map
 when on floor player looks like hes floating and his shadow is to the left (3rd person)
 desert and city look very similar now colours wise
+
+-- IDEAS NEEDING EXTERNAL CHANGES OR LARGER EFFORT --
+
+Sound effects (currently just music + basic tones):
+  - Footstep audio per surface type (metal, sand, concrete)
+  - Reload "click" per weapon (brass, magazine, pump)
+  - Bullet whiz-by on near miss
+  - Boss roar / growl when it charges
+  - Ambient wind for desert, urban noise for city
+  - Wave-clear victory sting
+  Needs: real audio files (WAV/OGG) per weapon/surface.
+
+Custom soldier and dog GLB models:
+  Code is ready — place soldier.glb and dog.glb in public/assets/models/
+  and mirror the Skeleton GLB loading pattern in createSoldier/createDog.
+
+Character cosmetics / skins:
+  Currently all characters share the same body mesh; adding per-character
+  torso textures/models would require GLB files and a selection system.
+
+Persistent leaderboard:
+  Scores currently reset when the server restarts. A SQLite/JSON file or
+  small DB would let you track all-time high scores and wave records.
+
+Lobby password / private rooms:
+  Anyone with the IP can join. A room code system would let you host
+  private LAN sessions with more control.
+
+More PvP modes:
+  - Team deathmatch (2v2 or 1v1v1v1 with team allocation)
+  - Capture zone / objective mode
+  - Elimination (one life, last player standing)
+
+Destructible props:
+  Some props (barrels, gas cans) could explode when shot, dealing
+  area damage. Requires server-side prop state and a destroy event.
+
+Map voting / rotation:
+  Instead of host choosing, a vote at end of match that auto-rotates
+  to the most-voted map. Small UX improvement with big feel payoff.
+
+Boss second phase:
+  At 50% HP the boss could speed up, gain a ranged attack (thrown rock),
+  or split into two smaller brutes. Adds drama to the fight.
+
+Ladder GLB models for city and desert:
+  Currently the fire escapes in City use box geometry staircases; the
+  pyramid in Desert has no visible ladder. Adding GLB ladder props
+  matching the ladder zone positions would make climbing more readable.
+
+Shadow / floating fix (3rd-person):
+  Player model hovers slightly above ground and shadow is offset left.
+  Needs investigation of playerGroup Y offset and shadow camera alignment.
+
+Server ESM conversion:
+  server.js is CommonJS so it cannot import shared constants from
+  gameConstants.js directly. Convert to ESM or add an esbuild step to
+  eliminate the duplicated constant definitions.
+
+Reconnection token:
+  Current reconnection uses playerName as identity, which isn't unique.
+  A proper fix needs a session token stored in localStorage/cookie.

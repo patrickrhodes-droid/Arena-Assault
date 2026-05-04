@@ -609,10 +609,10 @@ function moveEnemyWithCollision(pos, ndx, ndz, spd) {
 }
 
 function segmentIntersectsExpandedBox(startX, startZ, endX, endZ, obs, pad = 0) {
-  const minX = obs.xMin - pad;
-  const maxX = obs.xMax + pad;
-  const minZ = obs.zMin - pad;
-  const maxZ = obs.zMax + pad;
+  const minX = obs.min.x - pad;
+  const maxX = obs.max.x + pad;
+  const minZ = obs.min.z - pad;
+  const maxZ = obs.max.z + pad;
   const dx = endX - startX;
   const dz = endZ - startZ;
   let tmin = 0;
@@ -650,8 +650,8 @@ function getDetourDirection(pos, targetPos) {
 
   for (const obs of game.oBs) {
     if (!segmentIntersectsExpandedBox(pos.x, pos.z, targetPos.x, targetPos.z, obs, clearance)) continue;
-    const centerX = (obs.xMin + obs.xMax) * 0.5;
-    const centerZ = (obs.zMin + obs.zMax) * 0.5;
+    const centerX = (obs.min.x + obs.max.x) * 0.5;
+    const centerZ = (obs.min.z + obs.max.z) * 0.5;
     const dx = centerX - pos.x;
     const dz = centerZ - pos.z;
     const distSq = dx * dx + dz * dz;
@@ -664,10 +664,10 @@ function getDetourDirection(pos, targetPos) {
   if (!blockingObs) return null;
 
   const points = [
-    { x: blockingObs.xMin - clearance, z: blockingObs.zMin - clearance },
-    { x: blockingObs.xMin - clearance, z: blockingObs.zMax + clearance },
-    { x: blockingObs.xMax + clearance, z: blockingObs.zMin - clearance },
-    { x: blockingObs.xMax + clearance, z: blockingObs.zMax + clearance },
+    { x: blockingObs.min.x - clearance, z: blockingObs.min.z - clearance },
+    { x: blockingObs.min.x - clearance, z: blockingObs.max.z + clearance },
+    { x: blockingObs.max.x + clearance, z: blockingObs.min.z - clearance },
+    { x: blockingObs.max.x + clearance, z: blockingObs.max.z + clearance },
   ];
 
   let bestPoint = null;
@@ -806,7 +806,7 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
         crossfadeToAction(enemy, enemy.shootAction, 0.08);
         enemy.shootAnimTmr = SOLDIER_TUNING.shootAnimDuration;
       }
-      const spreadH = (Math.random() - 0.5) * 0.24;
+      const spreadH = (Math.random() - 0.5) * SOLDIER_TUNING.bulletSpreadH;
       const horizontalX = ndx + spreadH;
       const horizontalZ = ndz + spreadH;
       const horizontalLen = Math.sqrt(horizontalX ** 2 + horizontalZ ** 2) || 1;
@@ -893,6 +893,8 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     enemy.bossEfx = ndx; enemy.bossEfz = ndz;
     enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
     enemy.stuckTmr = 0;
+    // Clear attack timers so a ghost hit can't fire after landing somewhere new.
+    enemy.windupTmr = 0; enemy.swingTmr = 0;
   }
 }
 

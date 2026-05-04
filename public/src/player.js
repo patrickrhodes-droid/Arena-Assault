@@ -458,9 +458,9 @@ export function updatePlayer(actions) {
   }
 
   // ── Crouch visual: smoothly squish/unsquish the player model ──
-  const crouchTargetScale = game.isCrouching ? 0.65 : 1.0;
+  const crouchTargetScale = game.isCrouching ? PLAYER_MOVEMENT.crouchScale : 1.0;
   const pv = game.visuals.player;
-  pv.playerGroup.scale.y += (crouchTargetScale - pv.playerGroup.scale.y) * Math.min(1, 14 * game.dt);
+  pv.playerGroup.scale.y += (crouchTargetScale - pv.playerGroup.scale.y) * Math.min(1, PLAYER_MOVEMENT.crouchLerp * game.dt);
 
   for (const obstacle of game.oBs) {
     resolveCircleBox(game.visuals.player.playerGroup.position, P_RAD, obstacle, game.visuals.player.playerGroup.position.y);
@@ -549,7 +549,7 @@ function handleRevive(actions) {
       }
       const distance = game.visuals.player.playerGroup.position.distanceTo(remotePlayer.group.position);
       if (distance < reviveRange) {
-        nearDowned = { id, remotePlayer };
+        nearDowned = { id: remotePlayer.playerId, remotePlayer };
         break;
       }
     }
@@ -714,8 +714,8 @@ function updateWeaponVisuals() {
     }
   }
 
-  game.fpRecoilZ *= 0.85;
-  game.fpRecoilRX *= 0.85;
+  game.fpRecoilZ *= PLAYER_MOVEMENT.recoilDecay;
+  game.fpRecoilRX *= PLAYER_MOVEMENT.recoilDecay;
 
   const model = game.visuals.weapon.weaponModels[game.currentWeapon];
   const basePosition = game.isAiming ? model.fpAdsPos : model.fpPos;

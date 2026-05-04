@@ -11,13 +11,16 @@ import {
   bindMenuControls,
   drawMinimap,
   hideRankings,
+  pushKillFeed,
   renderJoinLinkControls,
   setCopyJoinLinkStatus,
   showBossImperviousAlert,
   showDamage,
   showPvPRankings,
   showRankings,
+  showWaveClear,
   updateHUD,
+  updateStatusIndicators,
 } from "./ui.js";
 import { disposeObject3D } from "./utils.js";
 
@@ -213,9 +216,8 @@ function startGame() {
 
   const playerCount = 1 + Object.keys(game.remotePlayers).length;
   game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
-  game.hp = game.effectiveMaxHP;
   resetSessionState();
-  game.hp = game.effectiveMaxHP;
+  game.hp = game.effectiveMaxHP; // override resetSessionState's P_MAX_HP default
   cleanupGame();
 
   hideRankings();
@@ -252,9 +254,8 @@ function startPvPGame() {
   game.dom.hud.style.display = "block";
 
   game.effectiveMaxHP = P_MAX_HP;
-  game.hp = game.effectiveMaxHP;
   resetSessionState();
-  game.mode = "PVP"; // resetSessionState doesn't touch mode, but be explicit.
+  game.mode = "PVP";
   game.hp = game.effectiveMaxHP;
   cleanupGame();
 
@@ -687,6 +688,7 @@ function animate(time) {
     updateRemotePlayerVisuals();
     updateCamera();
     updateHUD();
+    updateStatusIndicators();
     drawMinimap();
   } else if (game.state === "PAUSED") {
     if (!game.worldPaused) {
@@ -699,6 +701,7 @@ function animate(time) {
     updateRemotePlayerVisuals();
     updateCamera();
     updateHUD();
+    updateStatusIndicators();
     drawMinimap();
   } else if (game.state === "DOWNED") {
     syncLocalPlayerState();
@@ -711,6 +714,7 @@ function animate(time) {
     updateRemotePlayerVisuals();
     updateCamera();
     updateHUD();
+    updateStatusIndicators();
     drawMinimap();
     game.dom.reviveBarFill.style.width = `${Math.min(100, (game.downedTime / 45) * 100)}%`;
   } else if (game.state === "SPECTATING") {
@@ -723,6 +727,7 @@ function animate(time) {
     updateRemotePlayerVisuals();
     updateCamera();
     updateHUD();
+    updateStatusIndicators();
     drawMinimap();
   }
 

@@ -80,11 +80,11 @@
           <div class="map-card-sub">Abandoned Desert Outpost</div>
         </button>
         <button type="button" class="map-card" data-map="city">
-          <div class="map-preview" style="background:linear-gradient(135deg,#0a0f1a 0%,#1a2040 50%,#080c14 100%)">
-            <div class="map-preview-label" style="color:#4488ff">CITY</div>
+          <div class="map-preview" style="background:linear-gradient(135deg,#8ec5f4 0%,#d8b27a 52%,#f2dfbf 100%)">
+            <div class="map-preview-label" style="color:#ff8a3d">CITY</div>
           </div>
           <div class="map-card-name">DOWNTOWN</div>
-          <div class="map-card-sub">Urban Combat Zone</div>
+          <div class="map-card-sub">Sunlit Urban Warzone</div>
         </button>
       </div>
 
@@ -134,12 +134,15 @@
         <div class="controls-box">
           <span class="key">W A S D</span><span>Move</span>
           <span class="key">SPACE</span><span>Jump</span>
-          <span class="key">SHIFT + W</span><span>Sprint</span>
+          <span class="key">SHIFT+W / double-tap W</span><span>Sprint</span>
           <span class="key">CTRL</span><span>Crouch (toggle)</span>
-          <span class="key">1–5 / Q</span><span>Switch Weapon</span>
+          <span class="key">W / S on ladder</span><span>Climb up / down</span>
+          <span class="key">1–6 / Q</span><span>Switch Weapon</span>
+          <span class="key">G</span><span>Fire / release grapple</span>
+          <span class="key">LMB</span><span>Fire / use weapon</span>
           <span class="key">RMB</span><span>Aim Down Sights</span>
-          <span class="key">E (HOLD)</span><span>Revive</span>
           <span class="key">R</span><span>Reload</span>
+          <span class="key">E (HOLD)</span><span>Revive teammate</span>
           <span class="key">ESC</span><span>Pause</span>
         </div>
       </details>
@@ -216,6 +219,22 @@
 
     <div id="inventory-bar"></div>
 
+    <!-- status pill row: sprint / crouch / grapple -->
+    <div id="status-indicators">
+      <span id="status-sprint" class="status-pill">SPRINT</span>
+      <span id="status-crouch" class="status-pill">CROUCH</span>
+      <div id="grapple-cooldown-wrap">
+        <span id="grapple-ready-label">GRAPPLE</span>
+        <div id="grapple-cooldown-bar-bg"><div id="grapple-cooldown-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- kill feed -->
+    <div id="kill-feed"></div>
+
+    <!-- wave-clear banner -->
+    <div id="wave-clear"></div>
+
     <canvas id="minimap" width="360" height="360"></canvas>
   </div>
 
@@ -260,6 +279,7 @@
     <div id="revive-bar-bg">
       <div id="revive-bar-fill"></div>
     </div>
+    <button id="give-up-btn">GIVE UP</button>
   </div>
 
   <div id="spectator-overlay">

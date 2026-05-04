@@ -18,6 +18,9 @@ export const PLAYER_MOVEMENT = {
   sprintMultiplier: 2.9,
   crouchSpeed: 2.7,
   ladderClimbSpeed: 4.5,
+  crouchScale: 0.65,    // visual squish applied to playerGroup.scale.y when crouching
+  recoilDecay: 0.85,    // multiplied each frame to decay first-person recoil
+  crouchLerp: 14,       // lerp rate for crouch scale animation
 };
 
 export const GRAPPLE_TUNING = {
@@ -78,6 +81,7 @@ export const SOLDIER_TUNING = {
   bulletSpeed: 28,
   bulletLife: 4,
   shootAnimDuration: 0.7,
+  bulletSpreadH: 0.24,  // horizontal spread added to each shot
 };
 
 export const BOSS_TUNING = {

@@ -2,11 +2,10 @@ import * as THREE from "three";
 
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
-import { setWeapon, spawnBullet, spawnHealthPackVisual } from "./combat.js";
+import { setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles } from "./combat.js";
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
-import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert } from "./ui.js";
-import { spawnParticles } from "./combat.js";
+import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear } from "./ui.js";
 
 export function initNetworking(actions) {
   if (game.socket) {
@@ -113,11 +112,17 @@ export function initNetworking(actions) {
 
   game.socket.on("syncWave", (data) => {
     const prevWave = game.wave;
+    const prevState = game.waveState;
     game.wave = data.wave;
     game.waveState = data.state;
     game.waveTmr = data.tmr;
     if (data.wave > prevWave) {
       announceWave();
+    }
+    // Show wave-clear banner when wave ends (state transitions from ACTIVE → WAIT).
+    if (prevState === "ACTIVE" && data.state === "WAIT" && prevWave > 0) {
+      showWaveClear(prevWave);
+      pushKillFeed(`WAVE ${prevWave} CLEARED`, "wave-start");
     }
     actions.updateHUD();
   });
@@ -508,6 +513,8 @@ export function initNetworking(actions) {
 
   // Server awards kill credit to the shooter
   game.socket.on("killCredit", (data) => {
+    const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
+    pushKillFeed(`${game.playerName || "YOU"} → ${typeLabel} +${data.score}`, data.type === "boss" ? "boss-kill" : "");
     if (data.type === "boss") {
       game.stats.bossKills += 1;
       game.score += data.score;

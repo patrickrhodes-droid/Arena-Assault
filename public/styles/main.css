@@ -1455,3 +1455,160 @@ canvas {
     bottom: 16px;
   }
 }
+
+/* ── Damage overlay: smoother fade-out ── */
+#damage-overlay {
+  transition: opacity 0.08s ease-in, opacity 0.35s ease-out;
+}
+
+/* ── Status indicators: sprint / crouch / grapple ── */
+#status-indicators {
+  position: absolute;
+  bottom: 395px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 3px 8px;
+  border: 1px solid rgba(0, 204, 170, 0.3);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.status-pill.active {
+  color: var(--accent2);
+  border-color: var(--accent2);
+  background: rgba(0, 255, 204, 0.08);
+  opacity: 1;
+}
+
+#grapple-cooldown-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#grapple-ready-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+#grapple-ready-label.ready {
+  color: var(--accent2);
+}
+
+#grapple-cooldown-bar-bg {
+  width: 52px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 204, 170, 0.25);
+  overflow: hidden;
+}
+
+#grapple-cooldown-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent2);
+  transition: width 0.05s linear;
+}
+
+/* ── Kill feed ── */
+#kill-feed {
+  position: absolute;
+  top: 110px;
+  right: 24px;
+  width: 240px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kill-entry {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border-left: 2px solid var(--warn);
+  color: var(--text);
+  animation: killFeedIn 4s ease-out forwards;
+  text-align: right;
+}
+
+.kill-entry.boss-kill {
+  border-color: #ffb347;
+  color: #ffd391;
+}
+
+.kill-entry.wave-start {
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+@keyframes killFeedIn {
+  0%   { opacity: 0; transform: translateX(12px); }
+  8%   { opacity: 1; transform: translateX(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Wave clear banner ── */
+#wave-clear {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 6px;
+  color: var(--accent2);
+  text-shadow: 0 0 30px rgba(0, 255, 204, 0.6);
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+#wave-clear.show {
+  animation: waveClearFlash 2.4s ease-out forwards;
+}
+
+@keyframes waveClearFlash {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.8); }
+  12%  { opacity: 1; transform: translateX(-50%) scale(1.05); }
+  22%  { transform: translateX(-50%) scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%); }
+}
+
+/* ── Give-up button in downed overlay ── */
+#give-up-btn {
+  margin-top: 24px;
+  padding: 10px 32px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--danger);
+  background: rgba(255, 34, 68, 0.12);
+  border: 1px solid rgba(255, 34, 68, 0.5);
+  cursor: pointer;
+  pointer-events: all;
+  transition: all 0.15s;
+}
+
+#give-up-btn:hover {
+  background: rgba(255, 34, 68, 0.3);
+  border-color: var(--danger);
+}

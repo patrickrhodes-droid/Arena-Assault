@@ -81,7 +81,7 @@ export function bulletHitObstacle(x, y, z) {
   }
 
   for (const obstacle of game.oBs) {
-    if (x >= obstacle.min.x && x <= obstacle.max.x && y >= 0 && y <= obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
+    if (x >= obstacle.min.x && x <= obstacle.max.x && y >= 0 && y < obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
       return true;
     }
   }
