@@ -421,11 +421,14 @@ function duplicateSelected() {
 }
 
 function serializeMap() {
-  // Preserve all top-level metadata from the loaded map (fog, background, etc.)
+  const fileId = els.mapName.value.trim() || state.map.id || state.map.name || "sandbox";
   return {
     ...state.map,
     version: 2,
-    name: els.mapName.value.trim() || state.map.name || "sandbox",
+    // id = file key used for the URL and filename
+    id: fileId,
+    // name = lobby display name; keep the original, don't overwrite with the file ID
+    name: state.map.name || fileId,
     objects: state.objects.map((item) => item.data),
   };
 }
@@ -465,14 +468,18 @@ async function loadMap(name) {
   }
   state.map = await res.json();
   state.map.objects ||= [];
-  els.mapName.value = state.map.name || name;
+  // Use the file ID (id field or dropdown key) as the editable name, NOT the
+  // lobby display name (state.map.name). "city" must save back to city.json,
+  // not "DOWNTOWN.json".
+  els.mapName.value = state.map.id || name;
   rebuildObjectView();
   setStatus(`Loaded ${name}`);
 }
 
 async function saveMap() {
   const map = serializeMap();
-  const res = await fetch(`/api/maps/${encodeURIComponent(map.name)}`, {
+  const fileId = map.id || map.name;
+  const res = await fetch(`/api/maps/${encodeURIComponent(fileId)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(map),
@@ -482,8 +489,8 @@ async function saveMap() {
     return;
   }
   await loadMapsList();
-  els.mapSelect.value = map.name;
-  setStatus(`Saved ${map.name}`);
+  els.mapSelect.value = fileId;
+  setStatus(`Saved ${fileId}`);
 }
 
 function updateSelectedFromInspector(event) {
