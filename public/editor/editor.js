@@ -132,12 +132,17 @@ function setStatus(text) {
 
 function normalizeObject(obj) {
   const type = obj.type || "box";
+  const isProp = type === "prop" || type === "destructible";
+  const isSpawn = type === "spawn";
+  const isLadder = type === "ladder";
+
   // Preserve any unknown fields so future metadata is not dropped on save.
   const known = ["id","type","label","position","rotation","size","scale","material",
                  "model","collidable","spawnType","triggerRadius","bounds","collider"];
   const extra = {};
   for (const k of Object.keys(obj)) { if (!known.includes(k)) extra[k] = obj[k]; }
-  return {
+
+  const base = {
     ...extra,
     id: obj.id || uid(type),
     type,
@@ -145,15 +150,31 @@ function normalizeObject(obj) {
     position: obj.position || [0, type === "box" ? 1 : 0, 0],
     rotation: obj.rotation || [0, 0, 0],
     size: obj.size || [2, 2, 2],
-    // Props and destructibles use scale; boxes ignore it.
-    scale: obj.scale || (Array.isArray(obj.scale) ? obj.scale : [1, 1, 1]),
-    material: obj.material || "metal",
-    model: obj.model || state.assets[0] || "",
-    collidable: obj.collidable ?? (type === "box" || type === "prop" || type === "destructible"),
-    spawnType: obj.spawnType || "player",
-    triggerRadius: obj.triggerRadius ?? 2.2,
-    ...(obj.bounds ? { bounds: obj.bounds } : {}),
-    ...(obj.collider ? { collider: obj.collider } : {}),
+    collidable: obj.collidable ?? (type === "box" || isProp),
+  };
+
+  // Type-specific fields — only added when relevant so box objects stay clean.
+  if (type === "box") {
+    base.material = obj.material || "metal";
+  }
+  if (isProp) {
+    base.scale = obj.scale ?? [1, 1, 1];
+    base.material = obj.material || "metal";
+    base.model = obj.model || state.assets[0] || "";
+    if (obj.collider) base.collider = obj.collider;
+  }
+  if (type === "destructible") {
+    base.triggerRadius = obj.triggerRadius ?? 2.2;
+  }
+  if (isSpawn) {
+    base.spawnType = obj.spawnType || "player";
+  }
+  if (isLadder && obj.bounds) {
+    base.bounds = obj.bounds;
+  }
+
+  return {
+    ...base,
   };
 }
 
