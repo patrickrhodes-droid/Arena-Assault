@@ -20,7 +20,7 @@
       "type": "box",
       "label": "Blacksite / Wall North",
       "position": [
-        0,
+        -0.5,
         3,
         -72
       ],
@@ -34,8 +34,8 @@
         6,
         1
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_002",
@@ -56,8 +56,8 @@
         6,
         1
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_003",
@@ -78,8 +78,8 @@
         6,
         144
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_004",
@@ -100,8 +100,8 @@
         6,
         144
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_005",
@@ -122,8 +122,8 @@
         7,
         3.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_006",
@@ -144,8 +144,8 @@
         7,
         3.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_007",
@@ -166,8 +166,8 @@
         7,
         3.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_008",
@@ -188,8 +188,8 @@
         7,
         3.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "con_009",
@@ -210,8 +210,8 @@
         7,
         30
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_010",
@@ -232,8 +232,8 @@
         7,
         30
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_011",
@@ -254,8 +254,8 @@
         7,
         30
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_012",
@@ -276,8 +276,8 @@
         7,
         30
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_013",
@@ -298,8 +298,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_014",
@@ -320,8 +320,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_015",
@@ -342,8 +342,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_016",
@@ -364,8 +364,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_017",
@@ -386,8 +386,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_018",
@@ -408,15 +408,15 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_019",
       "type": "box",
       "label": "BS / N Wing Mass W",
       "position": [
-        -55,
+        -36,
         3.5,
         -61
       ],
@@ -428,17 +428,17 @@
       "size": [
         36,
         7,
-        18
+        2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_020",
       "type": "box",
       "label": "BS / N Wing Mass E",
       "position": [
-        55,
+        38.5,
         3.5,
         -61
       ],
@@ -448,12 +448,12 @@
         0
       ],
       "size": [
-        36,
+        34.6,
         7,
-        18
+        2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_021",
@@ -474,8 +474,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_022",
@@ -496,8 +496,8 @@
         7,
         2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_023",
@@ -516,17 +516,17 @@
       "size": [
         36,
         7,
-        18
+        2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_024",
       "type": "box",
       "label": "BS / S Wing Mass E",
       "position": [
-        55,
+        37.5,
         3.5,
         61
       ],
@@ -538,10 +538,10 @@
       "size": [
         36,
         7,
-        18
+        2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_025",
@@ -562,8 +562,8 @@
         7,
         26
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_026",
@@ -584,52 +584,8 @@
         7,
         26
       ],
-      "material": "concrete",
-      "collidable": true
-    },
-    {
-      "id": "con_027",
-      "type": "box",
-      "label": "BS / E Wing Mass N",
-      "position": [
-        61,
-        3.5,
-        -55
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        18,
-        7,
-        36
-      ],
-      "material": "concrete",
-      "collidable": true
-    },
-    {
-      "id": "con_028",
-      "type": "box",
-      "label": "BS / E Wing Mass S",
-      "position": [
-        61,
-        3.5,
-        55
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        18,
-        7,
-        36
-      ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_029",
@@ -650,8 +606,8 @@
         7,
         26
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_030",
@@ -672,8 +628,8 @@
         7,
         26
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_031",
@@ -682,7 +638,7 @@
       "position": [
         -61,
         3.5,
-        -55
+        -39.5
       ],
       "rotation": [
         0,
@@ -690,12 +646,12 @@
         0
       ],
       "size": [
-        18,
+        2,
         7,
         36
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_032",
@@ -712,12 +668,12 @@
         0
       ],
       "size": [
-        18,
+        2,
         7,
         36
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "bla_033",
@@ -738,17 +694,17 @@
         7,
         12
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_034",
       "type": "box",
       "label": "BS / Corner NW Div S",
       "position": [
-        -55,
+        -52,
         3.5,
-        -45
+        -43
       ],
       "rotation": [
         0,
@@ -760,8 +716,8 @@
         7,
         10
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_035",
@@ -782,15 +738,15 @@
         7,
         12
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_036",
       "type": "box",
       "label": "BS / Corner NE Div S",
       "position": [
-        55,
+        52,
         3.5,
         -45
       ],
@@ -804,8 +760,8 @@
         7,
         10
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_037",
@@ -826,8 +782,8 @@
         7,
         12
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_038",
@@ -848,8 +804,8 @@
         7,
         10
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_039",
@@ -870,8 +826,8 @@
         7,
         12
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_040",
@@ -892,8 +848,8 @@
         7,
         10
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "met_041",
@@ -914,8 +870,8 @@
         0.35,
         10
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_042",
@@ -936,8 +892,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_043",
@@ -958,8 +914,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_044",
@@ -980,8 +936,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_045",
@@ -1002,8 +958,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_046",
@@ -1024,8 +980,8 @@
         0.8,
         0.35
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_047",
@@ -1034,7 +990,7 @@
       "position": [
         0,
         2.45,
-        -55
+        -57
       ],
       "rotation": [
         0,
@@ -1046,6 +1002,7 @@
         4.9,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -4,
         "xMax": 4,
@@ -1073,8 +1030,8 @@
         0.35,
         10
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_049",
@@ -1095,8 +1052,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_050",
@@ -1117,8 +1074,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_051",
@@ -1139,8 +1096,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_052",
@@ -1161,8 +1118,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_053",
@@ -1183,8 +1140,8 @@
         0.8,
         0.35
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_054",
@@ -1205,6 +1162,7 @@
         4.9,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -4,
         "xMax": 4,
@@ -1232,8 +1190,8 @@
         0.35,
         30
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_056",
@@ -1254,8 +1212,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_057",
@@ -1276,8 +1234,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_058",
@@ -1298,8 +1256,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_059",
@@ -1320,8 +1278,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_060",
@@ -1342,8 +1300,8 @@
         0.8,
         30
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_061",
@@ -1352,7 +1310,7 @@
       "position": [
         60,
         2.45,
-        0
+        -15
       ],
       "rotation": [
         0,
@@ -1364,6 +1322,7 @@
         4.9,
         8
       ],
+      "collidable": false,
       "bounds": {
         "xMin": 58,
         "xMax": 62,
@@ -1391,8 +1350,8 @@
         0.35,
         30
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_063",
@@ -1413,8 +1372,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_064",
@@ -1435,8 +1394,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_065",
@@ -1457,8 +1416,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_066",
@@ -1479,8 +1438,8 @@
         4.6,
         0.5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_067",
@@ -1501,8 +1460,8 @@
         0.8,
         30
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_068",
@@ -1523,6 +1482,7 @@
         4.9,
         8
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -62,
         "xMax": -58,
@@ -1550,8 +1510,8 @@
         8,
         12
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_070",
@@ -1572,8 +1532,8 @@
         1,
         0.35
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_071",
@@ -1594,8 +1554,8 @@
         1,
         0.35
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_072",
@@ -1616,8 +1576,8 @@
         1,
         12
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_073",
@@ -1638,8 +1598,8 @@
         1,
         12
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_074",
@@ -1660,6 +1620,7 @@
         8.1,
         2
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -3,
         "xMax": 3,
@@ -1672,7 +1633,6 @@
       "id": "prp_075",
       "type": "prop",
       "label": "BS / Cover N",
-      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
       "position": [
         0,
         0,
@@ -1683,18 +1643,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.4,
         1.4,
         1.4
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_076",
       "type": "prop",
       "label": "BS / Cover S",
-      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
       "position": [
         0,
         0,
@@ -1705,18 +1671,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": false,
       "scale": [
         1.4,
         1.4,
         1.4
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_077",
       "type": "prop",
       "label": "BS / Cover W",
-      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
       "position": [
         -37,
         0,
@@ -1727,18 +1699,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.4,
         1.4,
         1.4
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_078",
       "type": "prop",
       "label": "BS / Cover E",
-      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb",
       "position": [
         37,
         0,
@@ -1749,18 +1727,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.4,
         1.4,
         1.4
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_079",
       "type": "prop",
       "label": "BS / Server Rack W",
-      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb",
       "position": [
         -30,
         0,
@@ -1771,18 +1755,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": false
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb"
     },
     {
       "id": "prp_080",
       "type": "prop",
       "label": "BS / Server Rack E",
-      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb",
       "position": [
         30,
         0,
@@ -1793,18 +1783,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": false
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container Structure.glb"
     },
     {
       "id": "dst_081",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -6,
         0,
@@ -1815,19 +1811,38 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "triggerRadius": 2.2,
-      "collidable": true
+      "collider": {
+        "type": "box",
+        "position": [
+          -6,
+          0,
+          -42
+        ],
+        "size": [
+          0.9,
+          1,
+          1
+        ]
+      }
     },
     {
       "id": "dst_082",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         6,
         0,
@@ -1838,19 +1853,38 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "triggerRadius": 2.2,
-      "collidable": true
+      "collider": {
+        "type": "box",
+        "position": [
+          6,
+          0,
+          -42
+        ],
+        "size": [
+          0.9,
+          1,
+          1
+        ]
+      }
     },
     {
       "id": "dst_083",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -6,
         0,
@@ -1861,19 +1895,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "dst_084",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         6,
         0,
@@ -1884,19 +1924,38 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "triggerRadius": 2.2,
-      "collidable": true
+      "collider": {
+        "type": "box",
+        "position": [
+          6,
+          0,
+          42
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      }
     },
     {
       "id": "dst_085",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -42,
         0,
@@ -1907,19 +1966,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "dst_086",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -42,
         0,
@@ -1930,19 +1995,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "dst_087",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         42,
         0,
@@ -1953,19 +2024,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "dst_088",
       "type": "destructible",
       "label": "BS / Corridor Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         42,
         0,
@@ -1976,19 +2053,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "prp_089",
       "type": "prop",
       "label": "BS / N Water Tank W",
-      "model": "/assets/models/shooter asset pack/Water Tank.glb",
       "position": [
         -20,
         0,
@@ -1999,18 +2082,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb"
     },
     {
       "id": "prp_090",
       "type": "prop",
       "label": "BS / N Water Tank E",
-      "model": "/assets/models/shooter asset pack/Water Tank.glb",
       "position": [
         20,
         0,
@@ -2021,18 +2110,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Water Tank.glb"
     },
     {
       "id": "prp_091",
       "type": "prop",
       "label": "BS / N Gas Tank W",
-      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
       "position": [
         -10,
         0,
@@ -2043,18 +2138,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb"
     },
     {
       "id": "prp_092",
       "type": "prop",
       "label": "BS / N Gas Tank E",
-      "model": "/assets/models/shooter asset pack/Gas Tank.glb",
       "position": [
         10,
         0,
@@ -2065,18 +2166,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Gas Tank.glb"
     },
     {
       "id": "prp_093",
       "type": "prop",
       "label": "BS / N Crate W",
-      "model": "/assets/models/shooter asset pack/Crate.glb",
       "position": [
         -30,
         0,
@@ -2087,18 +2194,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb"
     },
     {
       "id": "prp_094",
       "type": "prop",
       "label": "BS / N Crate E",
-      "model": "/assets/models/shooter asset pack/Crate.glb",
       "position": [
         30,
         0,
@@ -2109,18 +2222,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb"
     },
     {
       "id": "prp_095",
       "type": "prop",
       "label": "BS / N Pallet",
-      "model": "/assets/models/shooter asset pack/Pallet.glb",
       "position": [
         0,
         0,
@@ -2131,18 +2250,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.1,
         1.1,
         1.1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Pallet.glb"
     },
     {
       "id": "prp_096",
       "type": "prop",
       "label": "BS / S Cardboard W",
-      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
       "position": [
         -20,
         0,
@@ -2153,18 +2278,37 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
+      "collider": {
+        "type": "box",
+        "position": [
+          -20,
+          0,
+          60
+        ],
+        "size": [
+          1,
+          0.5,
+          1
+        ]
+      }
     },
     {
       "id": "prp_097",
       "type": "prop",
       "label": "BS / S Cardboard E",
-      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
       "position": [
         20,
         0,
@@ -2175,18 +2319,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.9,
         0.9,
         0.9
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb"
     },
     {
       "id": "prp_098",
       "type": "prop",
       "label": "BS / S Pallet Broken",
-      "model": "/assets/models/shooter asset pack/Pallet Broken.glb",
       "position": [
         -5,
         0,
@@ -2197,18 +2347,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": false,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Pallet Broken.glb"
     },
     {
       "id": "prp_099",
       "type": "prop",
       "label": "BS / S Pallet",
-      "model": "/assets/models/shooter asset pack/Pallet.glb",
       "position": [
         5,
         0,
@@ -2219,18 +2375,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": false,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Pallet.glb"
     },
     {
       "id": "prp_100",
       "type": "prop",
       "label": "BS / S Gas Can W",
-      "model": "/assets/models/shooter asset pack/Gas Can.glb",
       "position": [
         -28,
         0,
@@ -2241,18 +2403,37 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb",
+      "collider": {
+        "type": "box",
+        "position": [
+          -28,
+          0,
+          63
+        ],
+        "size": [
+          0.7,
+          0.9,
+          0.3
+        ]
+      }
     },
     {
       "id": "prp_101",
       "type": "prop",
       "label": "BS / S Gas Can E",
-      "model": "/assets/models/shooter asset pack/Gas Can.glb",
       "position": [
         28,
         0,
@@ -2263,18 +2444,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Gas Can.glb"
     },
     {
       "id": "prp_102",
       "type": "prop",
       "label": "BS / E Sack Trench N",
-      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
       "position": [
         62,
         0,
@@ -2285,18 +2472,37 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.3,
         1.3,
         1.3
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
+      "collider": {
+        "type": "box",
+        "position": [
+          62,
+          0,
+          -20
+        ],
+        "size": [
+          4.3,
+          1.5,
+          1
+        ]
+      }
     },
     {
       "id": "prp_103",
       "type": "prop",
       "label": "BS / E Sack Trench S",
-      "model": "/assets/models/shooter asset pack/Sack Trench.glb",
       "position": [
         62,
         0,
@@ -2307,18 +2513,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.3,
         1.3,
         1.3
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sack Trench.glb"
     },
     {
       "id": "prp_104",
       "type": "prop",
       "label": "BS / E Crate",
-      "model": "/assets/models/shooter asset pack/Crate.glb",
       "position": [
         65,
         0,
@@ -2329,18 +2541,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb"
     },
     {
       "id": "prp_105",
       "type": "prop",
       "label": "BS / W Barrier N",
-      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb",
       "position": [
         -60,
         0,
@@ -2351,18 +2569,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb"
     },
     {
       "id": "prp_106",
       "type": "prop",
       "label": "BS / W Barrier S",
-      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb",
       "position": [
         -60,
         0,
@@ -2373,18 +2597,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Barrier Fixed.glb"
     },
     {
       "id": "prp_107",
       "type": "prop",
       "label": "BS / W Dumpster",
-      "model": "/assets/models/shooter asset pack/Dumpster.glb",
       "position": [
         -63,
         0,
@@ -2395,18 +2625,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.1,
         1.1,
         1.1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb"
     },
     {
       "id": "dst_108",
       "type": "destructible",
       "label": "BS / Corner Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -62,
         0,
@@ -2417,19 +2653,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "prp_109",
       "type": "prop",
       "label": "BS / Corner Debris",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         -57,
         0,
@@ -2440,18 +2682,24 @@
         0.2,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "dst_110",
       "type": "destructible",
       "label": "BS / Corner Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         62,
         0,
@@ -2462,19 +2710,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "prp_111",
       "type": "prop",
       "label": "BS / Corner Debris",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         67,
         0,
@@ -2485,18 +2739,24 @@
         0.6,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "dst_112",
       "type": "destructible",
       "label": "BS / Corner Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         -62,
         0,
@@ -2507,19 +2767,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "prp_113",
       "type": "prop",
       "label": "BS / Corner Debris",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         -57,
         0,
@@ -2530,18 +2796,24 @@
         1.4,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "dst_114",
       "type": "destructible",
       "label": "BS / Corner Barrel",
-      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
       "position": [
         62,
         0,
@@ -2552,19 +2824,25 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "triggerRadius": 2.2,
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Exploding Barrel.glb",
+      "triggerRadius": 2.2
     },
     {
       "id": "prp_115",
       "type": "prop",
       "label": "BS / Corner Debris",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         67,
         0,
@@ -2575,18 +2853,24 @@
         1.8,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "prp_116",
       "type": "prop",
       "label": "BS / Hub Barrier W",
-      "model": "/assets/models/shooter asset pack/Barrier Single.glb",
       "position": [
         -8,
         0,
@@ -2597,18 +2881,37 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.3,
         1.3,
         1.3
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Barrier Single.glb",
+      "collider": {
+        "type": "box",
+        "position": [
+          -8,
+          0,
+          0
+        ],
+        "size": [
+          2.4,
+          0.8,
+          0.8
+        ]
+      }
     },
     {
       "id": "prp_117",
       "type": "prop",
       "label": "BS / Hub Barrier E",
-      "model": "/assets/models/shooter asset pack/Barrier Single.glb",
       "position": [
         8,
         0,
@@ -2619,18 +2922,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.3,
         1.3,
         1.3
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Barrier Single.glb"
     },
     {
       "id": "prp_118",
       "type": "prop",
       "label": "BS / Hub Debris",
-      "model": "/assets/models/shooter asset pack/Debris Pile.glb",
       "position": [
         0,
         0,
@@ -2641,12 +2950,20 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": false,
       "scale": [
         1.1,
         1.1,
         1.1
       ],
-      "collidable": false
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Pile.glb"
     }
-  ]
+  ],
+  "updatedAt": "2026-05-05T19:57:00.626Z"
 }

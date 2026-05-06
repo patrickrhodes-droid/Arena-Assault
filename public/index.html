@@ -20,6 +20,7 @@
 </head>
 <body>
   <div id="game-container"></div>
+  <div id="lobby-bg"></div>
   <div id="vignette"></div>
 
   <!-- ── SCREEN 1: PLAYER ── -->
@@ -187,11 +188,14 @@
     <div id="wave-display">
       <div id="wave-label">WAVE</div>
       <div id="wave-value">1</div>
+      <div id="wave-enemy-bar-wrap"><div id="wave-enemy-bar"></div></div>
+      <div id="wave-enemy-count"></div>
     </div>
 
     <div id="boss-health-wrap">
       <div id="boss-health-name">TITAN BRUTE</div>
       <div id="boss-health-bg"><div id="boss-health-fill"></div></div>
+      <div id="boss-phase-label"></div>
     </div>
 
     <div id="crosshair"><div id="crosshair-dot"></div></div>
@@ -206,6 +210,8 @@
     </div>
 
     <div id="damage-overlay"></div>
+    <div id="dmg-dir"></div>
+    <div id="score-popups"></div>
 
     <div id="wave-announce">
       <div class="wa-title"></div>
@@ -259,6 +265,7 @@
         <label for="sens-slider">SENSITIVITY: <span id="sens-val">5</span></label>
         <input type="range" id="sens-slider" min="1" max="10" value="5">
       </div>
+      <button class="pause-btn danger" id="pause-give-up-btn">GIVE UP</button>
       <button class="pause-btn" id="exit-btn">EXIT TO MENU</button>
     </div>
   </div>

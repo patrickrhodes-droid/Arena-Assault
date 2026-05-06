@@ -247,6 +247,7 @@ export function setupInput(actions) {
       if (event.code === "Digit4") actions.setWeapon("sniper");
       if (event.code === "Digit5") actions.setWeapon("sword");
       if (event.code === "Digit6") actions.setWeapon("grapple");
+      if (event.code === "Digit7") actions.setWeapon("bazooka");
       if (event.code === "KeyQ") {
         cycleWeapon();
         actions.updateHUD();
@@ -325,9 +326,11 @@ export function tryPointerLock() {
 }
 
 export function tryJump() {
-  if (!game.isGrounded && !game.isOnLadder && game.grappleState !== "hooked") {
+  if (!game.isGrounded && !game.isOnLadder && game.grappleState !== "hooked" && game.coyoteTmr <= 0) {
     return;
   }
+
+  game.coyoteTmr = 0; // consume coyote window
 
   // Release grapple on jump — lets the player swing and release mid-air
   if (game.grappleState === "hooked") {
@@ -345,6 +348,7 @@ export function tryJump() {
 }
 
 export function updatePlayer(actions) {
+  const wasGrounded = game.isGrounded;
   const prevY = game.visuals.player.playerGroup.position.y;
   const prevX = game.visuals.player.playerGroup.position.x;
   const prevZ = game.visuals.player.playerGroup.position.z;
@@ -456,6 +460,12 @@ export function updatePlayer(actions) {
       game.isGrounded = false;
     }
   }
+
+  // Coyote time: allow jump for 80 ms after walking off a ledge
+  if (wasGrounded && !game.isGrounded && !game.isOnLadder && game.playerVelY <= 0) {
+    game.coyoteTmr = 0.08;
+  }
+  if (game.coyoteTmr > 0) game.coyoteTmr -= game.dt;
 
   // ── Crouch visual: smoothly squish/unsquish the player model ──
   const crouchTargetScale = game.isCrouching ? PLAYER_MOVEMENT.crouchScale : 1.0;
@@ -640,7 +650,7 @@ function handleFiring(actions) {
     game.visuals.weapon.flashMesh.visible = true;
     game.visuals.weapon.flashLight.position.copy(muzzlePosition);
     game.visuals.weapon.flashLight.visible = true;
-    game.muzzleTmr = 0.04;
+    game.muzzleTmr = 0.10;
 
     const pelletCount = weapon.pellets || 1;
     const spread = game.isAiming ? weapon.spreadAim : weapon.spreadHip;
@@ -742,7 +752,8 @@ export function updateCamera() {
     -Math.cos(game.camTheta) * Math.cos(game.camPhi),
   ).normalize();
 
-  const targetFov = game.isAiming ? weapon.aimFov : BASE_FOV;
+  const sprintFovBonus = (game.isSprinting && game.isMoving && !game.isAiming) ? 8 : 0;
+  const targetFov = game.isAiming ? weapon.aimFov : BASE_FOV + sprintFovBonus;
   if (Math.abs(game.camera.fov - targetFov) > 0.05) {
     game.camera.fov += (targetFov - game.camera.fov) * Math.min(1, 10 * game.dt);
     game.camera.updateProjectionMatrix();
@@ -769,6 +780,11 @@ export function updateCamera() {
     target.x = Math.max(-HALF + 1, Math.min(HALF - 1, target.x));
     target.z = Math.max(-HALF + 1, Math.min(HALF - 1, target.z));
     target.y = Math.max(1.6, target.y);
+  }
+
+  // FPS head-bob: gentle vertical oscillation when walking in first-person
+  if (inFirstPerson && game.isMoving && game.isGrounded && !game.isCrouching) {
+    target.y += Math.sin(game.walkTime) * (game.isSprinting ? 0.055 : 0.038);
   }
 
   game.camera.position.lerp(target, Math.min(1, 12 * game.dt));

@@ -103,6 +103,13 @@ export function cacheDom() {
     leaderboardBtn: document.getElementById("leaderboard-btn"),
     leaderboardSection: document.getElementById("leaderboard-section"),
     leaderboardContent: document.getElementById("leaderboard-content"),
+    lobbyBg: document.getElementById("lobby-bg"),
+    pauseGiveUpBtn: document.getElementById("pause-give-up-btn"),
+    dmgDir: document.getElementById("dmg-dir"),
+    waveEnemyBar: document.getElementById("wave-enemy-bar"),
+    waveEnemyCount: document.getElementById("wave-enemy-count"),
+    bossPhaseLabel: document.getElementById("boss-phase-label"),
+    scorePopups: document.getElementById("score-popups"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
@@ -204,6 +211,13 @@ export function bindMenuControls(actions) {
     });
   }
 
+  if (game.dom.pauseGiveUpBtn) {
+    game.dom.pauseGiveUpBtn.addEventListener("click", () => {
+      game.dom.pause.style.display = "none";
+      actions.gameOver();
+    });
+  }
+
   // Room password: host input — debounce emit to server
   if (game.dom.roomPasswordInput) {
     let pwDebounce = null;
@@ -270,12 +284,18 @@ export function bindMenuControls(actions) {
         .then((r) => r.json())
         .then((lb) => {
           const coopRows = (lb.coop || []).map((e, i) =>
-            `<tr><td>${i + 1}</td><td>${e.playerName}</td><td>${e.score}</td><td>${e.wave}</td><td>${e.kills}</td><td>${e.date}</td></tr>`
+            `<tr><td>${i + 1}</td><td>${e.playerName}</td><td class="center">${e.score}</td><td class="center">${e.wave}</td><td class="center">${e.kills}</td><td>${e.date}</td></tr>`
           ).join("") || "<tr><td colspan='6' style='text-align:center;color:var(--muted)'>No entries yet</td></tr>";
+          const pvpRows = (lb.pvp || []).map((e, i) =>
+            `<tr><td>${i + 1}</td><td>${e.playerName}</td><td class="center">${e.kills}</td><td>${e.date}</td></tr>`
+          ).join("") || "<tr><td colspan='4' style='text-align:center;color:var(--muted)'>No entries yet</td></tr>";
           game.dom.leaderboardContent.innerHTML = `
             <h3 style="color:var(--warn);letter-spacing:2px;margin:12px 0 6px">CO-OP HIGH SCORES</h3>
-            <table><thead><tr><th>#</th><th>PLAYER</th><th class="center">SCORE</th><th class="center">WAVE</th><th class="center">KILLS</th><th class="center">DATE</th></tr></thead>
-            <tbody>${coopRows}</tbody></table>`;
+            <table><thead><tr><th>#</th><th>PLAYER</th><th class="center">SCORE</th><th class="center">WAVE</th><th class="center">KILLS</th><th>DATE</th></tr></thead>
+            <tbody>${coopRows}</tbody></table>
+            <h3 style="color:var(--accent);letter-spacing:2px;margin:16px 0 6px">PVP LEADERBOARD</h3>
+            <table><thead><tr><th>#</th><th>PLAYER</th><th class="center">KILLS</th><th>DATE</th></tr></thead>
+            <tbody>${pvpRows}</tbody></table>`;
           sec.hidden = false;
         })
         .catch(() => { game.dom.leaderboardContent.innerHTML = "<p style='color:var(--warn)'>Could not load leaderboard.</p>"; sec.hidden = false; });
@@ -283,12 +303,12 @@ export function bindMenuControls(actions) {
   }
 }
 
-export function syncMapCards(mapId, rebuildPreview = true) {
+export function syncMapCards(mapId) {
   game.dom.mapCards.forEach((c) => {
     c.classList.toggle("selected", c.dataset.map === mapId);
   });
-  // Rebuild the 3D background to match the selected map (live in-engine preview).
-  if (rebuildPreview && mapId && game.state === "MENU") {
+  if (mapId && game.state === "MENU") {
+    if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
     rebuildArena(mapId);
   }
 }
@@ -421,11 +441,33 @@ export function updateHUD() {
     if (bosses.length === 1) {
       game.dom.bossName.textContent = bosses[0].bossName || "TITAN BRUTE";
       game.dom.bossFill.style.width = `${Math.max(0, bosses[0].hp / bosses[0].maxHp) * 100}%`;
+      if (game.dom.bossPhaseLabel) {
+        game.dom.bossPhaseLabel.textContent = bosses[0].bossPhase2 ? "PHASE 2 — ENRAGED" : "PHASE 1";
+        game.dom.bossPhaseLabel.style.color = bosses[0].bossPhase2 ? "#ff5533" : "rgba(255,180,100,0.75)";
+      }
     } else {
       const totalHp = bosses.reduce((sum, b) => sum + b.hp, 0);
       const totalMaxHp = bosses.reduce((sum, b) => sum + b.maxHp, 0);
       game.dom.bossName.textContent = "TITAN BOSSES";
       game.dom.bossFill.style.width = `${Math.max(0, totalHp / totalMaxHp) * 100}%`;
+      if (game.dom.bossPhaseLabel) game.dom.bossPhaseLabel.textContent = "";
+    }
+  } else if (game.dom.bossPhaseLabel) {
+    game.dom.bossPhaseLabel.textContent = "";
+  }
+
+  // Wave enemy progress bar
+  if (game.dom.waveEnemyBar && game.dom.waveEnemyCount) {
+    const active = game.waveState === "SPAWNING" || game.waveState === "ACTIVE";
+    if (active && game.mode !== "PVP") {
+      const remaining = game.enemies.length;
+      const total = Math.max(game.waveSpawnedTotal, remaining, 1);
+      const pct = Math.round(Math.max(0, Math.min(100, ((total - remaining) / total) * 100)));
+      game.dom.waveEnemyBar.style.width = `${pct}%`;
+      game.dom.waveEnemyCount.textContent = remaining > 0 ? `${remaining} LEFT` : "";
+    } else {
+      game.dom.waveEnemyBar.style.width = "0%";
+      game.dom.waveEnemyCount.textContent = "";
     }
   }
 
@@ -485,6 +527,17 @@ export function pushKillFeed(text, type = "") {
     entry.remove();
   }, 4000);
   killFeedTimers.push(t);
+}
+
+// ── Score pop-ups ──────────────────────────────────────────────────────────────
+export function showScorePopup(score, type = "") {
+  const container = game.dom?.scorePopups;
+  if (!container) return;
+  const el = document.createElement("div");
+  el.className = `score-popup${type === "boss" ? " boss" : type === "dog" ? " dog" : ""}`;
+  el.textContent = `+${score}`;
+  container.appendChild(el);
+  window.setTimeout(() => el.remove(), 1200);
 }
 
 // ── Wave-clear banner ──────────────────────────────────────────────────────────

@@ -76,6 +76,10 @@ export const game = {
   bossImperviousTimeout: null,
   fpRecoilZ: 0,
   fpRecoilRX: 0,
+  coyoteTmr: 0,
+  lastDamageAngle: 0,
+  lastDamageTmr: 0,
+  waveSpawnedTotal: 0,
   currentWeapon: DEFAULT_WEAPON,
   weaponAmmo: createWeaponAmmo(),
   enemies: [],
@@ -165,6 +169,10 @@ export function resetSessionState() {
   game.knockbackZ = 0;
   game.fpRecoilZ = 0;
   game.fpRecoilRX = 0;
+  game.coyoteTmr = 0;
+  game.lastDamageAngle = 0;
+  game.lastDamageTmr = 0;
+  game.waveSpawnedTotal = 0;
   game.pvpKills = 0;
   game.pvpWeaponIdx = 0;
   game.pvpSwordKills = 0;

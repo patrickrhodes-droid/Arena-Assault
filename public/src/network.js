@@ -5,7 +5,26 @@ import { game } from "./state.js";
 import { setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, triggerDestructible } from "./combat.js";
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
-import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear } from "./ui.js";
+import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
+
+function recordDamageAngle(sourceX, sourceZ) {
+  const playerPos = game.visuals?.player?.playerGroup?.position;
+  if (!playerPos) return;
+  const dx = sourceX - playerPos.x;
+  const dz = sourceZ - playerPos.z;
+  const cos = Math.cos(-game.camTheta);
+  const sin = Math.sin(-game.camTheta);
+  const screenX = dx * cos - dz * sin;
+  const screenZ = dx * sin + dz * cos;
+  game.lastDamageAngle = Math.atan2(screenX, -screenZ) * 180 / Math.PI;
+  const el = game.dom?.dmgDir;
+  if (el) {
+    el.style.transform = `translate(-50%, -50%) rotate(${game.lastDamageAngle}deg)`;
+    el.classList.remove("hit");
+    void el.offsetWidth;
+    el.classList.add("hit");
+  }
+}
 
 export function initNetworking(actions) {
   if (game.socket) {
@@ -153,6 +172,9 @@ export function initNetworking(actions) {
     game.wave = data.wave;
     game.waveState = data.state;
     game.waveTmr = data.tmr;
+    if (data.state === "SPAWNING" && prevState !== "SPAWNING") {
+      game.waveSpawnedTotal = 0;
+    }
     if (data.wave > prevWave) {
       announceWave();
     }
@@ -225,6 +247,7 @@ export function initNetworking(actions) {
       game.knockbackX = data.knockbackX;
       game.knockbackZ = data.knockbackZ;
     }
+    recordDamageAngle(enemyX, enemyZ);
     if (data.enemyId) {
       game.lastDamageShooter = data.enemyId;
       game.lastDamageWeapon = "melee";
@@ -254,6 +277,8 @@ export function initNetworking(actions) {
     if (data.shooterId) {
       game.lastDamageShooter = data.shooterId;
       game.lastDamageWeapon = data.weapon || null;
+      const shooter = game.enemies.find((e) => e.id === data.shooterId);
+      if (shooter) recordDamageAngle(shooter.group.position.x, shooter.group.position.z);
     }
     if (game.hp <= 0) {
       game.hp = 0;
@@ -303,6 +328,7 @@ export function initNetworking(actions) {
   // Server spawns a new enemy — create the visual and stamp AI fields from server data.
   game.socket.on("enemySpawned", (data) => {
     if (game.enemies.find((e) => e.id === data.id)) return; // already exists
+    game.waveSpawnedTotal += 1;
     let pos = new THREE.Vector3(data.x, 0, data.z);
     if (data.type === "soldier") createSoldier(pos, data.id);
     else if (data.type === "dog") createDog(pos, data.id);
@@ -552,6 +578,7 @@ export function initNetworking(actions) {
   game.socket.on("killCredit", (data) => {
     const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
     pushKillFeed(`${game.playerName || "YOU"} → ${typeLabel} +${data.score}`, data.type === "boss" ? "boss-kill" : "");
+    showScorePopup(data.score, data.type);
     if (data.type === "boss") {
       game.stats.bossKills += 1;
       game.score += data.score;
@@ -569,7 +596,12 @@ export function initNetworking(actions) {
 
   // Server broadcasts enemy death for visual effects (particles etc.)
   game.socket.on("enemyKilled", (data) => {
-    spawnParticles(new THREE.Vector3(data.x, 1, data.z), 18, 0xcc2200, 8);
+    const color = data.type === "boss" ? 0xffd700
+      : data.type === "dog" ? 0xff6600
+      : data.type === "soldier" ? 0x880011
+      : 0xeeeeee;
+    const count = data.type === "boss" ? 40 : 18;
+    spawnParticles(new THREE.Vector3(data.x, 1, data.z), count, color, data.type === "boss" ? 12 : 8, data.type === "boss");
     // The enemy object is removed from game.enemies by the next enemiesSynced cleanup.
   });
 

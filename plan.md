@@ -2,28 +2,30 @@
 
 This document captures everything needed to take the project from its current prototype state to a genuinely polished, shippable game. Items are grouped by area and ordered roughly by impact-to-effort ratio.
 
+✅ = implemented
+
 ---
 
 ## 1. Core Gameplay Feel
 
 ### 1.1 Movement
 - **Hold-to-crouch option** — current toggle is unintuitive for new players. Add a keybind setting.
-- **Sprint visual feedback** — add a subtle FOV increase and head-bob when sprinting so it *feels* fast.
+- ✅ **Sprint visual feedback** — subtle FOV increase (+8°) and head-bob when sprinting.
 - **Jump feel** — add a small squash-and-stretch animation to the player model on land impact.
-- **Coyote time** — ~80 ms grace window after walking off a ledge before gravity locks in. Makes platforming feel fair.
+- ✅ **Coyote time** — 80 ms grace window after walking off a ledge before gravity locks in.
 - **Wall running / slide** — stretch goal; would add significant skill ceiling.
 
 ### 1.2 Weapons
 - **Weapon sway / bob** — first-person gun should sway gently while moving and settle when still.
 - **Reload animation** — add a simple transform animation (gun dips down, comes back up) instead of just text.
-- **Muzzle flash is too subtle** — increase the flash mesh size and lifetime by ~3×.
-- **Hit markers** — a brief white crosshair flicker when a shot connects would dramatically improve feedback.
+- ✅ **Muzzle flash 3× bigger** — flash sphere radius 0.1 → 0.32, light range 5 → 9, duration 0.04 → 0.10 s.
+- ✅ **Hit markers** — crosshair dot flashes white → orange when a shot connects.
 - **Ammo pickups** — add ammo crates to maps (similar to health packs) so players can resupply mid-wave.
 - **Weapon balancing pass** — pistol ADS accuracy is nearly as good as the rifle. Pistol should have a larger aim spread penalty. Shotgun needs damage falloff review.
 - **Sword lunge** — allow the player to dash 2–3 units forward when swinging the sword, making it feel aggressive.
 
 ### 1.3 Enemy AI
-- **Enemy pathfinding fix** — `segmentIntersectsExpandedBox` is using the right property names now, but the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
+- **Enemy pathfinding fix** — the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
 - **Dog animation** — dogs currently use the Wolf GLB walk. A proper dog-run animation or faster gallop cycle would look better.
 - **Soldier suppression** — soldiers should strafe laterally when behind cover, not just stand and shoot.
 - **Enemy awareness** — enemies should have a brief "notice" state (they look at you, pause) before charging; removes the "instant aggro" feel.
@@ -34,7 +36,7 @@ This document captures everything needed to take the project from its current pr
 ## 2. Visual Polish
 
 ### 2.1 Character & Animation
-- **Walk cycle head-bob** — add vertical sinusoidal offset to camera while walking. Currently smooth but flat.
+- ✅ **Walk cycle head-bob** — sinusoidal vertical camera offset in first-person while walking/sprinting.
 - **Landing animation** — camera dips on heavy landing.
 - **Crouch transition** — currently uses y-scale squeeze; replace with proper crouch by lowering `playerGroup.position.y` 0.6 units so the character actually crouches rather than squishes.
 - **Remote player interpolation** — remote players stutter slightly at low frame rates. Use proper lerp with a 100 ms buffer.
@@ -49,7 +51,7 @@ This document captures everything needed to take the project from its current pr
 - **Water in Desert** — the oasis compound has no water feature. A blue plane inside the compound walls would read as an oasis immediately.
 
 ### 2.3 Effects
-- **Death particles** — enemies currently spawn generic orange/red cubes on death. Add colour-coded particles: white for skeletons, dark red for soldiers, orange for dogs, gold for boss.
+- ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss (boss also gets 40 big particles vs 18).
 - **Blood decals** — very small impact decals on walls when bullets hit (1–2 frame flash then fade) add significant impact feel.
 - **Explosive barrel pre-warning** — barrels should have a glowing indicator (emissive rim) and a brief "critical hit" flash before detonating, giving nearby players a moment to react.
 - **Post-processing** — Three.js `EffectComposer` with a mild bloom pass (for the green glow in Blacksite, neon in City) and vignette would dramatically improve visual quality. No quality loss for the gameplay.
@@ -76,12 +78,12 @@ All items here require new audio assets (WAV/OGG files).
 ## 4. UI / UX
 
 ### 4.1 HUD
-- **Damage direction indicator** — a red arc at the edge of the screen pointing toward the damage source, similar to most modern shooters.
+- ✅ **Damage direction indicator** — red arc at the edge of the screen pointing toward the damage source.
 - **Enemy distance labels** — in wave mode, show a small dot with the distance to the nearest enemy on the minimap.
-- **Wave progression bar** — a horizontal bar at the top showing "enemies remaining / total this wave" rather than just the wave number.
-- **Score pop-ups** — when an enemy is killed, show a brief "+100" floating up from the kill position in 3D space (sprite or canvas).
-- **Boss phase indicator** — a text label beneath the boss HP bar: "PHASE 1" or "PHASE 2 — ENRAGED".
-- **Crosshair hit flash** — make the crosshair flash red/orange when a bullet connects (hit marker).
+- ✅ **Wave progression bar** — thin bar + "N LEFT" count below the wave number showing enemies remaining.
+- ✅ **Score pop-ups** — "+100" floats up from the crosshair area on each kill, color-coded by enemy type.
+- ✅ **Boss phase indicator** — "PHASE 1" / "PHASE 2 — ENRAGED" label beneath the boss HP bar.
+- ✅ **Crosshair hit flash** — crosshair dot flashes white → orange when a bullet connects.
 
 ### 4.2 Menus & Flow
 - **Map preview thumbnails** — replace the procedural gradient cards with actual screenshot thumbnails of each map (saved PNG files).
@@ -144,13 +146,13 @@ All items here require new audio assets (WAV/OGG files).
 
 ## Priority Order (if shipping soon)
 
-1. Hit markers (15 min, massive feel improvement)
+1. ✅ Hit markers (done — crosshair dot flash on hit)
 2. Enemy pathfinding fix (2 h, gameplay critical)
 3. Weapon audio assets (external, high impact)
-4. Damage direction indicator (1 h)
+4. ✅ Damage direction indicator (done)
 5. Post-processing bloom (2 h)
 6. Map thumbnails for lobby (1 h)
-7. Wave progress bar (30 min)
+7. ✅ Wave progress bar (done)
 8. Settings screen (3 h)
 9. Instanced mesh for props (4 h, performance)
 10. Electron packager (2 h, distribution)

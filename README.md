@@ -145,6 +145,7 @@ The boss attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s 
 - Every 5th wave spawns one or more Titan Brute bosses.
 - Wave announcements show the current wave number and enemy type warnings.
 - An enemy ping alert pulses on the minimap after 60 seconds if enemies are still alive.
+- A progress bar and enemy count ("N LEFT") track wave completion in real time.
 
 ## Character system
 
@@ -179,8 +180,12 @@ Heads use a layer-isolated point-light fill so they appear bright without emissi
 
 - Health bar with integrated PvP kill counter and rank indicator.
 - Ammo counter and weapon name.
-- Boss HP bar showing individual boss health or combined percentage for multiple bosses.
+- Boss HP bar with **phase label** ("PHASE 1" / "PHASE 2 — ENRAGED") and combined percentage for multiple bosses.
 - ADS scope overlays (sniper scope, red-dot for pistol/assault).
+- **Wave enemy bar** — thin progress bar + "N LEFT" count below the wave number showing enemies remaining this wave.
+- **Score pop-ups** — "+100" floats up from the crosshair on each kill, gold for bosses.
+- **Damage direction indicator** — red arc at the screen edge points toward the source of incoming damage.
+- **Hit marker** — crosshair dot flashes white → orange when a shot connects with an enemy.
 - **Minimap** (360 × 360 px, bottom-left): full arena coverage, obstacles, colour-coded enemies, remote players, and a directional arrow for the local player.
 - **Weapon unlock popup** pulses on screen whenever your PvP weapon advances.
 

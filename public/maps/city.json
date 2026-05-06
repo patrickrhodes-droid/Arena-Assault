@@ -34,8 +34,8 @@
         6,
         1
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_002",
@@ -56,8 +56,8 @@
         6,
         1
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_003",
@@ -78,8 +78,8 @@
         6,
         144
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_004",
@@ -100,8 +100,8 @@
         6,
         144
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_005",
@@ -122,8 +122,8 @@
         1.2,
         8
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "met_006",
@@ -144,8 +144,8 @@
         0.2,
         5
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "con_007",
@@ -166,8 +166,8 @@
         1.8,
         3.5
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_008",
@@ -188,8 +188,8 @@
         1.8,
         3.5
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_009",
@@ -210,8 +210,8 @@
         1.8,
         0.4
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_010",
@@ -232,8 +232,8 @@
         1.8,
         0.4
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_011",
@@ -254,8 +254,8 @@
         10,
         16
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_012",
@@ -276,8 +276,8 @@
         1,
         10
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_013",
@@ -298,8 +298,8 @@
         10,
         16
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_014",
@@ -320,8 +320,8 @@
         1,
         10
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_015",
@@ -342,8 +342,8 @@
         10,
         16
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_016",
@@ -364,8 +364,8 @@
         1,
         10
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_017",
@@ -386,8 +386,8 @@
         10,
         16
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_018",
@@ -408,8 +408,8 @@
         1,
         10
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "met_019",
@@ -430,8 +430,8 @@
         1.4,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_020",
@@ -452,8 +452,8 @@
         4.2,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_021",
@@ -474,6 +474,7 @@
         10.5,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -32,
         "xMax": -29,
@@ -501,8 +502,8 @@
         1.4,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_023",
@@ -523,8 +524,8 @@
         4.2,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_024",
@@ -545,6 +546,7 @@
         10.5,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": 29,
         "xMax": 32,
@@ -572,8 +574,8 @@
         1.4,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_026",
@@ -594,8 +596,8 @@
         4.2,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_027",
@@ -616,6 +618,7 @@
         10.5,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": -32,
         "xMax": -29,
@@ -643,8 +646,8 @@
         1.4,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "met_029",
@@ -665,8 +668,8 @@
         4.2,
         3
       ],
-      "material": "metal",
-      "collidable": true
+      "collidable": true,
+      "material": "metal"
     },
     {
       "id": "ldr_030",
@@ -687,6 +690,7 @@
         10.5,
         6
       ],
+      "collidable": false,
       "bounds": {
         "xMin": 29,
         "xMax": 32,
@@ -714,8 +718,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_032",
@@ -736,8 +740,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_033",
@@ -758,8 +762,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_034",
@@ -780,8 +784,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_035",
@@ -802,8 +806,8 @@
         1.3,
         5
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_036",
@@ -824,8 +828,8 @@
         1.3,
         5
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_037",
@@ -846,8 +850,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_038",
@@ -868,8 +872,8 @@
         1.3,
         1.2
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_039",
@@ -890,8 +894,8 @@
         1.3,
         12
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "con_040",
@@ -912,8 +916,8 @@
         1.3,
         12
       ],
-      "material": "concrete",
-      "collidable": true
+      "collidable": true,
+      "material": "concrete"
     },
     {
       "id": "bla_041",
@@ -934,8 +938,8 @@
         1.4,
         3.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_042",
@@ -956,8 +960,8 @@
         1.4,
         3.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_043",
@@ -978,8 +982,8 @@
         1.4,
         2
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_044",
@@ -1000,8 +1004,8 @@
         1.4,
         2
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_045",
@@ -1022,8 +1026,8 @@
         1.4,
         2.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_046",
@@ -1044,8 +1048,8 @@
         1.4,
         2.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_047",
@@ -1066,8 +1070,8 @@
         1.4,
         2.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "bla_048",
@@ -1088,14 +1092,13 @@
         1.4,
         2.5
       ],
-      "material": "blacksite",
-      "collidable": true
+      "collidable": true,
+      "material": "blacksite"
     },
     {
       "id": "prp_049",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -20,
         0,
@@ -1106,18 +1109,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_050",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         20,
         0,
@@ -1128,18 +1137,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_051",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -20,
         0,
@@ -1150,18 +1165,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_052",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         20,
         0,
@@ -1172,18 +1193,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_053",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -55,
         0,
@@ -1194,18 +1221,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_054",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -55,
         0,
@@ -1216,18 +1249,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_055",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         55,
         0,
@@ -1238,18 +1277,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_056",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         55,
         0,
@@ -1260,18 +1305,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_057",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -20,
         0,
@@ -1282,18 +1333,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_058",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         20,
         0,
@@ -1304,18 +1361,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_059",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         -20,
         0,
@@ -1326,18 +1389,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_060",
       "type": "prop",
       "label": "City / Street Light",
-      "model": "/assets/models/City Props asset pack/Street Light.glb",
       "position": [
         20,
         0,
@@ -1348,18 +1417,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
       "id": "prp_061",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         -60,
         0,
@@ -1370,18 +1445,24 @@
         3.293,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2.5,
         2.5,
         2.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_062",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         60,
         0,
@@ -1392,18 +1473,24 @@
         5.507,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2.5,
         2.5,
         2.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_063",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         -60,
         0,
@@ -1414,18 +1501,24 @@
         0.179,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2.5,
         2.5,
         2.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_064",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         60,
         0,
@@ -1436,18 +1529,24 @@
         2.12,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2.5,
         2.5,
         2.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_065",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         -50,
         0,
@@ -1458,18 +1557,24 @@
         5.942,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_066",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         50,
         0,
@@ -1480,18 +1585,24 @@
         2.867,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_067",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         -50,
         0,
@@ -1502,18 +1613,24 @@
         2.306,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_068",
       "type": "prop",
       "label": "City / Tree Long",
-      "model": "/assets/models/City Props asset pack/Tree Long.glb",
       "position": [
         50,
         0,
@@ -1524,18 +1641,24 @@
         3.605,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree Long.glb"
     },
     {
       "id": "prp_069",
       "type": "prop",
       "label": "City / Tree",
-      "model": "/assets/models/City Props asset pack/Tree.glb",
       "position": [
         -28,
         0,
@@ -1546,18 +1669,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb"
     },
     {
       "id": "prp_070",
       "type": "prop",
       "label": "City / Tree",
-      "model": "/assets/models/City Props asset pack/Tree.glb",
       "position": [
         28,
         0,
@@ -1568,18 +1697,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb"
     },
     {
       "id": "prp_071",
       "type": "prop",
       "label": "City / Tree",
-      "model": "/assets/models/City Props asset pack/Tree.glb",
       "position": [
         -28,
         0,
@@ -1590,18 +1725,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb"
     },
     {
       "id": "prp_072",
       "type": "prop",
       "label": "City / Tree",
-      "model": "/assets/models/City Props asset pack/Tree.glb",
       "position": [
         28,
         0,
@@ -1612,18 +1753,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Tree.glb"
     },
     {
       "id": "prp_073",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         -46,
         0,
@@ -1634,18 +1781,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_074",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         46,
         0,
@@ -1656,18 +1809,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_075",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         -46,
         0,
@@ -1678,18 +1837,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_076",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         46,
         0,
@@ -1700,18 +1865,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_077",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         -25,
         0,
@@ -1722,18 +1893,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_078",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         25,
         0,
@@ -1744,18 +1921,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_079",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         -25,
         0,
@@ -1766,18 +1949,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_080",
       "type": "prop",
       "label": "City / Trash Can",
-      "model": "/assets/models/City Props asset pack/Trash Can.glb",
       "position": [
         25,
         0,
@@ -1788,18 +1977,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Can.glb"
     },
     {
       "id": "prp_081",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         -8,
         0,
@@ -1810,18 +2005,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_082",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         8,
         0,
@@ -1832,18 +2033,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_083",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         -8,
         0,
@@ -1854,18 +2061,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_084",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         8,
         0,
@@ -1876,18 +2089,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_085",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         -22,
         0,
@@ -1898,18 +2117,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_086",
       "type": "prop",
       "label": "City / Fire Hydrant",
-      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb",
       "position": [
         22,
         0,
@@ -1920,18 +2145,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fire Hydrant.glb"
     },
     {
       "id": "prp_087",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         -5,
         0,
@@ -1942,18 +2173,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_088",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         5,
         0,
@@ -1964,18 +2201,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_089",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         -5,
         0,
@@ -1986,18 +2229,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_090",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         5,
         0,
@@ -2008,18 +2257,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_091",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         -5,
         0,
@@ -2030,18 +2285,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_092",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         5,
         0,
@@ -2052,18 +2313,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_093",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         0,
         0,
@@ -2074,18 +2341,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_094",
       "type": "prop",
       "label": "City / Bollard",
-      "model": "/assets/models/City Props asset pack/Bollard.glb",
       "position": [
         0,
         0,
@@ -2096,18 +2369,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bollard.glb"
     },
     {
       "id": "prp_095",
       "type": "prop",
       "label": "City / Bench W",
-      "model": "/assets/models/City Props asset pack/Bench.glb",
       "position": [
         -9,
         0,
@@ -2118,18 +2397,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb"
     },
     {
       "id": "prp_096",
       "type": "prop",
       "label": "City / Bench E",
-      "model": "/assets/models/City Props asset pack/Bench.glb",
       "position": [
         9,
         0,
@@ -2140,18 +2425,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb"
     },
     {
       "id": "prp_097",
       "type": "prop",
       "label": "City / Bench N",
-      "model": "/assets/models/City Props asset pack/Bench.glb",
       "position": [
         0,
         0,
@@ -2162,18 +2453,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb"
     },
     {
       "id": "prp_098",
       "type": "prop",
       "label": "City / Bench S",
-      "model": "/assets/models/City Props asset pack/Bench.glb",
       "position": [
         0,
         0,
@@ -2184,18 +2481,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bench.glb"
     },
     {
       "id": "prp_099",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         -12,
         0,
@@ -2206,18 +2509,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_100",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         -14,
         0,
@@ -2228,18 +2537,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_101",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         12,
         0,
@@ -2250,18 +2565,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_102",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         14,
         0,
@@ -2272,18 +2593,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_103",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         -12,
         0,
@@ -2294,18 +2621,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_104",
       "type": "prop",
       "label": "City / Traffic Cone",
-      "model": "/assets/models/City Props asset pack/Traffic Cone.glb",
       "position": [
         14,
         0,
@@ -2316,18 +2649,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Cone.glb"
     },
     {
       "id": "prp_105",
       "type": "prop",
       "label": "City / Traffic Light NW",
-      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
       "position": [
         -22,
         0,
@@ -2338,18 +2677,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb"
     },
     {
       "id": "prp_106",
       "type": "prop",
       "label": "City / Traffic Light SE",
-      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
       "position": [
         22,
         0,
@@ -2360,18 +2705,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb"
     },
     {
       "id": "prp_107",
       "type": "prop",
       "label": "City / Traffic Light NE",
-      "model": "/assets/models/City Props asset pack/Traffic Light.glb",
       "position": [
         22,
         0,
@@ -2382,18 +2733,24 @@
         4.712,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Traffic Light.glb"
     },
     {
       "id": "prp_108",
       "type": "prop",
       "label": "City / Stop Sign SW",
-      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
       "position": [
         -22,
         0,
@@ -2404,18 +2761,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb"
     },
     {
       "id": "prp_109",
       "type": "prop",
       "label": "City / Stop Sign NE",
-      "model": "/assets/models/City Props asset pack/Stop Sign.glb",
       "position": [
         22,
         0,
@@ -2426,18 +2789,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Stop Sign.glb"
     },
     {
       "id": "prp_110",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         -8,
         0.01,
@@ -2448,18 +2817,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_111",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         8,
         0.01,
@@ -2470,18 +2845,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_112",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         0,
         0.01,
@@ -2492,18 +2873,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_113",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         0,
         0.01,
@@ -2514,18 +2901,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_114",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         25,
         0.01,
@@ -2536,18 +2929,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_115",
       "type": "prop",
       "label": "City / Manhole",
-      "model": "/assets/models/City Props asset pack/Manhole.glb",
       "position": [
         -25,
         0.01,
@@ -2558,18 +2957,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Manhole.glb"
     },
     {
       "id": "prp_116",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         -21,
         0,
@@ -2580,18 +2985,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_117",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         21,
         0,
@@ -2602,18 +3013,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_118",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         9,
         0,
@@ -2624,18 +3041,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_119",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         -9,
         0,
@@ -2646,18 +3069,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_120",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         -55,
         0,
@@ -2668,18 +3097,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_121",
       "type": "prop",
       "label": "City / Trash Bag",
-      "model": "/assets/models/City Props asset pack/Trash Bag.glb",
       "position": [
         55,
         0,
@@ -2690,18 +3125,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Trash Bag.glb"
     },
     {
       "id": "prp_122",
       "type": "prop",
       "label": "City / Bike Rack W",
-      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
       "position": [
         -44,
         0,
@@ -2712,18 +3153,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb"
     },
     {
       "id": "prp_123",
       "type": "prop",
       "label": "City / Bike Rack E",
-      "model": "/assets/models/City Props asset pack/Bike Rack.glb",
       "position": [
         44,
         0,
@@ -2734,18 +3181,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Bike Rack.glb"
     },
     {
       "id": "prp_124",
       "type": "prop",
       "label": "City / Concrete Barrier W",
-      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
       "position": [
         -55,
         0,
@@ -2756,18 +3209,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_125",
       "type": "prop",
       "label": "City / Concrete Barrier E",
-      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb",
       "position": [
         55,
         0,
@@ -2778,18 +3237,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Concrete Barrier.glb"
     },
     {
       "id": "prp_126",
       "type": "prop",
       "label": "City / Box Pile",
-      "model": "/assets/models/City Props asset pack/Box Pile.glb",
       "position": [
         -48,
         0,
@@ -2800,18 +3265,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb"
     },
     {
       "id": "prp_127",
       "type": "prop",
       "label": "City / Box Pile",
-      "model": "/assets/models/City Props asset pack/Box Pile.glb",
       "position": [
         48,
         0,
@@ -2822,18 +3293,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb"
     },
     {
       "id": "prp_128",
       "type": "prop",
       "label": "City / Box Pile",
-      "model": "/assets/models/City Props asset pack/Box Pile.glb",
       "position": [
         -48,
         0,
@@ -2844,18 +3321,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb"
     },
     {
       "id": "prp_129",
       "type": "prop",
       "label": "City / Box Pile",
-      "model": "/assets/models/City Props asset pack/Box Pile.glb",
       "position": [
         48,
         0,
@@ -2866,18 +3349,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Box Pile.glb"
     },
     {
       "id": "prp_130",
       "type": "prop",
       "label": "City / Floor Trash",
-      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
       "position": [
         -30,
         0,
@@ -2888,18 +3377,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb"
     },
     {
       "id": "prp_131",
       "type": "prop",
       "label": "City / Floor Trash",
-      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
       "position": [
         30,
         0,
@@ -2910,18 +3405,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb"
     },
     {
       "id": "prp_132",
       "type": "prop",
       "label": "City / Floor Trash",
-      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
       "position": [
         -10,
         0,
@@ -2932,18 +3433,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb"
     },
     {
       "id": "prp_133",
       "type": "prop",
       "label": "City / Floor Trash",
-      "model": "/assets/models/City Props asset pack/Floor Trash.glb",
       "position": [
         10,
         0,
@@ -2954,18 +3461,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Floor Trash.glb"
     },
     {
       "id": "prp_134",
       "type": "prop",
       "label": "City / Long Bush W",
-      "model": "/assets/models/City Props asset pack/Long Bush.glb",
       "position": [
         -46,
         0,
@@ -2976,18 +3489,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb"
     },
     {
       "id": "prp_135",
       "type": "prop",
       "label": "City / Long Bush E",
-      "model": "/assets/models/City Props asset pack/Long Bush.glb",
       "position": [
         46,
         0,
@@ -2998,18 +3517,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Long Bush.glb"
     },
     {
       "id": "prp_136",
       "type": "prop",
       "label": "City / Small Bush",
-      "model": "/assets/models/City Props asset pack/Small Bush.glb",
       "position": [
         -12,
         0,
@@ -3020,18 +3545,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb"
     },
     {
       "id": "prp_137",
       "type": "prop",
       "label": "City / Small Bush",
-      "model": "/assets/models/City Props asset pack/Small Bush.glb",
       "position": [
         12,
         0,
@@ -3042,18 +3573,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb"
     },
     {
       "id": "prp_138",
       "type": "prop",
       "label": "City / Small Bush",
-      "model": "/assets/models/City Props asset pack/Small Bush.glb",
       "position": [
         -12,
         0,
@@ -3064,18 +3601,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb"
     },
     {
       "id": "prp_139",
       "type": "prop",
       "label": "City / Small Bush",
-      "model": "/assets/models/City Props asset pack/Small Bush.glb",
       "position": [
         12,
         0,
@@ -3086,18 +3629,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Small Bush.glb"
     },
     {
       "id": "prp_140",
       "type": "prop",
       "label": "City / Fallen Leaves",
-      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
       "position": [
         -57,
         0,
@@ -3108,18 +3657,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb"
     },
     {
       "id": "prp_141",
       "type": "prop",
       "label": "City / Fallen Leaves",
-      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
       "position": [
         63,
         0,
@@ -3130,18 +3685,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb"
     },
     {
       "id": "prp_142",
       "type": "prop",
       "label": "City / Fallen Leaves",
-      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
       "position": [
         -57,
         0,
@@ -3152,18 +3713,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb"
     },
     {
       "id": "prp_143",
       "type": "prop",
       "label": "City / Fallen Leaves",
-      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb",
       "position": [
         63,
         0,
@@ -3174,18 +3741,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/City Props asset pack/Fallen Leaves.glb"
     },
     {
       "id": "prp_144",
       "type": "prop",
       "label": "City / Dumpster SA NW",
-      "model": "/assets/models/shooter asset pack/Dumpster.glb",
       "position": [
         -21,
         0,
@@ -3196,18 +3769,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb"
     },
     {
       "id": "prp_145",
       "type": "prop",
       "label": "City / Dumpster SA SE",
-      "model": "/assets/models/shooter asset pack/Dumpster.glb",
       "position": [
         21,
         0,
@@ -3218,18 +3797,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb"
     },
     {
       "id": "prp_146",
       "type": "prop",
       "label": "City / Dumpster SA NE",
-      "model": "/assets/models/shooter asset pack/Dumpster.glb",
       "position": [
         9,
         0,
@@ -3240,40 +3825,52 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.2,
         1.2,
         1.2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Dumpster.glb"
     },
     {
       "id": "prp_147",
       "type": "prop",
       "label": "City / Broken Car NW",
-      "model": "/assets/models/shooter asset pack/Broken Car.glb",
       "position": [
-        -26,
-        0,
-        -8
+        39.5,
+        11,
+        37
       ],
       "rotation": [
         0,
         0.314,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb"
     },
     {
       "id": "prp_148",
       "type": "prop",
       "label": "City / Broken Car SE",
-      "model": "/assets/models/shooter asset pack/Broken Car.glb",
       "position": [
         26,
         0,
@@ -3284,18 +3881,24 @@
         3.456,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Broken Car.glb"
     },
     {
       "id": "prp_149",
       "type": "prop",
       "label": "City / Container SW",
-      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
       "position": [
         -55,
         0,
@@ -3306,18 +3909,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb"
     },
     {
       "id": "prp_150",
       "type": "prop",
       "label": "City / Container NE",
-      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
       "position": [
         55,
         0,
@@ -3328,18 +3937,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb"
     },
     {
       "id": "prp_151",
       "type": "prop",
       "label": "City / Container NW",
-      "model": "/assets/models/shooter asset pack/Shipping Container.glb",
       "position": [
         -48,
         0,
@@ -3350,18 +3965,24 @@
         1.571,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         2,
         2,
         2
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Shipping Container.glb"
     },
     {
       "id": "prp_152",
       "type": "prop",
       "label": "City / Tires W",
-      "model": "/assets/models/shooter asset pack/Tires.glb",
       "position": [
         -44,
         0,
@@ -3372,18 +3993,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Tires.glb"
     },
     {
       "id": "prp_153",
       "type": "prop",
       "label": "City / Tires E",
-      "model": "/assets/models/shooter asset pack/Tires.glb",
       "position": [
         44,
         0,
@@ -3394,18 +4021,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Tires.glb"
     },
     {
       "id": "prp_154",
       "type": "prop",
       "label": "City / Crate W",
-      "model": "/assets/models/shooter asset pack/Crate.glb",
       "position": [
         -55,
         0,
@@ -3416,18 +4049,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb"
     },
     {
       "id": "prp_155",
       "type": "prop",
       "label": "City / Crate E",
-      "model": "/assets/models/shooter asset pack/Crate.glb",
       "position": [
         55,
         0,
@@ -3438,18 +4077,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Crate.glb"
     },
     {
       "id": "prp_156",
       "type": "prop",
       "label": "City / Cardboard SW",
-      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
       "position": [
         -40,
         0,
@@ -3460,18 +4105,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb"
     },
     {
       "id": "prp_157",
       "type": "prop",
       "label": "City / Cardboard NE",
-      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb",
       "position": [
         40,
         0,
@@ -3482,18 +4133,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         0.8,
         0.8,
         0.8
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Cardboard Boxes.glb"
     },
     {
       "id": "prp_158",
       "type": "prop",
       "label": "City / Sign NW",
-      "model": "/assets/models/shooter asset pack/Sign.glb",
       "position": [
         -18,
         0,
@@ -3504,18 +4161,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sign.glb"
     },
     {
       "id": "prp_159",
       "type": "prop",
       "label": "City / Sign SE",
-      "model": "/assets/models/shooter asset pack/Sign.glb",
       "position": [
         18,
         0,
@@ -3526,18 +4189,24 @@
         3.142,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1.5,
         1.5,
         1.5
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Sign.glb"
     },
     {
       "id": "prp_160",
       "type": "prop",
       "label": "City / Debris Papers",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         -5,
         0,
@@ -3548,18 +4217,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "prp_161",
       "type": "prop",
       "label": "City / Debris Papers",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         5,
         0,
@@ -3570,18 +4245,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "prp_162",
       "type": "prop",
       "label": "City / Debris Papers",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         -28,
         0,
@@ -3592,18 +4273,24 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     },
     {
       "id": "prp_163",
       "type": "prop",
       "label": "City / Debris Papers",
-      "model": "/assets/models/shooter asset pack/Debris Papers.glb",
       "position": [
         28,
         0,
@@ -3614,12 +4301,20 @@
         0,
         0
       ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "collidable": true,
       "scale": [
         1,
         1,
         1
       ],
-      "collidable": true
+      "material": "metal",
+      "model": "/assets/models/shooter asset pack/Debris Papers.glb"
     }
-  ]
+  ],
+  "updatedAt": "2026-05-05T19:41:02.780Z"
 }

@@ -192,7 +192,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 
     if (!shouldRemove && bullet.isPlayer && game.mode === "PVP"
       && bullet.shooterId === game.socket?.id && !bullet.fromRemote) {
-      const prevXZ = new THREE.Vector3(previousPosition.x, 0, previousPosition.z);
+      const prevXZ = new THREE.Vector3(bullet.prevPos.x, 0, bullet.prevPos.z);
       const currXZ = new THREE.Vector3(position.x, 0, position.z);
       const seg = currXZ.clone().sub(prevXZ);
       const segLenSq = seg.lengthSq();
@@ -212,7 +212,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
         const t = segLenSq > 1e-5
           ? Math.max(0, Math.min(1, targetXZ.clone().sub(prevXZ).dot(seg) / segLenSq))
           : 0;
-        const bulletYAtClosest = previousPosition.y + (position.y - previousPosition.y) * t;
+        const bulletYAtClosest = bullet.prevPos.y + (position.y - bullet.prevPos.y) * t;
         if (bulletYAtClosest < ry - 0.2 || bulletYAtClosest > ry + 2.4) continue;
 
         const damage = bulletDamageAtDistance(bullet);
@@ -238,7 +238,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
         playerGroup.position.z,
       );
 
-      if (distanceSqPointToSegment(playerCenter, previousPosition, position) < 1.1) {
+      if (distanceSqPointToSegment(playerCenter, bullet.prevPos, position) < 1.1) {
         if (game.localPlayerIsAlive && !game.localPlayerIsDowned && !game.invincibilityMode) {
           game.hp -= bullet.damage || 10;
           game.audio.damage();
@@ -267,6 +267,13 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 }
 
 export function processHit(enemy, damage, particlePosition) {
+  // Crosshair hit flash
+  const dot = game.dom?.crosshair?.querySelector("#crosshair-dot");
+  if (dot) {
+    dot.classList.remove("hit");
+    void dot.offsetWidth;
+    dot.classList.add("hit");
+  }
   // Local audio + particles for instant feedback.
   game.audio.hit();
   spawnParticles(particlePosition, 5, 0xff6622, 4);

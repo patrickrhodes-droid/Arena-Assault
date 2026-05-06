@@ -117,7 +117,6 @@ export function initScene() {
   buildWeaponVisuals();
   buildGrappleVisuals();
   buildSharedRuntimeAssets();
-  rebuildArena("arena"); // default lobby scene — async, fire-and-forget on init
 }
 
 function buildGrappleVisuals() {
@@ -1424,13 +1423,13 @@ function buildWeaponVisuals() {
   game.visuals.player.playerGroup.add(tpMuzzle);
 
   const flashMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0xffff88 }),
+    new THREE.SphereGeometry(0.32, 7, 7),
+    new THREE.MeshBasicMaterial({ color: 0xfffaaa }),
   );
   flashMesh.visible = false;
   game.scene.add(flashMesh);
 
-  const flashLight = new THREE.PointLight(0xffaa44, 3, 5);
+  const flashLight = new THREE.PointLight(0xffaa44, 8, 9);
   flashLight.visible = false;
   game.scene.add(flashLight);
 
@@ -1513,7 +1512,7 @@ function buildWeaponVisuals() {
     shotgun: { file: "/assets/models/Shotgun.glb",       scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sniper:  { file: "/assets/models/Sniper Rifle.glb",  scale: 0.125, rotY: Math.PI / 2, posZ: 0.4 },
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
-    grapple: { file: "/assets/models/Lure.glb",           scale: 0.375, rotY: 0 },
+    grapple: { file: "/assets/models/Lure.glb",           scale: 0.375, rotY: Math.PI / 2 },
     bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.38,  rotY: 0 },
   };
 
@@ -1661,6 +1660,12 @@ function buildSharedRuntimeAssets() {
   game.shared.hpFgMatSoldier = new THREE.MeshBasicMaterial({ color: 0xff2244, side: THREE.DoubleSide });
   game.shared.hpFgMatDog = new THREE.MeshBasicMaterial({ color: 0xff8833, side: THREE.DoubleSide });
   game.shared.hpFgMatSkeleton = new THREE.MeshBasicMaterial({ color: 0xc0ccff, side: THREE.DoubleSide });
+
+  game.shared.worldMaterials = {
+    crateMat: new THREE.MeshStandardMaterial({ color: 0x86664a, roughness: 0.92 }),
+    metalMat: new THREE.MeshStandardMaterial({ color: 0x7ba1ac, roughness: 0.34, metalness: 0.66 }),
+    darkMat:  new THREE.MeshStandardMaterial({ color: 0x22343d, roughness: 0.56, metalness: 0.24 }),
+  };
 }
 
 function createNametag(name) { // Made this function internal to scene.js

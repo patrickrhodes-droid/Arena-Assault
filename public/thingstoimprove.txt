@@ -89,6 +89,37 @@
 - Map preview in lobby is now live: selecting a map card instantly rebuilds the 3D scene
   behind the UI to show the actual map geometry as a real-time preview.
 
+-- IMPLEMENTED (continued) --
+- Wave-6 freeze fixed: enemy soldier bullets referenced undefined `previousPosition` in
+  updateBullets (should have been `bullet.prevPos`). Since soldiers only appear from wave 6,
+  this caused a ReferenceError that silently killed the requestAnimationFrame loop exactly at
+  that wave. Fixed on all three usages in combat.js.
+- Crosshair hit flash: #crosshair-dot plays a white→orange scale animation (0.18 s) each
+  time processHit() fires. CSS `hit` class added/removed with forced reflow to restart it.
+- Color-coded death particles: enemyKilled handler now picks particle color by type —
+  white (skeleton), dark red (soldier), orange (dog), gold (boss). Boss also gets 40 big
+  particles instead of 18 for a more dramatic death.
+- Wave enemy progress bar: thin orange bar + "N LEFT" count appear below the wave number
+  during SPAWNING/ACTIVE states. Tracks enemies spawned via enemySpawned events and fills
+  as enemies are killed. Resets on each new wave.
+- Score pop-ups: "+100" floats up from the crosshair area on each killCredit event.
+  Color-coded: white (skeleton/soldier), orange (.dog), gold (.boss). Auto-removed after 1.2 s.
+- Damage direction indicator: red gradient arc at screen edge that rotates to point toward
+  the damage source. Triggers on both bullet (playerDamaged, looks up enemy by shooterId)
+  and melee (enemyMeleeAttempt, uses ex/ez). CSS animation fades over 1.4 s.
+- Sprint FOV boost: +8° FOV added to target when sprinting forward (not when aiming).
+  Smoothly lerped at the same rate as ADS FOV transitions.
+- FPS head-bob: sinusoidal vertical camera offset (amplitude 0.038 walk / 0.055 sprint)
+  applied in updateCamera when first-person, moving, grounded, and not crouching.
+  Uses game.walkTime which already tracks walk cycle frequency.
+- Boss phase label: "#boss-phase-label" element added below boss HP bar. Shows "PHASE 1"
+  (amber) or "PHASE 2 — ENRAGED" (red) based on boss.bossPhase2 flag. Updates in updateHUD.
+- Coyote time: 80 ms jump grace window after walking off a ledge. wasGrounded saved at the
+  start of updatePlayer; coyoteTmr set to 0.08 when transitioning grounded→airborne while
+  falling. tryJump allows jump if coyoteTmr > 0 and consumes it immediately.
+- Muzzle flash 3× bigger: SphereGeometry radius 0.1 → 0.32, PointLight range 5 → 9 and
+  intensity 3 → 8, muzzleTmr duration 0.04 → 0.10 s.
+
 -- TO DO --
 
 10. (residual) server.js still duplicates some constants from gameConstants.js.
@@ -100,12 +131,6 @@
 
 
 -- KNOWN RELIABILITY ISSUES --
-
-segmentIntersectsExpandedBox uses obs.xMin/xMax/zMin/zMax but obstacles are stored
-  as obs.min.x / obs.max.x / obs.min.z / obs.max.z. This means soldier/dog/skeleton
-  detour pathfinding always returns false (no blocking obstacle found), so those
-  enemies always go straight and get stuck behind walls instead of routing around them.
-  Fix: change segmentIntersectsExpandedBox and getDetourDirection to use obs.min.x etc.
 
 tickEnemies (server.js) is never called from startGameLoop. The server-side boss AI
   (attack, movement, escape jump) is dead code. All enemy AI runs on the host client.
@@ -179,8 +204,6 @@ Lobby password / private rooms:
 
 More PvP modes:
   - Team deathmatch (2v2 or 1v1v1v1 with team allocation)
-  - Capture zone / objective mode
-  - Elimination (one life, last player standing)
 
 Destructible props:
   Some props (barrels, gas cans) could explode when shot, dealing

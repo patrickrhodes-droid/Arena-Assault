@@ -208,6 +208,7 @@ async function startGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
+  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
@@ -248,6 +249,7 @@ async function startPvPGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
+  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
