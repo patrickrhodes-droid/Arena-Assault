@@ -1213,7 +1213,7 @@ io.on('connection', (socket) => {
         // Pre-load map JSON so obstacle lookups during tickEnemies are synchronous.
         loadMapJson(selectedMap).catch(() => {});
         startGameLoop();
-        io.emit('matchStarted', { mode: 'COOP', map: selectedMap, gameMode });
+        io.emit('matchStarted', { mode: 'COOP', map: selectedMap, gameMode, startingWave });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
         io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode });

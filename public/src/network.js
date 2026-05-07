@@ -152,6 +152,7 @@ export function initNetworking(actions) {
     const mode = payload?.mode || "COOP";
     if (payload?.map) game.selectedMap = payload.map;
     if (payload?.gameMode) game.gameMode = payload.gameMode;
+    if (typeof payload?.startingWave === 'number') game.startingWave = payload.startingWave;
     if (mode === "PVP") {
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
       actions.startPvPGame();
