@@ -519,8 +519,7 @@ export function updateHUD() {
     game.dom.teammatePanel.style.display = "none";
   }
 
-  const isCampaign = game.gameMode === 'campaign' || game.selectedGameMode === 'campaign';
-  const visibleWeapons = isCampaign
+  const visibleWeapons = game.mode === 'COOP'
     ? WEAPON_ORDER.filter(id => game.collectedWeapons?.has(id))
     : WEAPON_ORDER;
 

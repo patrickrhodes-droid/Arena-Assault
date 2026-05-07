@@ -1012,20 +1012,16 @@ export function announceWave() {
     } else {
       subtitle.textContent = "BOSS INCOMING";
     }
-  } else if (isCampaign) {
+  } else if (game.wave <= 6) {
+    // Rounds 1-6 unified text (same for both modes)
     if (game.wave >= 5) subtitle.textContent = "SKELETONS, SOLDIERS & DOGS INCOMING";
     else if (game.wave >= 3) subtitle.textContent = "SKELETONS & SOLDIERS INCOMING";
     else subtitle.textContent = "";
   } else {
-    if (game.wave >= 6) {
-      subtitle.textContent = "DOGS & SHOOTERS INCOMING";
-    } else if (game.wave >= 3) {
-      subtitle.textContent = "DOGS INCOMING";
-    } else {
-      subtitle.textContent = "";
-    }
+    // Endless rounds 8+ (campaign never reaches here — it transitions after round 7)
+    subtitle.textContent = "DOGS & SHOOTERS INCOMING";
   }
-  const showSub = bossWave || (isCampaign ? game.wave >= 3 : game.wave >= 3);
+  const showSub = bossWave || game.wave >= 3;
   subtitle.style.display = showSub ? "block" : "none";
   game.dom.waveAnnounce.classList.remove("show");
   void game.dom.waveAnnounce.offsetWidth;

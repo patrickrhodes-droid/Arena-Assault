@@ -154,25 +154,22 @@ export function initNetworking(actions) {
     if (payload?.gameMode) game.gameMode = payload.gameMode;
     if (typeof payload?.startingWave === 'number') game.startingWave = payload.startingWave;
 
-    // Set collectedWeapons SYNCHRONOUSLY here — before the async startGame() is called.
-    // Doing it inside startGame() risks a race with other socket events firing during
-    // the await rebuildArena() pause.
-    const WAVE_DROPS = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka', 7:'pistol' };
-    if (game.gameMode === 'campaign') {
+    if (mode === "PVP") {
+      // PvP gun game: all weapons available (game controls switching by kill count)
+      game.collectedWeapons = new Set(WEAPON_ORDER);
+      game.pvpSpawnAssignments = payload?.spawnAssignments || {};
+      actions.startPvPGame();
+    } else {
+      // COOP (both campaign and endless): start with pistol only, unlock via wave drops
+      // Set synchronously here — before the async startGame/rebuildArena to avoid race conditions
+      const WAVE_DROPS = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka', 7:'pistol' };
       const sw = game.startingWave || 1;
       game.collectedWeapons = new Set(['pistol']);
       for (let w = 1; w < sw && w <= 7; w++) {
         const drop = WAVE_DROPS[w];
         if (drop) game.collectedWeapons.add(drop);
       }
-    } else {
-      game.collectedWeapons = new Set(WEAPON_ORDER);
-    }
-
-    if (mode === "PVP") {
-      game.pvpSpawnAssignments = payload?.spawnAssignments || {};
-      actions.startPvPGame();
-    } else {
+      if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
       actions.startGame();
     }
     actions.tryPointerLock();

@@ -556,17 +556,28 @@ function emitEnemySpawned(e) {
     });
 }
 
+function spawnSkeletonPair(cx, cz) {
+    for (let i = 0; i < 2; i++) {
+        const angle = (i / 2) * Math.PI * 2;
+        const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
+        const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
+        const e = makeSkeleton(ex, ez);
+        e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
+        gameState.enemies.push(e);
+        emitEnemySpawned(e);
+    }
+}
+
 function spawnEnemy() {
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
     const [cx, cz] = pickSpawnPos(15);
+    const w = gameState.wave;
 
-    if (gameState.gameMode === 'campaign') {
-        // Campaign: wave 5-6 can spawn dogs, wave 3+ can spawn soldiers, always skeletons
-        const w = gameState.wave;
-        const hasDogs = w >= 5;
-        const hasSoldiers = w >= 3;
-        const dogChance = hasDogs ? 0.35 : 0;
-        const soldierChance = hasSoldiers ? 0.3 : 0;
+    if (w <= 6) {
+        // Rounds 1-6: unified progression in both campaign and endless
+        // 1-2 skeletons only; 3-4 add soldiers; 5-6 add dogs
+        const dogChance    = w >= 5 ? 0.35 : 0;
+        const soldierChance = w >= 3 ? 0.30 : 0;
         const roll = Math.random();
         if (roll < dogChance) {
             const dog = makeDog(cx, cz);
@@ -579,43 +590,24 @@ function spawnEnemy() {
             gameState.enemies.push(e);
             emitEnemySpawned(e);
         } else {
-            const count = 2;
-            for (let i = 0; i < count; i++) {
-                const angle = (i / count) * Math.PI * 2;
-                const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
-                const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
-                const e = makeSkeleton(ex, ez);
-                e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
-                gameState.enemies.push(e);
-                emitEnemySpawned(e);
-            }
+            spawnSkeletonPair(cx, cz);
         }
     } else {
-        // Endless: original logic
-        const dogChance = gameState.wave >= 3 ? Math.min(0.55, 0.12 + (gameState.wave - 3) * 0.12) : 0;
+        // Endless wave 8+: all types, increasing dog chance
+        const dogChance = Math.min(0.55, 0.12 + (w - 3) * 0.12);
         if (Math.random() < dogChance) {
             const dog = makeDog(cx, cz);
             dog.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
             gameState.enemies.push(dog);
             emitEnemySpawned(dog);
         } else {
-            const count = 2;
-            for (let i = 0; i < count; i++) {
-                const angle = (i / count) * Math.PI * 2;
-                const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
-                const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
-                const e = makeSkeleton(ex, ez);
-                e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
-                gameState.enemies.push(e);
-                emitEnemySpawned(e);
-            }
+            spawnSkeletonPair(cx, cz);
         }
     }
 }
 
 function spawnSkeletonGroup() {
-    // Endless wave 6+: spawns a single soldier.
-    // Campaign: not called (soldiers handled inside spawnEnemy).
+    // Extra soldier spawn used in endless rounds 8+ only
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
     const [sx, sz] = pickSpawnPos(15);
     const e = makeSoldier(sx, sz);
@@ -687,8 +679,8 @@ function tickWave(dt) {
             gameState.waveState = 'ACTIVE';
         } else {
             gameState.enemiesToSpawn = Math.min(1 + gameState.wave, 12);
-            // Endless: add soldiers from wave 6+. Campaign: soldiers mixed inside spawnEnemy.
-            gameState.skeletonGroupsToSpawn = (gameState.gameMode !== 'campaign' && gameState.wave >= 6) ? 2 : 0;
+            // Extra soldier spawns only in endless after round 7 (rounds 1-6 mix soldiers via spawnEnemy)
+            gameState.skeletonGroupsToSpawn = (gameState.gameMode === 'endless' && gameState.wave > 7) ? 2 : 0;
             gameState.spawnTmr = 0;
             gameState.waveState = 'SPAWNING';
         }
