@@ -668,7 +668,8 @@ function finishWave() {
 
 function isBossWave() {
     if (gameState.gameMode === 'campaign') return gameState.wave === CAMPAIGN_MAX_WAVE;
-    return gameState.wave % 5 === 0;
+    // Endless: first boss at wave 7, then every 5 waves (7, 12, 17, 22...)
+    return gameState.wave >= 7 && (gameState.wave - 7) % 5 === 0;
 }
 
 function tickWave(dt) {

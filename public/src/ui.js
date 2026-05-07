@@ -134,6 +134,10 @@ function applyMapScreenRole() {
     if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true;
     // Re-sync visual state if a mode was already selected (e.g. navigating back)
     if (game.selectedGameMode) applyModeSelection(game.selectedGameMode);
+    // Gun Game only available with 2+ players
+    const solo = Object.keys(game.remotePlayers).length === 0;
+    const pvpCard = document.querySelector('.mode-card[data-mode="pvp"]');
+    if (pvpCard) pvpCard.hidden = solo;
   }
   renderJoinLinkControls();
 }
@@ -402,6 +406,10 @@ export function updateLobbyUI(players) {
     game.dom.deployBtn.style.opacity = canReady ? "1" : "0.5";
     game.dom.deployBtn.textContent = "READY UP";
   }
+
+  // Hide Gun Game mode card when only 1 player in lobby
+  const pvpCard = document.querySelector('.mode-card[data-mode="pvp"]');
+  if (pvpCard) pvpCard.hidden = playerCount < 2;
 
   renderJoinLinkControls();
 }

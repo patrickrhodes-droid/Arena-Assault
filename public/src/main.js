@@ -224,19 +224,8 @@ async function startGame() {
 
   hideRankings();
   resetCombatState();
-  // Set collected weapons AFTER reset so nothing overwrites it
-  if (game.gameMode === 'campaign') {
-    // Wave N drop schedule — matches server's CAMPAIGN_WAVE_WEAPON_DROP
-    const waveDrops = { 1: 'assault', 2: 'shotgun', 3: 'sniper', 4: 'sword', 5: 'grapple', 6: 'bazooka', 7: 'pistol' };
-    game.collectedWeapons = new Set(['pistol']);
-    const startWave = game.startingWave || 1;
-    // Add every weapon earned from completed waves (1 … startWave-1)
-    for (let w = 1; w < startWave && w <= 7; w++) {
-      if (waveDrops[w]) game.collectedWeapons.add(waveDrops[w]);
-    }
-  } else {
-    game.collectedWeapons = new Set(WEAPON_ORDER);
-  }
+  // collectedWeapons is set synchronously in network.js when matchStarted fires,
+  // before this async function is called — nothing to do here.
   resetViewState();
   if (game.visuals.player.headGroup && game.myCharacter) {
     applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });

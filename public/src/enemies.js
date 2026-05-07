@@ -999,7 +999,7 @@ export function announceWave() {
   const title = game.dom.waveAnnounce.querySelector(".wa-title");
   const subtitle = game.dom.waveAnnounce.querySelector(".wa-sub");
   const isCampaign = game.gameMode === 'campaign';
-  const bossWave = isCampaign ? isCampaignBossWave() : (game.wave % 5 === 0);
+  const bossWave = isCampaign ? isCampaignBossWave() : (game.wave >= 7 && (game.wave - 7) % 5 === 0);
   const { bossCount, hpMultiplier } = bossWave ? getBossWaveConfig() : { bossCount: 0, hpMultiplier: 1 };
   title.textContent = `WAVE ${game.wave}`;
   if (bossWave) {
