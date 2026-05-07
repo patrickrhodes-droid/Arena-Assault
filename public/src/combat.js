@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { B_SPD_E, DEFAULT_WEAPON, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
 import { game } from "./state.js";
 import { bulletHitObstacle } from "./collision.js";
@@ -493,12 +494,12 @@ export function resetCombatState() {
 
 // ── Weapon Drop Pickups ───────────────────────────────────────────────────────
 
-const WEAPON_DROP_MODELS = {
-  pistol: '/assets/models/Pistol.glb',
+const WEAPON_DROP_PATHS = {
+  pistol:  '/assets/models/Pistol.glb',
   assault: '/assets/models/Assault%20Rifle.glb',
   shotgun: '/assets/models/Shotgun.glb',
-  sniper: '/assets/models/Sniper%20Rifle.glb',
-  sword: '/assets/models/Katana.glb',
+  sniper:  '/assets/models/Sniper%20Rifle.glb',
+  sword:   '/assets/models/Katana.glb',
   grapple: '/assets/models/Lure.glb',
   bazooka: '/assets/models/Bazooka.glb',
 };
@@ -508,51 +509,58 @@ const WEAPON_DROP_SCALES = {
   sword: 0.9, grapple: 0.8, bazooka: 0.7,
 };
 
+function applyGlbToPickup(pickup, gltf) {
+  if (pickup.collected || pickup.glbLoaded) return;
+  const model = gltf.scene.clone(true);
+  model.scale.setScalar(WEAPON_DROP_SCALES[pickup.weaponId] ?? 0.8);
+  model.traverse((n) => { if (n.isMesh) n.castShadow = true; });
+  pickup.group.add(model);
+  pickup.glbLoaded = true;
+}
+
 export function spawnWeaponPickupVisual(id, weaponId, position) {
   const group = new THREE.Group();
-  group.position.set(position.x, 1.2, position.z);
+  group.position.set(position.x, 1.0, position.z);
   game.scene.add(group);
 
-  // Glow ring
-  const ringGeo = new THREE.TorusGeometry(0.5, 0.04, 8, 24);
-  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffdd33, transparent: true, opacity: 0.8 });
-  const ring = new THREE.Mesh(ringGeo, ringMat);
+  // Horizontal glow ring — MeshBasicMaterial so always visible regardless of lighting
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.07, 8, 24),
+    new THREE.MeshBasicMaterial({ color: 0xffee00 }),
+  );
   ring.rotation.x = Math.PI / 2;
   group.add(ring);
 
-  // Fallback box if GLB not loaded yet
-  const fallbackGeo = new THREE.BoxGeometry(0.4, 0.15, 0.8);
-  const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, emissive: 0x555500, emissiveIntensity: 0.6 });
-  const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
-  group.add(fallback);
+  // Bright glowing sphere in the centre so it's visible from any angle
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff }),
+  );
+  group.add(glow);
 
   const pickup = {
     id, weaponId, group,
     pos: new THREE.Vector3(position.x, 0, position.z),
     bobT: Math.random() * Math.PI * 2,
     glbLoaded: false,
-    eHeld: false,
     collected: false,
   };
   game.weaponPickups.push(pickup);
 
-  // Try to load GLB model
-  const modelPath = WEAPON_DROP_MODELS[weaponId];
-  if (modelPath) {
-    import('three/addons/loaders/GLTFLoader.js').then(({ GLTFLoader }) => {
-      new GLTFLoader().load(modelPath, (gltf) => {
-        if (pickup.collected) return;
-        const model = gltf.scene;
-        const scale = WEAPON_DROP_SCALES[weaponId] ?? 0.8;
-        model.scale.setScalar(scale);
-        model.traverse((n) => { if (n.isMesh) { n.castShadow = true; } });
-        group.remove(fallback);
-        fallbackGeo.dispose();
-        fallbackMat.dispose();
-        group.add(model);
-        pickup.glbLoaded = true;
-      }, undefined, () => { /* keep fallback on error */ });
-    });
+  // Use GLB if already preloaded in game.shared (see scene.js buildSharedRuntimeAssets)
+  const cached = game.shared?.weaponDropGltfs?.[weaponId];
+  if (cached) {
+    applyGlbToPickup(pickup, cached);
+  } else {
+    // Load on demand using static GLTFLoader (importmap-safe, no dynamic import)
+    const path = WEAPON_DROP_PATHS[weaponId];
+    if (path) {
+      new GLTFLoader().load(path, (gltf) => {
+        if (!game.shared.weaponDropGltfs) game.shared.weaponDropGltfs = {};
+        game.shared.weaponDropGltfs[weaponId] = gltf;
+        applyGlbToPickup(pickup, gltf);
+      });
+    }
   }
 }
 

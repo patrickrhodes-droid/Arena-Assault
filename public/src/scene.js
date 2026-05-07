@@ -1653,6 +1653,23 @@ function buildSharedRuntimeAssets() {
     metalMat: new THREE.MeshStandardMaterial({ color: 0x7ba1ac, roughness: 0.34, metalness: 0.66 }),
     darkMat:  new THREE.MeshStandardMaterial({ color: 0x22343d, roughness: 0.56, metalness: 0.24 }),
   };
+
+  // Preload weapon drop GLBs so they're ready when the first wave ends
+  game.shared.weaponDropGltfs = {};
+  const WEAPON_DROP_PATHS = {
+    pistol:  '/assets/models/Pistol.glb',
+    assault: '/assets/models/Assault%20Rifle.glb',
+    shotgun: '/assets/models/Shotgun.glb',
+    sniper:  '/assets/models/Sniper%20Rifle.glb',
+    sword:   '/assets/models/Katana.glb',
+    grapple: '/assets/models/Lure.glb',
+    bazooka: '/assets/models/Bazooka.glb',
+  };
+  for (const [weaponId, path] of Object.entries(WEAPON_DROP_PATHS)) {
+    new GLTFLoader().load(path, (gltf) => {
+      game.shared.weaponDropGltfs[weaponId] = gltf;
+    });
+  }
 }
 
 function createNametag(name) { // Made this function internal to scene.js
