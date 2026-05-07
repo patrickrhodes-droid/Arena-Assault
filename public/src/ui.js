@@ -128,11 +128,11 @@ function applyMapScreenRole() {
   const guestSection = document.getElementById('guest-map-section');
   if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
   if (guestSection) guestSection.style.display = game.isHost ? 'none' : 'block';
-  // Host: show/hide note, ensure start buttons hidden until mode chosen
   if (game.isHost) {
+    // Always keep start buttons hidden until a mode card is explicitly clicked
     if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = true;
     if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true;
-    // Re-apply mode selection if already chosen
+    // Re-sync visual state if a mode was already selected (e.g. navigating back)
     if (game.selectedGameMode) applyModeSelection(game.selectedGameMode);
   }
   renderJoinLinkControls();

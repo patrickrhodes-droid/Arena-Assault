@@ -100,7 +100,7 @@ export const game = {
   weaponPickups: [],
   collectedWeapons: new Set(['pistol']),
   gameMode: 'endless',     // 'campaign' | 'endless' — set by server on match start
-  selectedGameMode: 'endless', // 'campaign' | 'endless' | 'pvp' — host's UI choice
+  selectedGameMode: '',    // 'campaign' | 'endless' | 'pvp' — set when host clicks a mode card
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"
