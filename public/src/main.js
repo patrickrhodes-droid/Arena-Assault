@@ -215,12 +215,6 @@ async function startGame() {
   game.dom.hud.style.display = "block";
   game.dom.pvpScore.hidden = true;
   await rebuildArena(game.selectedMap);
-  // Set collected weapons based on mode
-  if (game.gameMode === 'campaign') {
-    game.collectedWeapons = new Set(['pistol']);
-  } else {
-    game.collectedWeapons = new Set(WEAPON_ORDER);
-  }
 
   const playerCount = 1 + Object.keys(game.remotePlayers).length;
   game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
@@ -230,6 +224,12 @@ async function startGame() {
 
   hideRankings();
   resetCombatState();
+  // Set collected weapons AFTER reset so nothing overwrites it
+  if (game.gameMode === 'campaign') {
+    game.collectedWeapons = new Set(['pistol']);
+  } else {
+    game.collectedWeapons = new Set(WEAPON_ORDER);
+  }
   resetViewState();
   if (game.visuals.player.headGroup && game.myCharacter) {
     applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });

@@ -31,7 +31,8 @@ export function setWeapon(id) {
     return false;
   }
   // In campaign mode, only switch to collected weapons
-  if (game.gameMode === 'campaign' && !game.collectedWeapons.has(id)) {
+  const inCampaign = game.gameMode === 'campaign' || game.selectedGameMode === 'campaign';
+  if (inCampaign && !(game.collectedWeapons?.has(id))) {
     return false;
   }
 
@@ -46,8 +47,9 @@ export function setWeapon(id) {
 }
 
 export function cycleWeapon() {
-  const available = game.gameMode === 'campaign'
-    ? WEAPON_ORDER.filter(id => game.collectedWeapons.has(id))
+  const inCampaign = game.gameMode === 'campaign' || game.selectedGameMode === 'campaign';
+  const available = inCampaign
+    ? WEAPON_ORDER.filter(id => game.collectedWeapons?.has(id))
     : WEAPON_ORDER;
   const index = available.indexOf(game.currentWeapon);
   return setWeapon(available[(index + 1) % available.length]);

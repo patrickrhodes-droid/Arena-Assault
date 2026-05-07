@@ -511,12 +511,18 @@ export function updateHUD() {
     game.dom.teammatePanel.style.display = "none";
   }
 
-  game.dom.inventoryBar.innerHTML = WEAPON_ORDER.map((id, idx) => {
+  const isCampaign = game.gameMode === 'campaign' || game.selectedGameMode === 'campaign';
+  const visibleWeapons = isCampaign
+    ? WEAPON_ORDER.filter(id => game.collectedWeapons?.has(id))
+    : WEAPON_ORDER;
+
+  game.dom.inventoryBar.innerHTML = visibleWeapons.map((id) => {
     const def = WEAPON_DEFS[id];
     const isActive = game.currentWeapon === id;
     const shortName = def.label.split(" ").pop();
+    const slotNum = WEAPON_ORDER.indexOf(id) + 1;
     return `<div class="inv-slot${isActive ? " active" : ""}">
-      <div class="inv-key">${idx + 1}</div>
+      <div class="inv-key">${slotNum}</div>
       <div class="inv-name">${shortName}</div>
     </div>`;
   }).join("");
