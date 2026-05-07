@@ -1422,23 +1422,10 @@ function buildWeaponVisuals() {
   tpMuzzle.position.set(0.5, 1.35, -0.8);
   game.visuals.player.playerGroup.add(tpMuzzle);
 
-  const flashMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.32, 7, 7),
-    new THREE.MeshBasicMaterial({ color: 0xfffaaa }),
-  );
-  flashMesh.visible = false;
-  game.scene.add(flashMesh);
-
-  const flashLight = new THREE.PointLight(0xffaa44, 8, 9);
-  flashLight.visible = false;
-  game.scene.add(flashLight);
-
   game.visuals.weapon = {
     firstPersonGun,
     tpMuzzle,
     fpMuzzle,
-    flashMesh,
-    flashLight,
     weaponModels: {
       pistol: {
         tpPos: [0.48, 1.3, -0.22],

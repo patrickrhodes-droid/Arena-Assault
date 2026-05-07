@@ -1,6 +1,6 @@
 import { P_MAX_HP, PVP_CORNERS, WEAPON_ORDER } from "./config.js";
 import { createAudioController } from "./audio.js";
-import { processHit, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles } from "./combat.js";
+import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
 import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
@@ -87,6 +87,7 @@ const actions = {
       game.socket?.emit("startMatch", {
         startingWave: game.startingWave || 1,
         invincibility: Boolean(game.invincibilityMode),
+        gameMode: game.selectedGameMode || 'endless',
       });
     }
   },
@@ -198,7 +199,7 @@ requestAnimationFrame((time) => {
 });
 
 function hideAllLobbyScreens() {
-  ["screen-player", "screen-map", "screen-lobby"].forEach((id) => {
+  ["screen-player", "screen-map"].forEach((id) => {
     document.getElementById(id)?.classList.remove("active");
   });
 }
@@ -214,6 +215,12 @@ async function startGame() {
   game.dom.hud.style.display = "block";
   game.dom.pvpScore.hidden = true;
   await rebuildArena(game.selectedMap);
+  // Set collected weapons based on mode
+  if (game.gameMode === 'campaign') {
+    game.collectedWeapons = new Set(['pistol']);
+  } else {
+    game.collectedWeapons = new Set(WEAPON_ORDER);
+  }
 
   const playerCount = 1 + Object.keys(game.remotePlayers).length;
   game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
@@ -384,6 +391,11 @@ function cleanupGame() {
     game.scene.remove(pack.mesh);
   });
   game.healthPacks.length = 0;
+
+  game.weaponPickups.forEach((pickup) => {
+    game.scene.remove(pickup.group);
+  });
+  game.weaponPickups.length = 0;
 }
 
 function playerDiedLocal() {
@@ -690,6 +702,7 @@ function animate(time) {
     updateBullets({ ...actions, processHit });
     updateParticles();
     updateHealthPacks(doHUD ? updateHUD : undefined);
+    updateWeaponPickups(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();
@@ -701,6 +714,7 @@ function animate(time) {
       updateBullets({ ...actions, processHit });
       updateParticles();
       updateHealthPacks(updateHUD);
+      updateWeaponPickups(updateHUD);
       updateWaves();
     }
     updateRemotePlayerVisuals();
@@ -714,6 +728,7 @@ function animate(time) {
     updateBullets({ ...actions, processHit });
     updateParticles();
     updateHealthPacks(doHUD ? updateHUD : undefined);
+    updateWeaponPickups(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();
@@ -726,6 +741,7 @@ function animate(time) {
     updateBullets({ ...actions, processHit });
     updateParticles();
     updateHealthPacks(doHUD ? updateHUD : undefined);
+    updateWeaponPickups(doHUD ? updateHUD : undefined);
     updateWaves();
     updateRemotePlayerVisuals();
     updateCamera();

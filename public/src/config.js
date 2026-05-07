@@ -30,7 +30,7 @@ export const GRAPPLE_TUNING = {
   releaseDistance: 1.5,
   releaseCooldown: 0.8,
   jumpReleaseCooldown: 0.5,
-  enemyPullStopDistance: 8,
+  enemyPullStopDistance: 3,
   bossAttachHeight: 1.5,
 };
 
@@ -41,7 +41,7 @@ export const REVIVE_TUNING = {
 
 export const SKELETON_TUNING = {
   hp: 1,
-  baseSpeed: 9,
+  baseSpeed: 7,
   speedRandom: 2.5,
   attackDamageBase: 8,
   attackDamagePerWave: 1,
@@ -53,7 +53,7 @@ export const DOG_TUNING = {
   baseHp: 46,
   hpPerWave: 10,
   hpScale: 1.1,
-  baseSpeed: 8,
+  baseSpeed: 10,
   speedRandom: 2,
   speedWaveBonus: 0.3,
   attackDamageBase: 12,
@@ -66,7 +66,7 @@ export const SOLDIER_TUNING = {
   baseHp: 58,
   hpPerWave: 12,
   hpScale: 1.1,
-  baseSpeed: 3.5,
+  baseSpeed: 5,
   speedRandom: 1.5,
   speedWaveBonus: 0.2,
   fireIntervalMin: 0.8,
@@ -113,11 +113,11 @@ export const WEAPON_DEFS = {
   },
   assault: {
     label: "ASSAULT RIFLE",
-    mag: 30,
-    fireRate: 0.09,
+    mag: 60,
+    fireRate: 0.05,
     reload: 1.6,
     pellets: 1,
-    damage: 46,
+    damage: 30,
     spreadHip: 0.022,
     spreadAim: 0.008,
     bulletSpeed: 90,
@@ -232,9 +232,9 @@ export const CHARACTERS = {
 
 export const CHARACTER_ORDER = ["iestyn", "patrick", "will", "matt"];
 
-export const PVP_WIN_KILLS = 13;
-export const PVP_KILLS_PER_WEAPON = 2;
-export const PVP_SWORD_KILLS_TO_WIN = 5;
+export const PVP_WIN_KILLS = 7;
+export const PVP_KILLS_PER_WEAPON = 1;
+export const PVP_SWORD_KILLS_TO_WIN = 1;
 export const PVP_CORNERS = [
   [-60, -60],
   [60, -60],

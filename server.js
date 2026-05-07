@@ -100,10 +100,9 @@ app.get('/api/leaderboard', (_req, res) => {
 
 // ── PvP constants ─────────────────────────────────────────────────────────────
 
-const PVP_WIN_KILLS = 13;
-const PVP_KILLS_PER_WEAPON = 2;
-const PVP_SWORD_KILLS_TO_WIN = 5;
-const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'grapple', 'bazooka'];
+const PVP_WIN_KILLS = 7;          // 6 weapons × 1 kill + 1 grapple kill
+const PVP_KILLS_PER_WEAPON = 1;
+const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'bazooka', 'grapple'];
 const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
 
 // ── Game simulation constants ─────────────────────────────────────────────────
@@ -113,14 +112,14 @@ const ARENA_SIZE = 144;
 const P_MAX_HP = 1000;
 const B_SPD_E = 28;                                           // enemy bullet speed
 const BOSS_ESCAPE_GRAV = 180;
-const BOSS_ESCAPE_HEIGHT = 50 / 6;
+const BOSS_ESCAPE_HEIGHT = 50 / 3;
 const BOSS_ESCAPE_JUMP_VEL = Math.sqrt(2 * BOSS_ESCAPE_GRAV * BOSS_ESCAPE_HEIGHT); // ≈54.8
 const BOSS_ESCAPE_FWD_SPD = 14;
 const BOSS_ATTACK_REACH = 7.8;
 const BOSS_ATTACK_FREQ = 1.1;
 const BOSS_WINDUP = 0.2;
 const BOSS_SWING = 0.22;
-const MAX_LIVE_ENEMIES = 60;
+const MAX_LIVE_ENEMIES = 35;
 
 // ── JSON-driven map data ──────────────────────────────────────────────────────
 // Replaces the old hard-coded MAP_OBSTACLES table.
@@ -369,8 +368,19 @@ function broadcastPauseState() {
 
 // ── Server-side game state ────────────────────────────────────────────────────
 
+const CAMPAIGN_MAP_ORDER = ['arena', 'desert', 'city', 'blacksite'];
+const CAMPAIGN_MAX_WAVE = 7;
+
+// Weapon that drops after the last enemy of each campaign wave (waves 1-7)
+const CAMPAIGN_WAVE_WEAPON_DROP = {
+    1: 'assault', 2: 'shotgun', 3: 'sniper', 4: 'sword',
+    5: 'grapple', 6: 'bazooka', 7: 'pistol',
+};
+
 const gameState = {
     mode: null,
+    gameMode: 'endless',  // 'campaign' | 'endless'
+    campaignMapIndex: 0,
     invincibility: false,
     wave: 0,
     waveState: 'WAIT',
@@ -382,12 +392,16 @@ const gameState = {
     healthPacks: [],
     nextEnemyId: 1,
     nextPackId: 1,
+    nextDropId: 1,
+    weaponDrops: [],
     tickInterval: null,
 };
 
-function resetGameState(mode, startingWave) {
+function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapIndex = 0) {
     stopGameLoop();
     gameState.mode = mode;
+    gameState.gameMode = gameMode;
+    gameState.campaignMapIndex = campaignMapIndex;
     gameState.wave = startingWave > 1 ? startingWave - 1 : 0;
     gameState.waveState = 'WAIT';
     gameState.waveTmr = startingWave > 1 ? 0.1 : 3;
@@ -396,8 +410,10 @@ function resetGameState(mode, startingWave) {
     gameState.spawnTmr = 0;
     gameState.enemies = [];
     gameState.healthPacks = [];
+    gameState.weaponDrops = [];
     gameState.nextEnemyId = 1;
     gameState.nextPackId = 1;
+    gameState.nextDropId = 1;
 }
 
 // ── Enemy factories ───────────────────────────────────────────────────────────
@@ -543,30 +559,63 @@ function emitEnemySpawned(e) {
 function spawnEnemy() {
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
     const [cx, cz] = pickSpawnPos(15);
-    const dogChance = gameState.wave >= 3 ? Math.min(0.55, 0.12 + (gameState.wave - 3) * 0.12) : 0;
-    if (Math.random() < dogChance) {
-        // Dogs spawn individually
-        const dog = makeDog(cx, cz);
-        dog.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
-        gameState.enemies.push(dog);
-        emitEnemySpawned(dog);
-    } else {
-        // Skeletons spawn in groups of 2 or 3, clamped to arena bounds
-        const count = 2;
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
-            const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
-            const e = makeSkeleton(ex, ez);
-            e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
+
+    if (gameState.gameMode === 'campaign') {
+        // Campaign: wave 5-6 can spawn dogs, wave 3+ can spawn soldiers, always skeletons
+        const w = gameState.wave;
+        const hasDogs = w >= 5;
+        const hasSoldiers = w >= 3;
+        const dogChance = hasDogs ? 0.35 : 0;
+        const soldierChance = hasSoldiers ? 0.3 : 0;
+        const roll = Math.random();
+        if (roll < dogChance) {
+            const dog = makeDog(cx, cz);
+            dog.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
+            gameState.enemies.push(dog);
+            emitEnemySpawned(dog);
+        } else if (roll < dogChance + soldierChance) {
+            const e = makeSoldier(cx, cz);
+            e.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
             gameState.enemies.push(e);
             emitEnemySpawned(e);
+        } else {
+            const count = 2;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
+                const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
+                const e = makeSkeleton(ex, ez);
+                e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
+                gameState.enemies.push(e);
+                emitEnemySpawned(e);
+            }
+        }
+    } else {
+        // Endless: original logic
+        const dogChance = gameState.wave >= 3 ? Math.min(0.55, 0.12 + (gameState.wave - 3) * 0.12) : 0;
+        if (Math.random() < dogChance) {
+            const dog = makeDog(cx, cz);
+            dog.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
+            gameState.enemies.push(dog);
+            emitEnemySpawned(dog);
+        } else {
+            const count = 2;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const ex = Math.max(-(HALF - 2), Math.min(HALF - 2, cx + Math.cos(angle) * 2.0));
+                const ez = Math.max(-(HALF - 2), Math.min(HALF - 2, cz + Math.sin(angle) * 2.0));
+                const e = makeSkeleton(ex, ez);
+                e.ownerId = getClosestPlayerId(ex, ez) || Object.keys(players)[0] || null;
+                gameState.enemies.push(e);
+                emitEnemySpawned(e);
+            }
         }
     }
 }
 
 function spawnSkeletonGroup() {
-    // From wave 6+, spawns a single soldier individually.
+    // Endless wave 6+: spawns a single soldier.
+    // Campaign: not called (soldiers handled inside spawnEnemy).
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
     const [sx, sz] = pickSpawnPos(15);
     const e = makeSoldier(sx, sz);
@@ -604,9 +653,22 @@ function reviveAllPlayers() {
 }
 
 function finishWave() {
+    if (gameState.gameMode === 'campaign' && gameState.wave >= CAMPAIGN_MAX_WAVE) {
+        // Campaign complete — transition to next map after a short delay
+        gameState.waveState = 'WAIT';
+        gameState.waveTmr = 99999; // hold until transition fires
+        io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 4, gameMode: 'campaign' });
+        setTimeout(() => handleCampaignWaveComplete(), 3500);
+        return;
+    }
     gameState.waveState = 'WAIT';
     gameState.waveTmr = 2.5;
-    io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 2.5 });
+    io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 2.5, gameMode: gameState.gameMode });
+}
+
+function isBossWave() {
+    if (gameState.gameMode === 'campaign') return gameState.wave === CAMPAIGN_MAX_WAVE;
+    return gameState.wave % 5 === 0;
 }
 
 function tickWave(dt) {
@@ -619,16 +681,17 @@ function tickWave(dt) {
         gameState.wave += 1;
         reviveAllPlayers();
 
-        if (gameState.wave % 5 === 0) {
+        if (isBossWave()) {
             spawnBoss();
             gameState.waveState = 'ACTIVE';
         } else {
             gameState.enemiesToSpawn = Math.min(1 + gameState.wave, 12);
-            gameState.skeletonGroupsToSpawn = gameState.wave >= 6 ? 2 : 0;
+            // Endless: add soldiers from wave 6+. Campaign: soldiers mixed inside spawnEnemy.
+            gameState.skeletonGroupsToSpawn = (gameState.gameMode !== 'campaign' && gameState.wave >= 6) ? 2 : 0;
             gameState.spawnTmr = 0;
             gameState.waveState = 'SPAWNING';
         }
-        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr });
+        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode: gameState.gameMode });
 
     } else if (gameState.waveState === 'SPAWNING') {
         gameState.spawnTmr -= dt;
@@ -647,12 +710,30 @@ function tickWave(dt) {
         }
         if (gameState.enemiesToSpawn <= 0 && gameState.skeletonGroupsToSpawn <= 0) {
             gameState.waveState = 'ACTIVE';
-            io.emit('syncWave', { wave: gameState.wave, state: 'ACTIVE', tmr: 0 });
+            io.emit('syncWave', { wave: gameState.wave, state: 'ACTIVE', tmr: 0, gameMode: gameState.gameMode });
         }
 
     } else if (gameState.waveState === 'ACTIVE') {
         if (gameState.enemies.length === 0) finishWave();
     }
+}
+
+function handleCampaignWaveComplete() {
+    // Advance to next map after wave 7 in campaign mode
+    gameState.campaignMapIndex = (gameState.campaignMapIndex + 1) % CAMPAIGN_MAP_ORDER.length;
+    const nextMap = CAMPAIGN_MAP_ORDER[gameState.campaignMapIndex];
+    selectedMap = nextMap;
+    // Reset waves back to 0 so the next map starts at wave 1
+    gameState.wave = 0;
+    gameState.waveState = 'WAIT';
+    gameState.waveTmr = 4;
+    gameState.enemies = [];
+    gameState.weaponDrops = [];
+    gameState.healthPacks = [];
+    reviveAllPlayers();
+    loadMapJson(nextMap).catch(() => {});
+    io.emit('campaignNextMap', { map: nextMap, campaignMapIndex: gameState.campaignMapIndex });
+    io.emit('syncWave', { wave: 0, state: 'WAIT', tmr: 4, gameMode: 'campaign' });
 }
 
 // ── Enemy damage + kill ───────────────────────────────────────────────────────
@@ -679,6 +760,12 @@ function canEnemyMeleeTarget(enemy, target, ex, ey, ez) {
     return Math.abs(enemyY - targetY) <= maxVerticalDelta;
 }
 
+function spawnWeaponDrop(x, z, weaponId) {
+    const id = `drop${gameState.nextDropId++}`;
+    gameState.weaponDrops.push({ id, weaponId, x, z });
+    io.emit('weaponDropSpawned', { id, weaponId, x, z });
+}
+
 function killEnemy(enemy, killerId) {
     const idx = gameState.enemies.indexOf(enemy);
     if (idx === -1) return;
@@ -699,6 +786,15 @@ function killEnemy(enemy, killerId) {
 
     // Tell all clients the enemy is gone (visual death)
     io.emit('enemyKilled', { id: enemy.id, type: enemy.type, x: enemy.x, z: enemy.z });
+
+    // Weapon drop: last enemy of waves 1-7 drops the wave weapon (both modes)
+    const w = gameState.wave;
+    if (gameState.mode === 'COOP' && w >= 1 && w <= 7
+        && gameState.enemies.length === 0
+        && (gameState.waveState === 'ACTIVE' || (gameState.enemiesToSpawn <= 0 && gameState.skeletonGroupsToSpawn <= 0))
+        && CAMPAIGN_WAVE_WEAPON_DROP[w]) {
+        spawnWeaponDrop(enemy.x, enemy.z, CAMPAIGN_WAVE_WEAPON_DROP[w]);
+    }
 }
 
 // ── Health packs ──────────────────────────────────────────────────────────────
@@ -1044,6 +1140,20 @@ io.on('connection', (socket) => {
         if (!players[socket.id].playerName?.trim()) return;
         players[socket.id].isReady = true;
         io.emit('updateLobby', players);
+        // Check if all connected players with names are ready
+        const allPlayers = Object.values(players);
+        const namedPlayers = allPlayers.filter(p => p.playerName?.trim());
+        if (namedPlayers.length > 0 && namedPlayers.every(p => p.isReady)) {
+            io.emit('allPlayersReady');
+        }
+    });
+
+    socket.on('hostSelectMode', (data) => {
+        if (!players[socket.id]?.isHost) return;
+        const mode = data?.gameMode; // 'campaign' | 'endless'
+        if (mode === 'campaign' || mode === 'endless') {
+            io.emit('gameModeSelected', { gameMode: mode });
+        }
     });
 
     socket.on('playerNameUpdate', (data) => {
@@ -1078,8 +1188,14 @@ io.on('connection', (socket) => {
         if (!players[socket.id]?.isHost) return;
         const startingWave = (typeof data?.startingWave === 'number' && data.startingWave > 1)
             ? data.startingWave : 1;
+        const gameMode = (data?.gameMode === 'campaign') ? 'campaign' : 'endless';
         gameState.invincibility = !!data?.invincibility;
         currentMode = 'COOP';
+        // Campaign always starts on the first map in order
+        if (gameMode === 'campaign') {
+            gameState.campaignMapIndex = 0;
+            selectedMap = CAMPAIGN_MAP_ORDER[0];
+        }
         const playerCount = Object.keys(players).length;
         const effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
         Object.values(players).forEach(p => {
@@ -1093,14 +1209,14 @@ io.on('connection', (socket) => {
             p.pvpWeaponIdx = 0;
             p.hp = effectiveMaxHP;
         });
-        resetGameState('COOP', startingWave);
+        resetGameState('COOP', startingWave, gameMode, gameState.campaignMapIndex);
         // Pre-load map JSON so obstacle lookups during tickEnemies are synchronous.
         loadMapJson(selectedMap).catch(() => {});
         startGameLoop();
-        io.emit('matchStarted', { mode: 'COOP', map: selectedMap });
+        io.emit('matchStarted', { mode: 'COOP', map: selectedMap, gameMode });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
-        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr });
+        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode });
         broadcastPauseState();
     });
 
@@ -1164,6 +1280,15 @@ io.on('connection', (socket) => {
         io.emit('enemyPulled', { id: enemyId, x: enemy.x, y: enemy.y, z: enemy.z });
     });
 
+    // Weapon drop pickup
+    socket.on('pickupWeaponDrop', (data) => {
+        const idx = gameState.weaponDrops.findIndex(d => d.id === data.dropId);
+        if (idx === -1) return;
+        const drop = gameState.weaponDrops[idx];
+        gameState.weaponDrops.splice(idx, 1);
+        io.emit('weaponDropRemoved', { dropId: drop.id, playerId: socket.id, weaponId: drop.weaponId });
+    });
+
     // Health pack pickup — server validates directly (no host relay)
     socket.on('pickupHealthPack', (data) => {
         const packIdx = gameState.healthPacks.findIndex(p => p.id === data.packId);
@@ -1208,7 +1333,8 @@ io.on('connection', (socket) => {
             }])),
         });
 
-        if (shooter.pvpKills >= PVP_WIN_KILLS && shooter.pvpSwordKills >= PVP_SWORD_KILLS_TO_WIN) {
+        const onGrapple = WEAPON_ORDER[shooter.pvpWeaponIdx] === 'grapple';
+        if (onGrapple && weaponUsed === 'grapple') {
             currentMode = 'COOP';
             stopGameLoop();
             const pvpRankings = buildPvPRankings();

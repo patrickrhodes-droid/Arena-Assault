@@ -246,8 +246,8 @@ export function setupInput(actions) {
       if (event.code === "Digit3") actions.setWeapon("shotgun");
       if (event.code === "Digit4") actions.setWeapon("sniper");
       if (event.code === "Digit5") actions.setWeapon("sword");
-      if (event.code === "Digit6") actions.setWeapon("grapple");
-      if (event.code === "Digit7") actions.setWeapon("bazooka");
+      if (event.code === "Digit6") actions.setWeapon("bazooka");
+      if (event.code === "Digit7") actions.setWeapon("grapple");
       if (event.code === "KeyQ") {
         cycleWeapon();
         actions.updateHUD();
@@ -646,11 +646,6 @@ function handleFiring(actions) {
 
     const muzzlePosition = new THREE.Vector3();
     (usingFirstPersonView() ? game.visuals.weapon.fpMuzzle : game.visuals.weapon.tpMuzzle).getWorldPosition(muzzlePosition);
-    game.visuals.weapon.flashMesh.position.copy(muzzlePosition);
-    game.visuals.weapon.flashMesh.visible = true;
-    game.visuals.weapon.flashLight.position.copy(muzzlePosition);
-    game.visuals.weapon.flashLight.visible = true;
-    game.muzzleTmr = 0.10;
 
     const pelletCount = weapon.pellets || 1;
     const spread = game.isAiming ? weapon.spreadAim : weapon.spreadHip;
@@ -715,14 +710,6 @@ function updateWeaponVisuals() {
       wv.firstPersonGun.rotation.set(s * 0.5, s * -1, 1);
       const swordTp = wv.glbGroups?.sword?.tpGroup;
       if (swordTp) swordTp.rotation.set(s * -0.3, s * 2, 0.8);
-    }
-  }
-
-  if (game.muzzleTmr > 0) {
-    game.muzzleTmr -= game.dt;
-    if (game.muzzleTmr <= 0) {
-      game.visuals.weapon.flashMesh.visible = false;
-      game.visuals.weapon.flashLight.visible = false;
     }
   }
 

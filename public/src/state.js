@@ -97,7 +97,10 @@ export const game = {
   netSyncTmr: 0,
   frameIndex: 0, // increments each animate() call; used to decouple slow updates
   swordSwingProgress: 0,
-  muzzleTmr: 0,
+  weaponPickups: [],
+  collectedWeapons: new Set(['pistol']),
+  gameMode: 'endless',     // 'campaign' | 'endless' — set by server on match start
+  selectedGameMode: 'endless', // 'campaign' | 'endless' | 'pvp' — host's UI choice
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"
@@ -164,7 +167,6 @@ export function resetSessionState() {
   game.netSyncTmr = 0;
   game.reviveHoldTime = 0;
   game.swordSwingProgress = 0;
-  game.muzzleTmr = 0;
   game.knockbackX = 0;
   game.knockbackZ = 0;
   game.fpRecoilZ = 0;

@@ -990,11 +990,16 @@ export function updateWaves() {
 }
 
 
+function isCampaignBossWave() {
+  return game.gameMode === 'campaign' && game.wave === 7;
+}
+
 export function announceWave() {
   if (!game.dom?.waveAnnounce) return;
   const title = game.dom.waveAnnounce.querySelector(".wa-title");
   const subtitle = game.dom.waveAnnounce.querySelector(".wa-sub");
-  const bossWave = game.wave % 5 === 0;
+  const isCampaign = game.gameMode === 'campaign';
+  const bossWave = isCampaign ? isCampaignBossWave() : (game.wave % 5 === 0);
   const { bossCount, hpMultiplier } = bossWave ? getBossWaveConfig() : { bossCount: 0, hpMultiplier: 1 };
   title.textContent = `WAVE ${game.wave}`;
   if (bossWave) {
@@ -1007,6 +1012,10 @@ export function announceWave() {
     } else {
       subtitle.textContent = "BOSS INCOMING";
     }
+  } else if (isCampaign) {
+    if (game.wave >= 5) subtitle.textContent = "SKELETONS, SOLDIERS & DOGS INCOMING";
+    else if (game.wave >= 3) subtitle.textContent = "SKELETONS & SOLDIERS INCOMING";
+    else subtitle.textContent = "";
   } else {
     if (game.wave >= 6) {
       subtitle.textContent = "DOGS & SHOOTERS INCOMING";
@@ -1016,7 +1025,8 @@ export function announceWave() {
       subtitle.textContent = "";
     }
   }
-  subtitle.style.display = game.wave >= 3 || bossWave ? "block" : "none";
+  const showSub = bossWave || (isCampaign ? game.wave >= 3 : game.wave >= 3);
+  subtitle.style.display = showSub ? "block" : "none";
   game.dom.waveAnnounce.classList.remove("show");
   void game.dom.waveAnnounce.offsetWidth;
   game.dom.waveAnnounce.classList.add("show");

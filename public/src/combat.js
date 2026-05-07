@@ -4,6 +4,7 @@ import { B_SPD_E, DEFAULT_WEAPON, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./
 import { game } from "./state.js";
 import { bulletHitObstacle } from "./collision.js";
 import { applyWeaponModel } from "./scene.js";
+import { disposeObject3D } from "./utils.js";
 
 export function getWeapon() {
   return WEAPON_DEFS[game.currentWeapon];
@@ -29,6 +30,10 @@ export function setWeapon(id) {
   if (!WEAPON_DEFS[id] || id === game.currentWeapon) {
     return false;
   }
+  // In campaign mode, only switch to collected weapons
+  if (game.gameMode === 'campaign' && !game.collectedWeapons.has(id)) {
+    return false;
+  }
 
   game.weaponAmmo[game.currentWeapon] = game.ammo;
   game.currentWeapon = id;
@@ -41,8 +46,17 @@ export function setWeapon(id) {
 }
 
 export function cycleWeapon() {
-  const index = WEAPON_ORDER.indexOf(game.currentWeapon);
-  return setWeapon(WEAPON_ORDER[(index + 1) % WEAPON_ORDER.length]);
+  const available = game.gameMode === 'campaign'
+    ? WEAPON_ORDER.filter(id => game.collectedWeapons.has(id))
+    : WEAPON_ORDER;
+  const index = available.indexOf(game.currentWeapon);
+  return setWeapon(available[(index + 1) % available.length]);
+}
+
+export function collectWeapon(weaponId) {
+  if (!WEAPON_DEFS[weaponId]) return;
+  game.collectedWeapons.add(weaponId);
+  game.weaponAmmo[weaponId] = WEAPON_DEFS[weaponId].mag;
 }
 
 export function startReload() {
@@ -475,6 +489,131 @@ export function resetCombatState() {
   game.currentWeapon = DEFAULT_WEAPON;
   syncCurrentAmmo();
   applyWeaponModel();
+}
+
+// ── Weapon Drop Pickups ───────────────────────────────────────────────────────
+
+const WEAPON_DROP_MODELS = {
+  pistol: '/assets/models/Pistol.glb',
+  assault: '/assets/models/Assault%20Rifle.glb',
+  shotgun: '/assets/models/Shotgun.glb',
+  sniper: '/assets/models/Sniper%20Rifle.glb',
+  sword: '/assets/models/Katana.glb',
+  grapple: '/assets/models/Lure.glb',
+  bazooka: '/assets/models/Bazooka.glb',
+};
+
+const WEAPON_DROP_SCALES = {
+  pistol: 0.8, assault: 0.8, shotgun: 0.7, sniper: 0.7,
+  sword: 0.9, grapple: 0.8, bazooka: 0.7,
+};
+
+export function spawnWeaponPickupVisual(id, weaponId, position) {
+  const group = new THREE.Group();
+  group.position.set(position.x, 1.2, position.z);
+  game.scene.add(group);
+
+  // Glow ring
+  const ringGeo = new THREE.TorusGeometry(0.5, 0.04, 8, 24);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffdd33, transparent: true, opacity: 0.8 });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  group.add(ring);
+
+  // Fallback box if GLB not loaded yet
+  const fallbackGeo = new THREE.BoxGeometry(0.4, 0.15, 0.8);
+  const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, emissive: 0x555500, emissiveIntensity: 0.6 });
+  const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
+  group.add(fallback);
+
+  const pickup = {
+    id, weaponId, group,
+    pos: new THREE.Vector3(position.x, 0, position.z),
+    bobT: Math.random() * Math.PI * 2,
+    glbLoaded: false,
+    eHeld: false,
+    collected: false,
+  };
+  game.weaponPickups.push(pickup);
+
+  // Try to load GLB model
+  const modelPath = WEAPON_DROP_MODELS[weaponId];
+  if (modelPath) {
+    import('three/addons/loaders/GLTFLoader.js').then(({ GLTFLoader }) => {
+      new GLTFLoader().load(modelPath, (gltf) => {
+        if (pickup.collected) return;
+        const model = gltf.scene;
+        const scale = WEAPON_DROP_SCALES[weaponId] ?? 0.8;
+        model.scale.setScalar(scale);
+        model.traverse((n) => { if (n.isMesh) { n.castShadow = true; } });
+        group.remove(fallback);
+        fallbackGeo.dispose();
+        fallbackMat.dispose();
+        group.add(model);
+        pickup.glbLoaded = true;
+      }, undefined, () => { /* keep fallback on error */ });
+    });
+  }
+}
+
+export function updateWeaponPickups(updateHUD) {
+  const playerGroup = game.visuals.player.playerGroup;
+  const ePressed = game.keys['KeyE'];
+
+  for (let i = game.weaponPickups.length - 1; i >= 0; i--) {
+    const pickup = game.weaponPickups[i];
+    pickup.bobT += game.dt * 1.8;
+    pickup.group.position.y = 1.2 + Math.sin(pickup.bobT) * 0.18;
+    pickup.group.rotation.y += game.dt * 1.2;
+
+    if (!game.localPlayerIsAlive || game.localPlayerIsDowned) continue;
+
+    const dx = playerGroup.position.x - pickup.pos.x;
+    const dz = playerGroup.position.z - pickup.pos.z;
+    const distSq = dx * dx + dz * dz;
+
+    if (distSq < 4) {
+      // Show prompt overlay (simple approach: use existing HUD element)
+      if (!pickup._promptVisible) {
+        pickup._promptVisible = true;
+        showWeaponPickupPrompt(pickup.weaponId, true);
+      }
+      if (ePressed && !pickup._eWasDown) {
+        pickup._eWasDown = true;
+        // Emit to server to remove drop for everyone; on removal we collect locally
+        game.socket?.emit('pickupWeaponDrop', { dropId: pickup.id });
+      } else if (!ePressed) {
+        pickup._eWasDown = false;
+      }
+    } else {
+      if (pickup._promptVisible) {
+        pickup._promptVisible = false;
+        showWeaponPickupPrompt(pickup.weaponId, false);
+      }
+    }
+  }
+}
+
+let _pickupPromptEl = null;
+function showWeaponPickupPrompt(weaponId, show) {
+  if (!_pickupPromptEl) {
+    _pickupPromptEl = document.getElementById('weapon-pickup-prompt');
+  }
+  if (!_pickupPromptEl) return;
+  _pickupPromptEl.textContent = show ? `Press E to pick up ${weaponId.toUpperCase()}` : '';
+  _pickupPromptEl.style.display = show ? 'block' : 'none';
+}
+
+export function removeWeaponPickup(id) {
+  const idx = game.weaponPickups.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  const pickup = game.weaponPickups[idx];
+  pickup.collected = true;
+  pickup._promptVisible = false;
+  showWeaponPickupPrompt(pickup.weaponId, false);
+  game.scene.remove(pickup.group);
+  disposeObject3D(pickup.group);
+  game.weaponPickups.splice(idx, 1);
 }
 
 function distanceSqPointToSegment(point, start, end) {

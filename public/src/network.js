@@ -2,9 +2,9 @@ import * as THREE from "three";
 
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
-import { setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, triggerDestructible } from "./combat.js";
+import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, spawnWeaponPickupVisual, triggerDestructible } from "./combat.js";
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
-import { applyCharacterHead, createRemotePlayer, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
+import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 
 function recordDamageAngle(sourceX, sourceZ) {
@@ -147,6 +147,7 @@ export function initNetworking(actions) {
   game.socket.on("matchStarted", (payload) => {
     const mode = payload?.mode || "COOP";
     if (payload?.map) game.selectedMap = payload.map;
+    if (payload?.gameMode) game.gameMode = payload.gameMode;
     if (mode === "PVP") {
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
       actions.startPvPGame();
@@ -172,6 +173,7 @@ export function initNetworking(actions) {
     game.wave = data.wave;
     game.waveState = data.state;
     game.waveTmr = data.tmr;
+    if (data.gameMode) game.gameMode = data.gameMode;
     if (data.state === "SPAWNING" && prevState !== "SPAWNING") {
       game.waveSpawnedTotal = 0;
     }
@@ -610,5 +612,62 @@ export function initNetworking(actions) {
     if (!data?.propId || game.isHost) return; // host already handled it locally
     const origin = new THREE.Vector3(data.x ?? 0, data.y ?? 0, data.z ?? 0);
     triggerDestructible(data.propId, origin, null); // null processHit — visual only on non-host
+  });
+
+  // ── Weapon drop pickups ───────────────────────────────────────────────────
+  game.socket.on("weaponDropSpawned", (data) => {
+    spawnWeaponPickupVisual(data.id, data.weaponId, new THREE.Vector3(data.x, 0, data.z));
+  });
+
+  game.socket.on("weaponDropRemoved", (data) => {
+    removeWeaponPickup(data.dropId);
+    if (data.playerId === game.socket?.id) {
+      collectWeapon(data.weaponId);
+      actions.setWeapon(data.weaponId);
+      actions.updateHUD();
+    }
+  });
+
+  // ── Campaign map transition ──────────────────────────────────────────────
+  game.socket.on("campaignNextMap", async (data) => {
+    game.selectedMap = data.map;
+    // Show brief transition message
+    if (game.dom?.waveAnnounce) {
+      const title = game.dom.waveAnnounce.querySelector(".wa-title");
+      const sub = game.dom.waveAnnounce.querySelector(".wa-sub");
+      if (title) title.textContent = "MISSION COMPLETE";
+      if (sub) { sub.textContent = `DEPLOYING TO ${(data.map || "").toUpperCase()}`; sub.style.display = "block"; }
+      game.dom.waveAnnounce.classList.remove("show");
+      void game.dom.waveAnnounce.offsetWidth;
+      game.dom.waveAnnounce.classList.add("show");
+      window.setTimeout(() => game.dom.waveAnnounce.classList.remove("show"), 3000);
+    }
+    // Rebuild arena on new map after a delay matching transition announcement
+    window.setTimeout(async () => {
+      await rebuildArena(data.map);
+      // Reset collected weapons for new campaign map
+      game.collectedWeapons = new Set(['pistol']);
+      actions.setWeapon('pistol');
+      actions.updateHUD();
+    }, 3500);
+  });
+
+  // ── Mode selection from host ─────────────────────────────────────────────
+  game.socket.on("gameModeSelected", (data) => {
+    game.gameMode = data.gameMode || 'endless';
+    // If campaign, disable map cards UI
+    const mapCards = document.querySelectorAll('.map-card');
+    mapCards.forEach(c => { c.disabled = data.gameMode === 'campaign'; });
+    const campaignNote = document.getElementById('campaign-map-note');
+    if (campaignNote) campaignNote.style.display = data.gameMode === 'campaign' ? 'block' : 'none';
+  });
+
+  game.socket.on("allPlayersReady", () => {
+    // Only the host picks map/mode; non-hosts wait
+    const screenMap = document.getElementById('screen-map');
+    if (screenMap) {
+      document.getElementById('screen-player')?.classList.remove('active');
+      screenMap.classList.add('active');
+    }
   });
 }

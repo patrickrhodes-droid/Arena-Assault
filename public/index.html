@@ -23,7 +23,7 @@
   <div id="lobby-bg"></div>
   <div id="vignette"></div>
 
-  <!-- ── SCREEN 1: PLAYER ── -->
+  <!-- ── SCREEN 1: OPERATOR SELECT + READY ── -->
   <div id="screen-player" class="lobby-screen active">
     <div class="lobby-panel">
       <h1>ARENA ASSAULT</h1>
@@ -56,14 +56,53 @@
         </div>
       </div>
 
-      <button class="deploy-btn" id="btn-to-map" disabled>NEXT →</button>
+      <!-- Players waiting list -->
+      <div id="lobby-status" style="margin-top:12px">
+        <div id="player-list" style="font-size:13px;color:var(--muted)">Connecting...</div>
+      </div>
+
+      <!-- Password overlay for locked rooms -->
+      <div id="password-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+        <div style="color:var(--warn);letter-spacing:3px;font-size:18px">ROOM LOCKED</div>
+        <input type="password" id="password-entry" placeholder="Enter room password" style="padding:8px 12px;background:rgba(0,0,0,0.6);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:14px">
+        <button id="password-submit-btn" class="deploy-btn">SUBMIT</button>
+        <div id="password-error" style="display:none;color:var(--danger);font-size:12px">Wrong password</div>
+      </div>
+
+      <button class="deploy-btn" id="deploy-btn" disabled>READY UP</button>
+      <div id="ready-status" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:6px;text-align:center">WAITING FOR ALL PLAYERS...</div>
+
+      <!-- Unused but kept for DOM refs -->
+      <button id="btn-to-map" style="display:none"></button>
+      <button id="btn-to-player" style="display:none"></button>
+      <button id="btn-to-lobby" style="display:none"></button>
+      <button id="btn-to-map-from-lobby" style="display:none"></button>
+      <div id="map-chosen-label" style="display:none"></div>
     </div>
   </div>
 
-  <!-- ── SCREEN 2: MAP SELECT ── -->
+  <!-- ── SCREEN 2: MODE + MAP SELECT ── -->
   <div id="screen-map" class="lobby-screen">
-    <div class="lobby-panel">
-      <h2 class="screen-title">SELECT MAP</h2>
+    <div class="lobby-panel" style="max-width:700px">
+      <h2 class="screen-title">SELECT MODE &amp; MAP</h2>
+
+      <!-- Mode selection -->
+      <div id="mode-select" style="display:flex;gap:10px;margin-bottom:16px;justify-content:center">
+        <button type="button" class="mode-card selected" data-mode="endless">
+          <div class="mode-card-name">ENDLESS</div>
+          <div class="mode-card-sub">Survive infinite waves</div>
+        </button>
+        <button type="button" class="mode-card" data-mode="campaign">
+          <div class="mode-card-name">CAMPAIGN</div>
+          <div class="mode-card-sub">7 waves per map — auto progression</div>
+        </button>
+        <button type="button" class="mode-card" data-mode="pvp">
+          <div class="mode-card-name">GUN GAME</div>
+          <div class="mode-card-sub">PvP — reach grapple to win</div>
+        </button>
+      </div>
+
+      <div id="campaign-map-note" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-bottom:8px;text-align:center">CAMPAIGN: MAP ORDER IS AUTOMATIC (ARENA → DESERT → CITY → BLACKSITE)</div>
 
       <div id="map-grid">
         <button type="button" class="map-card selected" data-map="arena">
@@ -96,27 +135,7 @@
         </button>
       </div>
 
-      <div id="map-host-note" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:8px">WAITING FOR HOST TO SELECT MAP</div>
-
-      <div class="screen-nav">
-        <button class="deploy-btn secondary" id="btn-to-player">← BACK</button>
-        <button class="deploy-btn" id="btn-to-lobby">NEXT →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── SCREEN 3: LOBBY ── -->
-  <div id="screen-lobby" class="lobby-screen">
-    <div class="lobby-panel">
-      <h2 class="screen-title">LOBBY</h2>
-      <div id="map-chosen-label"></div>
-
-      <div id="lobby-status">
-        <div id="player-list">Connecting...</div>
-      </div>
-
-      <button class="deploy-btn" id="deploy-btn">READY UP</button>
-      <button class="deploy-btn pvp-btn" id="pvp-match-btn" hidden>PVP MATCH</button>
+      <div id="map-host-note" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:8px;text-align:center">WAITING FOR HOST TO SELECT</div>
 
       <div id="join-link-box" hidden>
         <div id="host-controls">
@@ -141,7 +160,12 @@
         <div id="copy-join-link-status" aria-live="polite"></div>
       </div>
 
-      <details class="controls-details">
+      <div style="display:flex;gap:10px;margin-top:14px;justify-content:center">
+        <button class="deploy-btn" id="start-mission-btn">START MISSION</button>
+        <button class="deploy-btn pvp-btn" id="pvp-match-btn" hidden>START GUN GAME</button>
+      </div>
+
+      <details class="controls-details" style="margin-top:12px">
         <summary>CONTROLS</summary>
         <div class="controls-box">
           <span class="key">W A S D</span><span>Move</span>
@@ -149,17 +173,22 @@
           <span class="key">SHIFT+W / double-tap W</span><span>Sprint</span>
           <span class="key">CTRL</span><span>Crouch (toggle)</span>
           <span class="key">W / S on ladder</span><span>Climb up / down</span>
-          <span class="key">1–6 / Q</span><span>Switch Weapon</span>
+          <span class="key">1–7 / Q</span><span>Switch Weapon</span>
           <span class="key">G</span><span>Fire / release grapple</span>
+          <span class="key">E</span><span>Pick up weapon / Revive (hold)</span>
           <span class="key">LMB</span><span>Fire / use weapon</span>
           <span class="key">RMB</span><span>Aim Down Sights</span>
           <span class="key">R</span><span>Reload</span>
-          <span class="key">E (HOLD)</span><span>Revive teammate</span>
           <span class="key">ESC</span><span>Pause</span>
         </div>
       </details>
+    </div>
+  </div>
 
-      <button class="deploy-btn secondary" id="btn-to-map-from-lobby">← BACK</button>
+  <!-- ── SCREEN 3: LOBBY (kept for DOM compat, hidden) ── -->
+  <div id="screen-lobby" class="lobby-screen" style="display:none">
+    <div class="lobby-panel">
+      <button class="deploy-btn" id="deploy-btn-lobby" style="display:none">READY UP</button>
     </div>
   </div>
 
@@ -235,6 +264,7 @@
     <div id="respawn-fade"></div>
 
     <div id="inventory-bar"></div>
+    <div id="weapon-pickup-prompt" style="display:none"></div>
 
     <!-- status pill row: sprint / crouch / grapple -->
     <div id="status-indicators">

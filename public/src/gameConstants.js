@@ -16,11 +16,12 @@ export const EYE_H = 2.15;
 export const LAND_SNAP = 0.18;
 export const EPS = 1e-6;
 
-export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "grapple", "bazooka"];
+export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "bazooka", "grapple"];
 
-export const PVP_WIN_KILLS = 6;
+// Gun game: 1 kill per weapon, last weapon is grapple, 1 grapple kill wins
+export const PVP_WIN_KILLS = 7; // 6 weapons × 1 kill + 1 grapple kill
 export const PVP_KILLS_PER_WEAPON = 1;
-export const PVP_SWORD_KILLS_TO_WIN = 2;
+export const PVP_SWORD_KILLS_TO_WIN = 1; // unused now
 export const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
 
 export const BOSS_ESCAPE_HEIGHT = 50 / 6;

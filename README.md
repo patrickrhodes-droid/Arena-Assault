@@ -1,6 +1,6 @@
 # Arena Assault
 
-Arena Assault is a browser-based multiplayer shooter built with `Three.js`, `Express`, and `Socket.IO`. Play co-op wave survival against enemy AI, or jump into a competitive **PvP Gun Game** with up to 4 players — all selectable from a clean three-screen lobby.
+Arena Assault is a browser-based multiplayer shooter built with `Three.js`, `Express`, and `Socket.IO`. Play co-op wave survival against enemy AI, or jump into a competitive **PvP Gun Game** with up to 4 players — all selectable from a clean two-screen lobby.
 
 ## How to run
 
@@ -60,11 +60,10 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 
 ## Lobby flow
 
-The lobby is split into three screens:
+The lobby uses two screens:
 
-1. **PLAYER** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Each has a distinct head colour and size. Iestyn, Patrick, and Will each use a custom GLB face model.
-2. **MAP** — The host chooses a map; all players see the selection update in real-time. Non-host players see the chosen map highlighted but cannot change it.
-3. **LOBBY** — See who is in the session, check controls, ready up, and start. Host sees **START MISSION** (co-op) and, when ≥ 2 players have characters, **PVP MATCH**.
+1. **OPERATOR** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Click **READY UP** when you're in. Once every player in the room has readied, the host moves to the next screen automatically.
+2. **MODE & MAP** — The host picks a game mode (Campaign / Endless / Gun Game) and, for non-campaign modes, selects a map. All players see the selection update in real-time. Host clicks **START MISSION** (co-op) or **START GUN GAME** (PvP).
 
 ## Maps
 
@@ -96,14 +95,14 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 | Double-tap W | Sprint (alt) |
 | Ctrl | Crouch (toggle) |
 | W / S on a ladder | Climb up / down |
-| 1 / 2 / 3 / 4 / 5 / 6 | Select weapon slot (co-op) |
+| 1 / 2 / 3 / 4 / 5 / 6 / 7 | Select weapon slot (co-op) |
 | Q | Cycle weapon (co-op) |
 | Mouse | Aim |
 | Left click | Fire / use equipped weapon |
 | Right click | Aim down sights |
 | R | Reload |
 | G | Fire / release grappling hook |
-| E (hold) | Revive downed teammate |
+| E | Pick up weapon drop / Hold to revive downed teammate |
 | Esc | Pause / fullscreen toggle |
 
 ## Weapons
@@ -111,19 +110,41 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 | Slot | Name | Damage | Notes |
 |---|---|---|---|
 | 1 | Service Pistol | 102 | Semi-auto, fast fire rate, always available |
-| 2 | Assault Rifle | 46 per bullet | Full-auto, 30-round mag |
+| 2 | Assault Rifle | 30 per bullet | Full-auto, 60-round mag |
 | 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
 | 4 | Sniper Rifle | 500 | Slow fire, heavy ADS zoom |
 | 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: 250 per swing |
-| 6 | Grapple Hook | 80 | Pulls you to walls or cover; if aimed at an enemy it deals 80 damage and yanks non-boss enemies to 8 units away |
-| 7 | Bazooka | 500 direct / 180 splash | 4-round mag, 6-unit splash radius, slow projectile |
+| 6 | Bazooka | 500 direct / 180 splash | 4-round mag, 6-unit splash radius, slow projectile |
+| 7 | Grapple Hook | 80 | Pulls you to walls or cover; if aimed at an enemy it deals 80 damage and yanks non-boss enemies close |
+
+In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 7 waves drops a weapon pickup over the last enemy's corpse — walk over it and press **E** to add it to your arsenal.
+
+## Game modes (Co-op)
+
+### Campaign
+
+- Fixed 7-wave structure per map, then auto-progression to the next map in order: **Arena → Dust Bowl → Downtown → Blacksite** (loops).
+- Enemy escalation each two waves:
+  - Waves 1–2: Skeletons only
+  - Waves 3–4: Skeletons + Soldiers
+  - Waves 5–6: Skeletons + Soldiers + Dogs
+  - Wave 7: Titan Brute boss
+- **Weapon drops** — the last enemy of each wave drops a specific weapon pickup (floats with a glow ring). Walk within 2 m and press **E** to collect.
+  - Wave 1 → Assault Rifle · Wave 2 → Shotgun · Wave 3 → Sniper · Wave 4 → Sword · Wave 5 → Grapple · Wave 6 → Bazooka · Wave 7 → Pistol
+- Map selection is disabled in Campaign (maps rotate automatically).
+
+### Endless
+
+- Waves continue indefinitely; boss spawns every 5th wave.
+- Dogs appear from wave 3, soldiers from wave 6.
+- All weapons are available from the start.
 
 ## PvP Gun Game mode
 
-- Starts with only the **pistol**; every **2 kills** automatically advances you to the next weapon.
-- Progression: Pistol → Assault Rifle → Shotgun → Sniper → Sword → Grapple.
+- Every **1 kill** automatically advances you to the next weapon.
+- Progression: Pistol → Assault Rifle → Shotgun → Sniper → Sword → Bazooka → **Grapple Hook**.
 - Manual weapon switching is **locked** — the game decides your loadout.
-- First player to reach **13 total kills** (final 5 must be sword kills) wins.
+- First player to reach the **Grapple Hook** and score **1 grapple kill** wins.
 - On death: the player falls over with an animation, the screen fades to black, then fades back in at the corner furthest from any living player.
 - Inventory bar is replaced by a compact kill counter and rank indicator next to the health bar.
 - A **"SHOTGUN UNLOCKED"** style popup appears whenever your weapon progresses.
@@ -132,17 +153,16 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 
 | Type | Appears | Behaviour |
 |---|---|---|
-| Skeleton | Wave 1+ | 1 HP, fast melee rusher. Wave 6 = 4 groups of 2 per wave (+1 group per wave, capped at 8). Animated GLB model. |
-| Dog | Wave 3+ | Fast melee rush. Chance increases each wave up to 55%. |
-| Soldier | Wave 6+ | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. Spawns in pairs alongside skeleton groups. |
-| Titan Brute (boss) | Every 5th wave | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward. Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. |
+| Skeleton | Wave 1+ | 1 HP, fast melee rusher. Animated GLB model. |
+| Dog | Wave 3+ (Endless) / Wave 5+ (Campaign) | Fast melee rush. Chance increases each wave up to 55% in Endless. |
+| Soldier | Wave 6+ (Endless) / Wave 3+ (Campaign) | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
+| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. |
 
 The boss attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2).
 
 ## Wave system
 
 - Waves start automatically after a short countdown.
-- Every 5th wave spawns one or more Titan Brute bosses.
 - Wave announcements show the current wave number and enemy type warnings.
 - An enemy ping alert pulses on the minimap after 60 seconds if enemies are still alive.
 - A progress bar and enemy count ("N LEFT") track wave completion in real time.
@@ -165,7 +185,7 @@ Heads use a layer-isolated point-light fill so they appear bright without emissi
 ## Multiplayer
 
 - The **server drives wave spawning, damage validation, and health packs**. Enemy AI (movement, pathfinding, attacks) runs on the host client and is synced to other clients at 20 Hz.
-- The first player to connect becomes the **lobby leader** and controls map selection and match start.
+- The first player to connect becomes the **lobby leader** and controls mode/map selection and match start.
 - **Revive system**: downed players can be revived by teammates holding `E` nearby (45 s timeout before forced spectate). Revived players return with full health.
 - **Nametags** appear above each remote player's head.
 - **Teammate status panel** shows each teammate's HP bar.
@@ -186,7 +206,8 @@ Heads use a layer-isolated point-light fill so they appear bright without emissi
 - **Score pop-ups** — "+100" floats up from the crosshair on each kill, gold for bosses.
 - **Damage direction indicator** — red arc at the screen edge points toward the source of incoming damage.
 - **Hit marker** — crosshair dot flashes white → orange when a shot connects with an enemy.
-- **Minimap** (360 × 360 px, bottom-left): full arena coverage, obstacles, colour-coded enemies, remote players, and a directional arrow for the local player.
+- **Minimap** (bottom-left): full arena coverage, obstacles, colour-coded enemies, remote players, and a directional arrow for the local player.
+- **Weapon pickup prompt** — "Press E to pick up ASSAULT" appears when near a weapon drop.
 - **Weapon unlock popup** pulses on screen whenever your PvP weapon advances.
 
 ## Host controls (server PC only)
@@ -242,20 +263,28 @@ Current default values:
 | Weapon | Mag | Fire rate | Reload | Damage | Extra notes |
 |---|---:|---:|---:|---:|---|
 | Pistol | 14 | 0.3 s | 1.2 s | 102 | Bullet speed 96 |
-| Assault rifle | 30 | 0.09 s | 1.6 s | 46 | Bullet speed 90 |
+| Assault rifle | 60 | 0.05 s | 1.6 s | 30 | Bullet speed 90 |
 | Shotgun | 8 | 0.72 s | 2.2 s | 72 per pellet | 8 pellets, falls to 8 min damage |
 | Sniper | 5 | 1.15 s | 2.6 s | 500 | Bullet speed 160 |
 | Sword | 1 | 0.4 s | 0.1 s | 500 | Range 4.5, arc 1.2 |
-| Grapple | — | 0.9 s | — | 80 | Pulls you to geometry; drags non-boss enemies |
 | Bazooka | 4 | 1.8 s | 3.2 s | 500 direct / 180 splash | 6-unit splash radius; bullet speed 55 |
+| Grapple | — | 0.3 s | — | 80 | Pulls you to geometry; drags non-boss enemies |
 
 ### PvP settings
 
 | What | Current value | Where to change it |
 |---|---:|---|
-| Kills needed to unlock next weapon | 2 | `public/src/config.js` and `server.js` -> `PVP_KILLS_PER_WEAPON` |
-| Total kills to win | 13 | `public/src/config.js` -> `PVP_WIN_KILLS`, `server.js` -> `PVP_WIN_KILLS` |
-| Sword kills required at the end | 5 | `public/src/config.js` -> `PVP_SWORD_KILLS_TO_WIN`, `server.js` -> `PVP_SWORD_KILLS_TO_WIN` |
+| Kills to advance weapon | 1 | `public/src/gameConstants.js` and `server.js` -> `PVP_KILLS_PER_WEAPON` |
+| Win condition | 1 grapple kill | `server.js` in `resolvePvPKill()` — `onGrapple && weaponUsed === 'grapple'` |
+| Weapon progression order | Pistol→Assault→Shotgun→Sniper→Sword→Bazooka→Grapple | `public/src/gameConstants.js` and `server.js` -> `WEAPON_ORDER` |
+
+### Campaign settings
+
+| What | Current value | Where to change it |
+|---|---:|---|
+| Max campaign waves per map | 7 | `server.js` -> `CAMPAIGN_MAX_WAVE` |
+| Campaign map order | arena→desert→city→blacksite | `server.js` -> `CAMPAIGN_MAP_ORDER` |
+| Wave weapon drops | wave 1=assault … wave 7=pistol | `server.js` -> `CAMPAIGN_WAVE_WEAPON_DROP` |
 
 ### Enemy stats
 
@@ -308,7 +337,7 @@ Boss tuning: `server.js` top-level constants and `public/src/config.js` -> `BOSS
 |---|---:|---|
 | Inter-wave wait time | 2.5 s | `server.js` in `finishWave()` |
 | Standard enemies per wave | `min(1 + wave, 12)` | `server.js` in `tickWave()` |
-| Max live enemies | 60 | `server.js` -> `MAX_LIVE_ENEMIES` |
+| Max live enemies | 35 | `server.js` -> `MAX_LIVE_ENEMIES` |
 
 ### Health pack and score values
 
@@ -326,7 +355,7 @@ Boss tuning: `server.js` top-level constants and `public/src/config.js` -> `BOSS
 ```text
 Arena Assault/
 |-- public/
-|   |-- index.html              # Three-screen lobby UI and game markup
+|   |-- index.html              # Two-screen lobby UI and game markup
 |   |-- styles/
 |   |   `-- main.css            # All UI styling
 |   |-- maps/                   # Editable JSON map files (source of truth for geometry)
@@ -344,13 +373,14 @@ Arena Assault/
 |   `-- src/
 |       |-- main.js             # App bootstrap and main game loop
 |       |-- config.js           # Constants, weapon defs, map defs, character defs
+|       |-- gameConstants.js    # Shared constants (also duplicated in server.js)
 |       |-- state.js            # Mutable runtime state shared across modules
 |       |-- utils.js            # Small reusable helpers
 |       |-- audio.js            # Web Audio sound effects
 |       |-- scene.js            # Three.js scene setup, map builder (JSON + legacy fallback)
 |       |-- mapLoader.js        # Fetches map JSON and builds Three.js scene from it
 |       |-- collision.js        # Collision helpers
-|       |-- combat.js           # Weapons, bullets, particles, health pack pickups
+|       |-- combat.js           # Weapons, bullets, particles, health packs, weapon pickups
 |       |-- enemies.js          # Enemy rendering, wave UI, boss logic, PvP sword hit
 |       |-- player.js           # Input, movement, camera, networking sync
 |       |-- network.js          # Socket.IO client events

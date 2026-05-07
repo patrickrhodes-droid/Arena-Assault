@@ -52,6 +52,9 @@ export function cacheDom() {
     lobbyList: document.getElementById("player-list"),
     playerName: document.getElementById("player-name"),
     deployBtn: document.getElementById("deploy-btn"),
+    startMissionBtn: document.getElementById("start-mission-btn"),
+    readyStatus: document.getElementById("ready-status"),
+    modeCards: document.querySelectorAll(".mode-card"),
     joinLinkBox: document.getElementById("join-link-box"),
     copyJoinLinkBtn: document.getElementById("copy-join-link-btn"),
     copyJoinLinkStatus: document.getElementById("copy-join-link-status"),
@@ -116,7 +119,7 @@ export function cacheDom() {
 }
 
 function showScreen(id) {
-  ["screen-player", "screen-map", "screen-lobby"].forEach((s) => {
+  ["screen-player", "screen-map"].forEach((s) => {
     document.getElementById(s)?.classList.toggle("active", s === id);
   });
 }
@@ -124,30 +127,54 @@ function showScreen(id) {
 export function bindMenuControls(actions) {
   const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage, copyJoinLink } = actions;
 
-  // ── Screen navigation ──
-  game.dom.btnToMap.addEventListener("click", () => {
-    if (!game.myCharacter || !game.dom.playerName.value.trim()) return;
-    // Improvement: If you are not the host, skip past the map selection.
-    if (!game.isHost) {
-      showScreen("screen-lobby");
+  // ── Ready Up button (screen-player) ──
+  game.dom.deployBtn.addEventListener("click", () => {
+    const name = game.dom.playerName.value.trim();
+    if (!name) {
+      game.dom.playerName.style.borderColor = "var(--danger)";
+      game.dom.playerName.placeholder = "Name required!";
       return;
     }
-    showScreen("screen-map");
-    // Sync host-selected map highlight.
-    syncMapCards(game.selectedMap);
-    const isHost = game.isHost;
-    game.dom.mapHostNote.style.display = isHost ? "none" : "block";
-    game.dom.mapCards.forEach((c) => { c.disabled = !isHost; });
+    if (!game.myCharacter) {
+      game.dom.characterSelect.style.borderColor = "var(--danger)";
+      return;
+    }
+    audioInit();
+    readyUp();
+    game.dom.deployBtn.disabled = true;
+    game.dom.deployBtn.style.opacity = "0.5";
+    game.dom.deployBtn.textContent = "READY ✓";
+    if (game.dom.readyStatus) game.dom.readyStatus.style.display = "block";
   });
 
-  game.dom.btnToPlayer.addEventListener("click", () => showScreen("screen-player"));
-  game.dom.btnToLobby.addEventListener("click", () => showScreen("screen-lobby"));
-  game.dom.btnToMapFromLobby.addEventListener("click", () => showScreen("screen-map"));
+  // ── Mode selection cards ──
+  if (game.dom.modeCards) {
+    game.dom.modeCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        if (!game.isHost) return;
+        const mode = card.dataset.mode;
+        if (!mode) return;
+        game.dom.modeCards.forEach(c => c.classList.toggle("selected", c === card));
+        game.selectedGameMode = mode;
+        const isCampaign = mode === 'campaign';
+        const isPvP = mode === 'pvp';
+        const campaignNote = document.getElementById('campaign-map-note');
+        if (campaignNote) campaignNote.style.display = isCampaign ? 'block' : 'none';
+        // Disable map selection in campaign
+        game.dom.mapCards.forEach(c => { c.disabled = isCampaign; });
+        // Toggle start buttons
+        if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP;
+        if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
+        game.socket?.emit("hostSelectMode", { gameMode: mode });
+      });
+    });
+  }
 
   // ── Map cards ──
   game.dom.mapCards.forEach((card) => {
     card.addEventListener("click", () => {
       if (!game.isHost) return;
+      if (game.selectedGameMode === 'campaign') return; // campaign auto-selects maps
       const mapId = card.dataset.map;
       if (!mapId) return;
       game.selectedMap = mapId;
@@ -157,30 +184,14 @@ export function bindMenuControls(actions) {
     });
   });
 
-  game.dom.deployBtn.addEventListener("click", () => {
-    const name = game.dom.playerName.value.trim();
-    if (!name) {
-      game.dom.playerName.style.borderColor = "var(--danger)";
-      game.dom.playerName.placeholder = "Name required!";
-      return;
-    }
-
-    if (!game.myCharacter) {
-      game.dom.characterSelect.style.borderColor = "var(--danger)";
-      return;
-    }
-
-    audioInit();
-
-    if (game.isHost && game.dom.deployBtn.textContent === "START MISSION") {
+  // ── Start Mission button (screen-map, host only) ──
+  if (game.dom.startMissionBtn) {
+    game.dom.startMissionBtn.addEventListener("click", () => {
+      if (!game.isHost) return;
+      audioInit();
       startMatch();
-      return;
-    }
-
-    readyUp();
-    game.dom.deployBtn.disabled = true;
-    game.dom.deployBtn.style.opacity = "0.5";
-  });
+    });
+  }
 
   game.dom.characterCards.forEach((card) => {
     card.addEventListener("click", () => {
@@ -196,11 +207,13 @@ export function bindMenuControls(actions) {
     });
   });
 
-  game.dom.pvpMatchBtn.addEventListener("click", () => {
-    if (!game.isHost) return;
-    audioInit();
-    game.socket?.emit("startPvPMatch");
-  });
+  if (game.dom.pvpMatchBtn) {
+    game.dom.pvpMatchBtn.addEventListener("click", () => {
+      if (!game.isHost) return;
+      audioInit();
+      game.socket?.emit("startPvPMatch");
+    });
+  }
 
   game.dom.resumeBtn.addEventListener("click", actions.resumeGame);
   game.dom.exitBtn.addEventListener("click", reloadPage);
@@ -363,25 +376,18 @@ export function updateLobbyUI(players) {
   const hasName = Boolean(localPlayer.playerName);
   game.dom.characterSelect.hidden = !hasName;
 
-  // NEXT button on screen 1 requires both name and character.
-  const canAdvance = hasName && Boolean(game.myCharacter);
-  game.dom.btnToMap.disabled = !canAdvance;
+  // Ready button: enabled only when name + character chosen, and not already ready
+  const canReady = hasName && Boolean(game.myCharacter) && !localPlayer.isReady;
+  if (!localPlayer.isReady) {
+    game.dom.deployBtn.disabled = !canReady;
+    game.dom.deployBtn.style.opacity = canReady ? "1" : "0.5";
+    game.dom.deployBtn.textContent = "READY UP";
+  }
 
-  game.dom.deployBtn.style.display = "block";
-  game.dom.deployBtn.disabled = false;
-  game.dom.deployBtn.style.opacity = "1";
-  const allReady = Object.values(players).every((player) => player.isReady);
-  game.dom.deployBtn.textContent = localPlayer.isHost && allReady ? "START MISSION" : "READY UP";
-
-  const showPvPBtn = localPlayer.isHost
-    && hasName
-    && Boolean(game.myCharacter)
-    && playerCount >= 2
-    && namedPlayersWithCharacter >= 2;
-  game.dom.pvpMatchBtn.hidden = !showPvPBtn;
-
-  // Keep the map chosen label in sync.
-  updateMapChosenLabel(game.selectedMap);
+  // Map/mode screen: show for host after all ready (auto-shown via allPlayersReady event),
+  // but keep start buttons visible only to host
+  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = !localPlayer.isHost;
+  if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true; // shown via mode card click
 
   renderJoinLinkControls();
 }
