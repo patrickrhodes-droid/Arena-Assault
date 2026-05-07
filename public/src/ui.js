@@ -53,7 +53,6 @@ export function cacheDom() {
     playerName: document.getElementById("player-name"),
     deployBtn: document.getElementById("deploy-btn"),
     startMissionBtn: document.getElementById("start-mission-btn"),
-    readyStatus: document.getElementById("ready-status"),
     modeCards: document.querySelectorAll(".mode-card"),
     joinLinkBox: document.getElementById("join-link-box"),
     copyJoinLinkBtn: document.getElementById("copy-join-link-btn"),
@@ -124,6 +123,32 @@ function showScreen(id) {
   });
 }
 
+function applyMapScreenRole() {
+  const hostSection = document.getElementById('host-map-section');
+  const guestSection = document.getElementById('guest-map-section');
+  if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
+  if (guestSection) guestSection.style.display = game.isHost ? 'none' : 'block';
+  // Host: show/hide note, ensure start buttons hidden until mode chosen
+  if (game.isHost) {
+    if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = true;
+    if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true;
+    // Re-apply mode selection if already chosen
+    if (game.selectedGameMode) applyModeSelection(game.selectedGameMode);
+  }
+  renderJoinLinkControls();
+}
+
+function applyModeSelection(mode) {
+  const isCampaign = mode === 'campaign';
+  const isPvP = mode === 'pvp';
+  const mapWrap = document.getElementById('map-grid-wrap');
+  // Campaign: hide map grid. Endless/PvP: show it.
+  if (mapWrap) mapWrap.style.display = isCampaign ? 'none' : 'block';
+  // Show the correct start button
+  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP;
+  if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
+}
+
 export function bindMenuControls(actions) {
   const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage, copyJoinLink } = actions;
 
@@ -144,7 +169,9 @@ export function bindMenuControls(actions) {
     game.dom.deployBtn.disabled = true;
     game.dom.deployBtn.style.opacity = "0.5";
     game.dom.deployBtn.textContent = "READY ✓";
-    if (game.dom.readyStatus) game.dom.readyStatus.style.display = "block";
+    // Navigate immediately — no server round-trip needed
+    showScreen("screen-map");
+    applyMapScreenRole();
   });
 
   // ── Mode selection cards ──
@@ -156,15 +183,7 @@ export function bindMenuControls(actions) {
         if (!mode) return;
         game.dom.modeCards.forEach(c => c.classList.toggle("selected", c === card));
         game.selectedGameMode = mode;
-        const isCampaign = mode === 'campaign';
-        const isPvP = mode === 'pvp';
-        const campaignNote = document.getElementById('campaign-map-note');
-        if (campaignNote) campaignNote.style.display = isCampaign ? 'block' : 'none';
-        // Disable map selection in campaign
-        game.dom.mapCards.forEach(c => { c.disabled = isCampaign; });
-        // Toggle start buttons
-        if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP;
-        if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
+        applyModeSelection(mode);
         game.socket?.emit("hostSelectMode", { gameMode: mode });
       });
     });
@@ -376,18 +395,13 @@ export function updateLobbyUI(players) {
   const hasName = Boolean(localPlayer.playerName);
   game.dom.characterSelect.hidden = !hasName;
 
-  // Ready button: enabled only when name + character chosen, and not already ready
-  const canReady = hasName && Boolean(game.myCharacter) && !localPlayer.isReady;
+  // Ready button: only update it if the player hasn't clicked ready yet
   if (!localPlayer.isReady) {
+    const canReady = hasName && Boolean(game.myCharacter);
     game.dom.deployBtn.disabled = !canReady;
     game.dom.deployBtn.style.opacity = canReady ? "1" : "0.5";
     game.dom.deployBtn.textContent = "READY UP";
   }
-
-  // Map/mode screen: show for host after all ready (auto-shown via allPlayersReady event),
-  // but keep start buttons visible only to host
-  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = !localPlayer.isHost;
-  if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true; // shown via mode card click
 
   renderJoinLinkControls();
 }

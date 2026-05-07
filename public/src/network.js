@@ -138,9 +138,13 @@ export function initNetworking(actions) {
     if (!data?.map) return;
     game.selectedMap = data.map;
     syncMapCards(data.map);
-    // Show non-host players what the host picked.
-    if (!game.isHost && game.dom.mapChosenLabel) {
-      game.dom.mapChosenLabel.textContent = `HOST CHOSE: ${(data.map).toUpperCase()}`;
+    // Update guest display
+    if (!game.isHost) {
+      const hostDisplay = document.getElementById('host-selection-display');
+      if (hostDisplay) {
+        const modeLabel = { endless: 'ENDLESS', campaign: 'CAMPAIGN', pvp: 'GUN GAME' }[game.selectedGameMode] || '';
+        hostDisplay.textContent = `${modeLabel ? `MODE: ${modeLabel}  ·  ` : ''}MAP: ${data.map.toUpperCase()}`;
+      }
     }
   });
 
@@ -652,22 +656,34 @@ export function initNetworking(actions) {
     }, 3500);
   });
 
-  // ── Mode selection from host ─────────────────────────────────────────────
+  // ── Mode selection from host (non-host clients receive this) ─────────────
   game.socket.on("gameModeSelected", (data) => {
     game.gameMode = data.gameMode || 'endless';
-    // If campaign, disable map cards UI
-    const mapCards = document.querySelectorAll('.map-card');
-    mapCards.forEach(c => { c.disabled = data.gameMode === 'campaign'; });
-    const campaignNote = document.getElementById('campaign-map-note');
-    if (campaignNote) campaignNote.style.display = data.gameMode === 'campaign' ? 'block' : 'none';
+    game.selectedGameMode = data.gameMode || 'endless';
+    // Update guest display
+    const hostDisplay = document.getElementById('host-selection-display');
+    if (hostDisplay) {
+      const modeLabel = { endless: 'ENDLESS', campaign: 'CAMPAIGN', pvp: 'GUN GAME' }[data.gameMode] || data.gameMode;
+      hostDisplay.textContent = `MODE: ${modeLabel}`;
+    }
+    // For host: apply the mode selection visually
+    if (game.isHost) {
+      const { applyModeSelectionFromNetwork } = actions;
+      if (typeof applyModeSelectionFromNetwork === 'function') applyModeSelectionFromNetwork(data.gameMode);
+    }
   });
 
   game.socket.on("allPlayersReady", () => {
-    // Only the host picks map/mode; non-hosts wait
-    const screenMap = document.getElementById('screen-map');
-    if (screenMap) {
-      document.getElementById('screen-player')?.classList.remove('active');
-      screenMap.classList.add('active');
+    // Backup navigation: if somehow still on screen-player, switch to screen-map
+    if (document.getElementById('screen-player')?.classList.contains('active')) {
+      document.getElementById('screen-player').classList.remove('active');
+      const screenMap = document.getElementById('screen-map');
+      if (screenMap) screenMap.classList.add('active');
+      // Apply host/guest layout
+      const hostSection = document.getElementById('host-map-section');
+      const guestSection = document.getElementById('guest-map-section');
+      if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
+      if (guestSection) guestSection.style.display = game.isHost ? 'none' : 'block';
     }
   });
 }
