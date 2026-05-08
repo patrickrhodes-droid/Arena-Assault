@@ -64,6 +64,15 @@ export function initNetworking(actions) {
     }
   });
 
+  game.socket.on("matchStartError", (data) => {
+    const el = document.getElementById("match-start-error");
+    if (!el) return;
+    el.textContent = data?.reason || "Could not start match.";
+    el.style.display = "block";
+    clearTimeout(el._hideTimeout);
+    el._hideTimeout = setTimeout(() => { el.style.display = "none"; }, 5000);
+  });
+
   game.socket.on("passwordResult", (data) => {
     if (data?.ok) {
       const overlay = game.dom?.passwordOverlay;
@@ -142,7 +151,7 @@ export function initNetworking(actions) {
     if (!game.isHost) {
       const hostDisplay = document.getElementById('host-selection-display');
       if (hostDisplay) {
-        const modeLabel = { endless: 'ENDLESS', campaign: 'CAMPAIGN', pvp: 'GUN GAME' }[game.selectedGameMode] || '';
+        const modeLabel = { endless: 'ENDLESS', campaign: 'CAMPAIGN', pvp: 'GUN GAME', ffa: 'FREE FOR ALL' }[game.selectedGameMode] || '';
         hostDisplay.textContent = `${modeLabel ? `MODE: ${modeLabel}  ·  ` : ''}MAP: ${data.map.toUpperCase()}`;
       }
     }
@@ -154,7 +163,14 @@ export function initNetworking(actions) {
     if (payload?.gameMode) game.gameMode = payload.gameMode;
     if (typeof payload?.startingWave === 'number') game.startingWave = payload.startingWave;
 
-    if (mode === "PVP") {
+    if (mode === "FFA") {
+      game.collectedWeapons = new Set(WEAPON_ORDER);
+      game.pvpSpawnAssignments = payload?.spawnAssignments || {};
+      game.ffaDuration = payload?.ffaDuration || 300;
+      game.ffaTimeLeft = game.ffaDuration;
+      game.ffaKills = 0;
+      actions.startFFAGame();
+    } else if (mode === "PVP") {
       // PvP gun game: all weapons available (game controls switching by kill count)
       game.collectedWeapons = new Set(WEAPON_ORDER);
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
@@ -253,6 +269,15 @@ export function initNetworking(actions) {
       return;
     }
 
+    // Snap boss visual position to the authoritative attack origin so the
+    // attack never appears to come from an "invisible" lagged position.
+    if (enemyType === "boss" && enemy && typeof data.ex === "number") {
+      enemy.group.position.set(data.ex, data.ey ?? enemy.group.position.y, data.ez ?? enemy.group.position.z);
+      enemy.serverX = data.ex;
+      enemy.serverY = data.ey ?? enemy.group.position.y;
+      enemy.serverZ = data.ez ?? enemy.group.position.z;
+    }
+
     const playerPos = game.visuals.player.playerGroup.position;
     const dx = enemyX - playerPos.x;
     const dz = enemyZ - playerPos.z;
@@ -277,6 +302,20 @@ export function initNetworking(actions) {
       actions.playerDiedLocal();
     }
     actions.updateHUD();
+  });
+
+  // Received when another player lands a grapple hook on us — pull toward shooter.
+  game.socket.on("pvpGrapplePull", (data) => {
+    if (!game.localPlayerIsAlive || game.localPlayerIsDowned) return;
+    const pp = game.visuals.player.playerGroup.position;
+    const dx = data.shooterX - pp.x;
+    const dy = data.shooterY - pp.y;
+    const dz = data.shooterZ - pp.z;
+    const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    // Apply a strong knockback impulse toward the shooter (negative = away from player).
+    game.knockbackX = (dx / len) * 260;
+    game.knockbackZ = (dz / len) * 260;
+    if (dy > 0) game.playerVelY = (dy / len) * 30;
   });
 
   game.socket.on("playerDamaged", (data) => {
@@ -445,9 +484,9 @@ export function initNetworking(actions) {
   game.socket.on("playerDied", (data) => {
     const remote = game.remotePlayers[data.playerId];
     if (remote) {
-      const isPvP = data.mode === "PVP";
+      const isCompetitive = data.mode === "PVP" || data.mode === "FFA";
       remote.isAlive = false;
-      remote.isDowned = !isPvP;
+      remote.isDowned = !isCompetitive;
       remote.isSpectating = false;
       remote.hp = 0;
       remote.stats = data.stats;
@@ -457,7 +496,7 @@ export function initNetworking(actions) {
       remote.bossKills = data.stats?.bossKills || 0;
       remote.totalKills = data.stats?.totalKills || data.stats?.kills || 0;
       remote.wave = data.stats?.wave || remote.wave;
-      if (!isPvP) {
+      if (!isCompetitive) {
         showTeammateDownAlert(remote.playerName);
       }
     }
@@ -491,6 +530,37 @@ export function initNetworking(actions) {
 
   game.socket.on("pvpMatchOver", (data) => {
     actions.pvpMatchOver(data);
+  });
+
+  game.socket.on("ffaKill", (data) => {
+    if (!data) return;
+    Object.entries(data.standings || {}).forEach(([id, s]) => {
+      if (id === game.socket?.id) {
+        game.ffaKills = s.ffaKills;
+      } else if (game.remotePlayers[id]) {
+        game.remotePlayers[id].ffaKills = s.ffaKills;
+      }
+    });
+    actions.updateHUD();
+    const victim = game.remotePlayers[data.victimId];
+    const shooterName = data.shooterId === game.socket?.id
+      ? "You"
+      : (game.remotePlayers[data.shooterId]?.playerName || "?");
+    const victimName = data.victimId === game.socket?.id
+      ? "You"
+      : (victim?.playerName || "?");
+    actions.pushKillFeed?.(`${shooterName} eliminated ${victimName}`);
+  });
+
+  game.socket.on("ffaTimeUpdate", (data) => {
+    if (typeof data?.timeLeft === "number") {
+      game.ffaTimeLeft = data.timeLeft;
+      actions.updateHUD();
+    }
+  });
+
+  game.socket.on("ffaMatchOver", (data) => {
+    actions.ffaMatchOver(data);
   });
 
   game.socket.on("playerSpectating", (data) => {

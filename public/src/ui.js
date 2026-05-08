@@ -79,6 +79,15 @@ export function cacheDom() {
     bossImperviousAlert: document.getElementById("boss-impervious-alert"),
     inventoryBar: document.getElementById("inventory-bar"),
     pvpMatchBtn: document.getElementById("pvp-match-btn"),
+    ffaMatchBtn: document.getElementById("ffa-match-btn"),
+    ffaTimeWrap: document.getElementById("ffa-time-wrap"),
+    ffaDurationSelect: document.getElementById("ffa-duration-select"),
+    ffaScore: document.getElementById("ffa-score"),
+    ffaKillsEl: document.getElementById("ffa-kills"),
+    ffaRankEl: document.getElementById("ffa-rank"),
+    ffaHud: document.getElementById("ffa-hud"),
+    ffaPosition: document.getElementById("ffa-position"),
+    ffaTimer: document.getElementById("ffa-timer"),
     characterSelect: document.getElementById("character-select"),
     characterCards: document.querySelectorAll(".character-card"),
     pvpScore: document.getElementById("pvp-score"),
@@ -132,12 +141,15 @@ function applyMapScreenRole() {
     // Always keep start buttons hidden until a mode card is explicitly clicked
     if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = true;
     if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true;
+    if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = true;
     // Re-sync visual state if a mode was already selected (e.g. navigating back)
     if (game.selectedGameMode) applyModeSelection(game.selectedGameMode);
-    // Gun Game only available with 2+ players
+    // PvP modes only available with 2+ players
     const solo = Object.keys(game.remotePlayers).length === 0;
     const pvpCard = document.querySelector('.mode-card[data-mode="pvp"]');
     if (pvpCard) pvpCard.hidden = solo;
+    const ffaCard = document.querySelector('.mode-card[data-mode="ffa"]');
+    if (ffaCard) ffaCard.hidden = solo;
   }
   renderJoinLinkControls();
 }
@@ -145,12 +157,13 @@ function applyMapScreenRole() {
 function applyModeSelection(mode) {
   const isCampaign = mode === 'campaign';
   const isPvP = mode === 'pvp';
+  const isFFA = mode === 'ffa';
   const mapWrap = document.getElementById('map-grid-wrap');
-  // Campaign: hide map grid. Endless/PvP: show it.
   if (mapWrap) mapWrap.style.display = isCampaign ? 'none' : 'block';
-  // Show the correct start button
-  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP;
+  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP || isFFA;
   if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
+  if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = !isFFA;
+  if (game.dom.ffaTimeWrap) game.dom.ffaTimeWrap.style.display = isFFA ? 'block' : 'none';
 }
 
 export function bindMenuControls(actions) {
@@ -235,6 +248,15 @@ export function bindMenuControls(actions) {
       if (!game.isHost) return;
       audioInit();
       game.socket?.emit("startPvPMatch");
+    });
+  }
+
+  if (game.dom.ffaMatchBtn) {
+    game.dom.ffaMatchBtn.addEventListener("click", () => {
+      if (!game.isHost) return;
+      audioInit();
+      const duration = parseInt(game.dom.ffaDurationSelect?.value || "300", 10);
+      game.socket?.emit("startFFAMatch", { duration });
     });
   }
 
@@ -407,9 +429,11 @@ export function updateLobbyUI(players) {
     game.dom.deployBtn.textContent = "READY UP";
   }
 
-  // Hide Gun Game mode card when only 1 player in lobby
+  // Hide PvP mode cards when only 1 player in lobby
   const pvpCard = document.querySelector('.mode-card[data-mode="pvp"]');
   if (pvpCard) pvpCard.hidden = playerCount < 2;
+  const ffaCard2 = document.querySelector('.mode-card[data-mode="ffa"]');
+  if (ffaCard2) ffaCard2.hidden = playerCount < 2;
 
   renderJoinLinkControls();
 }
@@ -441,8 +465,12 @@ export function updateHUD() {
   game.dom.hpText.textContent = Math.ceil(game.hp);
 
   const isPvP = game.mode === "PVP";
+  const isFFA = game.mode === "FFA";
+  const isCompetitive = isPvP || isFFA;
   game.dom.pvpScore.hidden = !isPvP;
-  game.dom.waveDisplay.style.display = isPvP ? "none" : "";
+  if (game.dom.ffaScore) game.dom.ffaScore.hidden = !isFFA;
+  if (game.dom.ffaHud) game.dom.ffaHud.hidden = !isFFA;
+  game.dom.waveDisplay.style.display = isCompetitive ? "none" : "";
   game.dom.inventoryBar.style.display = isPvP ? "none" : "";
   if (isPvP) {
     game.dom.pvpKills.textContent = game.pvpKills;
@@ -451,6 +479,21 @@ export function updateHUD() {
     const remoteKillCounts = Object.values(game.remotePlayers).map((r) => r.pvpKills ?? 0);
     const rank = 1 + remoteKillCounts.filter((k) => k > selfKills).length;
     game.dom.pvpRank.textContent = `#${rank}`;
+  }
+  if (isFFA) {
+    const selfKills = game.ffaKills || 0;
+    if (game.dom.ffaKillsEl) game.dom.ffaKillsEl.textContent = selfKills;
+    const remoteKillCounts = Object.values(game.remotePlayers).map((r) => r.ffaKills ?? 0);
+    const rank = 1 + remoteKillCounts.filter((k) => k > selfKills).length;
+    const rankText = `#${rank}`;
+    if (game.dom.ffaRankEl) game.dom.ffaRankEl.textContent = rankText;
+    if (game.dom.ffaPosition) game.dom.ffaPosition.textContent = rankText;
+    if (game.dom.ffaTimer) {
+      const t = Math.max(0, Math.ceil(game.ffaTimeLeft || 0));
+      const mins = Math.floor(t / 60);
+      const secs = String(t % 60).padStart(2, "0");
+      game.dom.ffaTimer.textContent = `${mins}:${secs}`;
+    }
   }
   game.dom.ammoCurrent.textContent = game.localPlayerIsAlive
     ? (game.isReloading ? "--" : game.ammo)
@@ -871,6 +914,37 @@ export function showPvPRankings(rankings, winnerId) {
   `;
   game.dom.gameOverTitle.textContent = winnerId === game.socket?.id ? "VICTORY" : "MATCH COMPLETE";
   game.dom.gameOverSubtitle.textContent = "Gun-game standings";
+  game.dom.rankingsSection.hidden = false;
+  game.dom.statsGrid.style.display = "none";
+}
+
+export function showFFARankings(rankings, winnerId) {
+  const rows = rankings.map((player, index) => {
+    const isYou = player.playerId === game.socket?.id;
+    const isWinner = player.playerId === winnerId;
+    return `
+      <tr class="${isYou ? "is-you" : ""} ${isWinner ? "is-winner" : ""}">
+        <td class="rankings-rank">${index + 1}</td>
+        <td class="rankings-name ${isYou ? "is-you" : ""}">${player.playerName || player.playerId}${isYou ? " (YOU)" : ""}${isWinner ? " <span style='color:#ffcc33'>WINNER</span>" : ""}</td>
+        <td class="center">${player.kills || 0}</td>
+      </tr>
+    `;
+  }).join("");
+
+  game.dom.rankingsContent.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>RANK</th>
+          <th>PLAYER</th>
+          <th class="center">KILLS</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  game.dom.gameOverTitle.textContent = winnerId === game.socket?.id ? "VICTORY" : "MATCH COMPLETE";
+  game.dom.gameOverSubtitle.textContent = "Free-for-all standings";
   game.dom.rankingsSection.hidden = false;
   game.dom.statsGrid.style.display = "none";
 }

@@ -344,6 +344,8 @@ function updateEnemyDetour(enemy, target, obstacles, movedDistSq, chaseRange, dt
 let players = {};
 let currentMode = 'COOP';
 let selectedMap = 'arena';
+let ffaTimerInterval = null;
+let ffaTimeLeft = 0;
 let roomPassword = null; // null = open room, string = locked room
 
 // Temporarily stores state for players who disconnected mid-game so they can
@@ -1019,6 +1021,36 @@ function stopGameLoop() {
     }
 }
 
+// ── FFA helpers ────────────────────────────────────────────────────────────────
+
+function stopFFATimer() {
+    if (ffaTimerInterval) {
+        clearInterval(ffaTimerInterval);
+        ffaTimerInterval = null;
+    }
+    ffaTimeLeft = 0;
+}
+
+function buildFFARankings() {
+    return Object.values(players)
+        .sort((a, b) => (b.ffaKills || 0) - (a.ffaKills || 0))
+        .map((p, idx) => ({
+            rank: idx + 1,
+            playerId: p.playerId,
+            playerName: p.playerName || `Player ${p.playerId.slice(0, 6)}`,
+            character: p.character || null,
+            kills: p.ffaKills || 0,
+        }));
+}
+
+function endFFAMatch() {
+    stopFFATimer();
+    currentMode = 'COOP';
+    const rankings = buildFFARankings();
+    recordPvpGame(rankings);
+    io.emit('ffaMatchOver', { winnerId: rankings[0]?.playerId || null, rankings });
+}
+
 // ── PvP helpers ───────────────────────────────────────────────────────────────
 
 function computeWeaponForKills(kills) {
@@ -1045,6 +1077,17 @@ function buildPvPRankings() {
 
 function broadcastRoomInfo() {
     io.emit('roomInfo', { locked: roomPassword !== null });
+}
+
+// Guarantee exactly one player has isHost=true. Called after any structural change.
+function ensureHost() {
+    const all = Object.values(players);
+    if (all.length === 0) return;
+    const hasHost = all.some(p => p.isHost);
+    if (!hasHost) {
+        all[0].isHost = true;
+        io.emit('newHost', all[0].playerId);
+    }
 }
 
 // ── Socket connections ────────────────────────────────────────────────────────
@@ -1084,15 +1127,23 @@ io.on('connection', (socket) => {
             recentlyDisconnected[token] = { ...leaving, savedAt: Date.now() };
             setTimeout(() => { delete recentlyDisconnected[token]; }, 60000);
         }
+        const wasHost = players[socket.id]?.isHost ?? false;
         delete players[socket.id];
         if (Object.keys(players).length === 0) {
             stopGameLoop();
+            stopFFATimer();
         } else {
-            const newHostId = Object.keys(players)[0];
-            players[newHostId].isHost = true;
-            io.emit('newHost', newHostId);
-            reassignEnemyOwnership(); // hand off any enemies owned by the leaver
+            // If the leaver was host (or no one else is host), promote the first remaining player.
+            const hasHost = Object.values(players).some(p => p.isHost);
+            if (wasHost || !hasHost) {
+                const newHostId = Object.keys(players)[0];
+                Object.values(players).forEach(p => { p.isHost = false; });
+                players[newHostId].isHost = true;
+                io.emit('newHost', newHostId);
+            }
+            reassignEnemyOwnership();
         }
+        ensureHost();
         io.emit('updateLobby', players);
         io.emit('playerDisconnected', socket.id);
         broadcastPauseState();
@@ -1214,9 +1265,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startPvPMatch', () => {
-        if (!players[socket.id]?.isHost) return;
+        if (!players[socket.id]?.isHost) {
+            socket.emit('matchStartError', { reason: 'Only the host can start the match.' });
+            return;
+        }
         const eligible = Object.values(players).filter(p => p.playerName && p.character);
-        if (eligible.length < 2) return;
+        if (eligible.length < 2) {
+            socket.emit('matchStartError', { reason: `Need at least 2 players with name and character selected (${eligible.length}/2 ready).` });
+            return;
+        }
 
         currentMode = 'PVP';
         const sortedIds = Object.keys(players).sort();
@@ -1243,6 +1300,52 @@ io.on('connection', (socket) => {
         broadcastPauseState();
     });
 
+    socket.on('startFFAMatch', (data) => {
+        if (!players[socket.id]?.isHost) {
+            socket.emit('matchStartError', { reason: 'Only the host can start the match.' });
+            return;
+        }
+        if (Object.keys(players).length < 2) {
+            socket.emit('matchStartError', { reason: 'Need at least 2 players to start Free For All.' });
+            return;
+        }
+
+        const duration = (typeof data?.duration === 'number' && data.duration > 0) ? Math.min(data.duration, 1800) : 300;
+
+        stopFFATimer();
+        currentMode = 'FFA';
+        const sortedIds = Object.keys(players).sort();
+        const spawnAssignments = {};
+        sortedIds.forEach((id, idx) => { spawnAssignments[id] = idx % PVP_CORNERS.length; });
+
+        Object.values(players).forEach(p => {
+            p.isAlive = true;
+            p.isDowned = false;
+            p.isSpectating = false;
+            p.isPaused = false;
+            p.mode = 'FFA';
+            p.pvpKills = 0;
+            p.pvpSwordKills = 0;
+            p.pvpWeaponIdx = 0;
+            p.ffaKills = 0;
+            p.weapon = 'pistol';
+            p.hp = P_MAX_HP;
+        });
+        gameState.invincibility = false;
+        resetGameState('FFA', 1);
+        loadMapJson(selectedMap).catch(() => {});
+        io.emit('matchStarted', { mode: 'FFA', map: selectedMap, spawnAssignments, ffaDuration: duration });
+        io.emit('invincibilityChanged', { enabled: false });
+        broadcastPauseState();
+
+        ffaTimeLeft = duration;
+        ffaTimerInterval = setInterval(() => {
+            ffaTimeLeft -= 1;
+            io.emit('ffaTimeUpdate', { timeLeft: ffaTimeLeft });
+            if (ffaTimeLeft <= 0) endFFAMatch();
+        }, 1000);
+    });
+
     // Client reports their bullet hit an enemy — server is now authoritative
     socket.on('bulletHit', (data) => {
         if (gameState.mode !== 'COOP') return;
@@ -1254,6 +1357,7 @@ io.on('connection', (socket) => {
         const enemy = gameState.enemies.find(e => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
         if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple' && weapon !== 'bazooka') return;
+        if (enemy.type === 'boss' && weapon === 'sword') damage = Math.round(damage * 1.5);
         enemy.hp = Math.max(0, enemy.hp - damage);
         io.emit('enemyDamaged', { id: enemyId, damage });
         if (enemy.hp <= 0) killEnemy(enemy, socket.id);
@@ -1292,9 +1396,32 @@ io.on('connection', (socket) => {
         io.emit('healthPackRemoved', { packId: data.packId, playerId: socket.id });
     });
 
+    // PvP grapple pull: shooter hooked a player — deal damage and pull them toward shooter
+    socket.on('pvpGrapplePull', (data) => {
+        if (currentMode !== 'PVP' && currentMode !== 'FFA') return;
+        if (!data?.targetId) return;
+        const target = players[data.targetId];
+        if (!target || !target.isAlive || target.isDowned) return;
+        const targetSocket = io.sockets.sockets.get(data.targetId);
+        if (!targetSocket) return;
+        const damage = Math.min(typeof data.damage === 'number' ? data.damage : 80, 500);
+        targetSocket.emit('playerDamaged', {
+            targetId: data.targetId,
+            damage,
+            shooterId: socket.id,
+            weapon: 'grapple',
+        });
+        targetSocket.emit('pvpGrapplePull', {
+            shooterX: typeof data.shooterX === 'number' ? data.shooterX : 0,
+            shooterY: typeof data.shooterY === 'number' ? data.shooterY : 0,
+            shooterZ: typeof data.shooterZ === 'number' ? data.shooterZ : 0,
+        });
+    });
+
     // PvP: shooter reports a hit; server validates and forwards damage + resolves kills
     socket.on('pvpDamage', (data) => {
-        if (currentMode !== 'PVP' || !data?.targetId) return;
+        if (currentMode !== 'PVP' && currentMode !== 'FFA') return;
+        if (!data?.targetId) return;
         const targetSocket = io.sockets.sockets.get(data.targetId);
         if (targetSocket) {
             targetSocket.emit('playerDamaged', {
@@ -1309,6 +1436,21 @@ io.on('connection', (socket) => {
     function resolvePvPKill(shooterId, victimId, weaponUsed) {
         const shooter = players[shooterId];
         if (!shooter) return;
+
+        // FFA: just track kills, no weapon progression
+        if (currentMode === 'FFA') {
+            shooter.ffaKills = (shooter.ffaKills || 0) + 1;
+            io.emit('ffaKill', {
+                shooterId, victimId, weapon: weaponUsed,
+                standings: Object.fromEntries(Object.values(players).map(p => [p.playerId, {
+                    ffaKills: p.ffaKills || 0,
+                    playerName: p.playerName,
+                    character: p.character,
+                }])),
+            });
+            return;
+        }
+
         shooter.pvpKills = (shooter.pvpKills || 0) + 1;
         if (weaponUsed === 'sword') shooter.pvpSwordKills = (shooter.pvpSwordKills || 0) + 1;
         const progression = computeWeaponForKills(shooter.pvpKills);
@@ -1353,9 +1495,11 @@ io.on('connection', (socket) => {
 
     socket.on('playerDied', (data) => {
         const isPvP = (data?.mode === 'PVP') || currentMode === 'PVP';
+        const isFFA = (data?.mode === 'FFA') || currentMode === 'FFA';
+        const isCompetitive = isPvP || isFFA;
         if (players[socket.id]) {
             players[socket.id].isAlive = false;
-            players[socket.id].isDowned = !isPvP;
+            players[socket.id].isDowned = !isCompetitive;
             players[socket.id].isSpectating = false;
             players[socket.id].stats = data.stats || {};
             players[socket.id].score = data.stats?.score || 0;
@@ -1368,7 +1512,7 @@ io.on('connection', (socket) => {
         io.emit('playerDied', {
             playerId: socket.id,
             stats: data.stats,
-            mode: isPvP ? 'PVP' : 'COOP',
+            mode: isFFA ? 'FFA' : isPvP ? 'PVP' : 'COOP',
             killerId: data?.killerId || null,
         });
         broadcastPauseState();
@@ -1376,9 +1520,9 @@ io.on('connection', (socket) => {
         // Transfer this player's owned enemies to the next closest player.
         reassignEnemyOwnership();
 
-        if (isPvP) {
+        if (isCompetitive) {
             if (data?.killerId && players[data.killerId] && data.killerId !== socket.id) {
-                const weaponUsed = data.killerWeapon || WEAPON_ORDER[players[data.killerId].pvpWeaponIdx || 0];
+                const weaponUsed = data.killerWeapon || (isFFA ? 'pistol' : WEAPON_ORDER[players[data.killerId].pvpWeaponIdx || 0]);
                 resolvePvPKill(data.killerId, socket.id, weaponUsed);
             }
             return;
@@ -1439,7 +1583,11 @@ io.on('connection', (socket) => {
         const saved = recentlyDisconnected[token];
         if (!saved || Date.now() - saved.savedAt > 60000) return;
         delete recentlyDisconnected[token];
-        players[socket.id] = { ...saved, playerId: socket.id, isHost: false, isReady: false, sessionToken: token };
+        // Preserve the isHost flag that the connection handler may have already assigned
+        // (connection fires before rejoin, so if this socket was made host it stays host).
+        const alreadyHost = players[socket.id]?.isHost ?? false;
+        players[socket.id] = { ...saved, playerId: socket.id, isHost: alreadyHost, isReady: false, sessionToken: token };
+        ensureHost();
         socket.emit('stateRestored', {
             wave: saved.wave || 0,
             hp: saved.hp || P_MAX_HP,

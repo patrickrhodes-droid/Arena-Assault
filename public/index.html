@@ -101,6 +101,20 @@
             <div class="mode-card-name">GUN GAME</div>
             <div class="mode-card-sub">PvP — reach grapple to win</div>
           </button>
+          <button type="button" class="mode-card" data-mode="ffa">
+            <div class="mode-card-name">FREE FOR ALL</div>
+            <div class="mode-card-sub">PvP — all weapons, most kills wins</div>
+          </button>
+        </div>
+
+        <!-- FFA time selector (shown only when FFA mode selected) -->
+        <div id="ffa-time-wrap" style="display:none;text-align:center;margin-bottom:12px">
+          <span style="color:var(--muted);font-size:12px;letter-spacing:2px;margin-right:10px">MATCH LENGTH</span>
+          <select id="ffa-duration-select" style="background:#0d1a14;color:#00ffaa;border:1px solid #00ffaa44;padding:4px 10px;font-family:inherit;font-size:13px;letter-spacing:2px">
+            <option value="180">3 MIN</option>
+            <option value="300" selected>5 MIN</option>
+            <option value="600">10 MIN</option>
+          </select>
         </div>
 
         <!-- Map grid (hidden until non-campaign mode selected) -->
@@ -162,10 +176,12 @@
         </div>
 
         <!-- Start buttons — hidden until mode selected -->
-        <div style="display:flex;gap:10px;margin-top:14px;justify-content:center">
+        <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap">
           <button class="deploy-btn" id="start-mission-btn" hidden>START MISSION</button>
           <button class="deploy-btn pvp-btn" id="pvp-match-btn" hidden>START GUN GAME</button>
+          <button class="deploy-btn pvp-btn" id="ffa-match-btn" hidden>START FREE FOR ALL</button>
         </div>
+        <div id="match-start-error" style="display:none;margin-top:10px;text-align:center;color:#ff4444;font-size:13px;letter-spacing:2px;font-weight:700"></div>
       </div>
 
       <!-- NON-HOST section -->
@@ -210,6 +226,10 @@
         <span id="pvp-kills">0</span><span id="pvp-kills-sep">/</span><span id="pvp-kills-max">13</span>
         <span id="pvp-rank">#1</span>
       </div>
+      <div id="ffa-score" hidden>
+        <span id="ffa-kills">0</span><span style="color:var(--muted);margin:0 4px">KILLS</span>
+        <span id="ffa-rank">#1</span>
+      </div>
     </div>
 
     <div id="ammo-wrap">
@@ -245,6 +265,12 @@
 
     <div id="red-dot-overlay">
       <div id="red-dot-pip"></div>
+    </div>
+
+    <!-- FFA top-left panel: rank + timer -->
+    <div id="ffa-hud" hidden style="position:absolute;top:14px;left:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none">
+      <div id="ffa-position" style="font-size:28px;font-weight:700;letter-spacing:3px;color:#00ffaa;text-shadow:0 0 12px #00ffaa88">#1</div>
+      <div id="ffa-timer" style="font-size:16px;letter-spacing:3px;color:#ffffff;opacity:0.85">5:00</div>
     </div>
 
     <div id="damage-overlay"></div>

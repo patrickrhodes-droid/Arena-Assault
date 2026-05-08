@@ -99,7 +99,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.3,
     reload: 1.2,
     pellets: 1,
-    damage: 102,
+    damage: 150,
     spreadHip: 0.018,
     spreadAim: 0.007,
     bulletSpeed: 96,
@@ -189,7 +189,7 @@ export const WEAPON_DEFS = {
     fireRate: 0.3,
     reload: 0,
     pellets: 0,
-    damage: 80,
+    damage: 300,
     spreadHip: 0,
     spreadAim: 0,
     bulletSpeed: 0,
@@ -234,12 +234,17 @@ export const CHARACTER_ORDER = ["iestyn", "patrick", "will", "matt"];
 
 export const PVP_WIN_KILLS = 7;
 export const PVP_KILLS_PER_WEAPON = 1;
-export const PVP_SWORD_KILLS_TO_WIN = 1;
 export const PVP_CORNERS = [
   [-60, -60],
   [60, -60],
   [-60, 60],
   [60, 60],
+];
+
+export const FFA_DURATIONS = [
+  { label: "3 MIN",  seconds: 180 },
+  { label: "5 MIN",  seconds: 300 },
+  { label: "10 MIN", seconds: 600 },
 ];
 
 export const MAP_DEFS = {
@@ -258,7 +263,7 @@ export const MAP_DEFS = {
   city: {
     name: "DOWNTOWN",
     subtitle: "Sunlit Urban Warzone",
-    accentColor: "#ff8a3d",
+    accentColor: "#92795d",
     previewGradient: "linear-gradient(135deg,#8ec5f4 0%,#d8b27a 52%,#f2dfbf 100%)",
   },
   blacksite: {

@@ -39,6 +39,53 @@ function findEnemyFromHit(object) {
   return null;
 }
 
+function findRemotePlayerFromHit(object) {
+  let current = object;
+  while (current) {
+    const rp = Object.values(game.remotePlayers).find((r) => r.group === current);
+    if (rp) return rp;
+    current = current.parent;
+  }
+  return null;
+}
+
+function tryGrapplePlayerPull() {
+  if (game.currentWeapon !== "grapple") return false;
+  if (game.mode !== "PVP" && game.mode !== "FFA") return false;
+
+  const aliveRemotes = Object.values(game.remotePlayers).filter(
+    (r) => r.isAlive && !r.isDowned && !r.isSpectating,
+  );
+  if (aliveRemotes.length === 0) return false;
+
+  const rc = new THREE.Raycaster();
+  rc.setFromCamera(new THREE.Vector2(0, 0), game.camera);
+  rc.far = GRAPPLE_TUNING.maxDistance;
+  const hits = rc.intersectObjects(aliveRemotes.map((r) => r.group), true);
+  if (hits.length === 0) return false;
+
+  const hitPlayer = findRemotePlayerFromHit(hits[0].object);
+  if (!hitPlayer) return false;
+
+  const playerPos = game.visuals.player.playerGroup.position;
+  game.socket?.emit("pvpGrapplePull", {
+    targetId: hitPlayer.playerId,
+    shooterX: playerPos.x,
+    shooterY: playerPos.y,
+    shooterZ: playerPos.z,
+    damage: getWeapon().damage,
+  });
+
+  // Show hook flash at the hit point for 0.4 s then auto-release.
+  game.grapplePoint = hits[0].point.clone();
+  game.grappleState = "hooked";
+  window.setTimeout(() => {
+    if (game.grappleState === "hooked") releaseGrapple();
+  }, 400);
+
+  return true;
+}
+
 function tryGrappleEnemyPull() {
   if (game.currentWeapon !== "grapple") {
     return false;
@@ -106,6 +153,7 @@ export function fireGrapple() {
 
   if (game.grappleCooldown > 0) return;
 
+  if (tryGrapplePlayerPull()) return;
   if (tryGrappleEnemyPull()) return;
 
   const raycaster = new THREE.Raycaster();

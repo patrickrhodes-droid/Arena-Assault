@@ -549,7 +549,7 @@ export function finishWave() {
 }
 
 export function updateEnemies() {
-  if (game.mode === "PVP") return;
+  if (game.mode === "PVP" || game.mode === "FFA") return;
 
   // Host client runs Three.js AI for all enemies (wall collision, targeting, firing).
   // Non-host clients lerp toward server-broadcast positions.
@@ -567,12 +567,14 @@ export function updateEnemies() {
         syncBatch.push({ id: enemy.id, x: p.x, y: p.y, z: p.z, rot: enemy.group.rotation.y, walkT: enemy.walkT || 0 });
       }
     } else {
+      const lerpXZ = enemy.type === "boss" ? 25 : 15;
+      const lerpY  = enemy.type === "boss" ? 20 : 12;
       if (enemy.serverX !== undefined) {
-        enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, 15 * game.dt);
-        enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, 15 * game.dt);
+        enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, lerpXZ * game.dt);
+        enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, lerpXZ * game.dt);
       }
       if (enemy.serverY !== undefined) {
-        enemy.group.position.y += (enemy.serverY - enemy.group.position.y) * Math.min(1, 12 * game.dt);
+        enemy.group.position.y += (enemy.serverY - enemy.group.position.y) * Math.min(1, lerpY * game.dt);
       }
     }
     updateHealthBar(enemy);
@@ -970,7 +972,7 @@ function updateHealthBar(enemy) {
 }
 
 export function updateWaves() {
-  if (game.mode === "PVP") return;
+  if (game.mode === "PVP" || game.mode === "FFA") return;
 
   // Server drives all wave logic. Clients just maintain the minimap enemy-ping timer.
   if ((game.waveState === "SPAWNING" || game.waveState === "ACTIVE") && game.enemies.length > 0) {
@@ -1047,8 +1049,8 @@ export function trySwordHit() {
   if (camFlat.lengthSq() > 0) camFlat.normalize();
   const playerPos = game.visuals.player.playerGroup.position;
 
-  // PvP: sword hits remote players. Non-host is allowed so anyone can swing.
-  if (game.mode === "PVP") {
+  // PvP/FFA: sword hits remote players. Non-host is allowed so anyone can swing.
+  if (game.mode === "PVP" || game.mode === "FFA") {
     for (const [remoteId, remote] of Object.entries(game.remotePlayers)) {
       if (!remote.isAlive || remote.isDowned || remote.isSpectating) continue;
 

@@ -16,6 +16,7 @@ import {
   setCopyJoinLinkStatus,
   showBossImperviousAlert,
   showDamage,
+  showFFARankings,
   showPvPRankings,
   showRankings,
   showWaveClear,
@@ -78,9 +79,12 @@ const actions = {
   },
   showBossImperviousAlert,
   showDamage,
+  pushKillFeed,
   startGame,
   startPvPGame,
+  startFFAGame,
   pvpMatchOver,
+  ffaMatchOver,
   startMatch: () => {
     if (game.isHost) {
       game.audio.init();
@@ -298,6 +302,57 @@ async function startPvPGame() {
   game.lastTime = performance.now();
 }
 
+async function startFFAGame() {
+  game.mode = "FFA";
+  game.state = "PLAYING";
+  game.audio.stopBackgroundMusic();
+  hideAllLobbyScreens();
+  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
+  await rebuildArena(game.selectedMap);
+  game.dom.gameOver.style.display = "none";
+  game.dom.pause.style.display = "none";
+  game.dom.hud.style.display = "block";
+
+  game.effectiveMaxHP = P_MAX_HP;
+  resetSessionState();
+  game.mode = "FFA";
+  game.hp = game.effectiveMaxHP;
+  cleanupGame();
+
+  hideRankings();
+  resetCombatState();
+  setWeapon("pistol");
+  game.pvpKills = 0;
+  game.pvpSwordKills = 0;
+  game.pvpWeaponIdx = 0;
+  game.ffaKills = 0;
+
+  resetViewState();
+  if (game.visuals.player.headGroup && game.myCharacter) {
+    applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });
+  }
+
+  const cornerIdx = game.pvpSpawnAssignments?.[game.socket?.id] ?? 0;
+  const [cx, cz] = PVP_CORNERS[cornerIdx % PVP_CORNERS.length];
+  game.visuals.player.playerGroup.position.set(cx, 0, cz);
+  game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
+  game.camTheta = Math.atan2(-cx, -cz);
+  game.visuals.player.playerGroup.visible = !game.isFPS;
+  game.visuals.weapon.firstPersonGun.visible = game.isFPS;
+
+  game.dom.reviveOverlay.style.display = "none";
+  game.dom.spectatorOverlay.style.display = "none";
+  game.dom.revivePromptHud.style.display = "none";
+  game.dom.reviveProgressBg.style.display = "none";
+  game.dom.reviveProgressFill.style.width = "0%";
+  game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
+  renderJoinLinkControls();
+  updateHUD();
+  drawMinimap();
+  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
+  game.lastTime = performance.now();
+}
+
 function pickFurthestCorner() {
   const livingRemotes = Object.values(game.remotePlayers).filter((r) => r.isAlive && !r.isDowned && !r.isSpectating);
   if (livingRemotes.length === 0) {
@@ -323,7 +378,7 @@ function pickFurthestCorner() {
   return bestCorner;
 }
 
-function pvpMatchOver(data) {
+function endCompetitiveMatch() {
   game.mode = "COOP";
   game.state = "GAMEOVER";
   game.audio.stopBackgroundMusic();
@@ -342,13 +397,22 @@ function pvpMatchOver(data) {
   game.dom.reviveProgressFill.style.width = "0%";
   game.dom.gameOver.style.display = "flex";
   game.dom.hud.style.display = "none";
-  game.dom.pvpScore.hidden = true;
-
-  showPvPRankings(data.rankings || [], data.winnerId);
-
+  if (game.dom.pvpScore) game.dom.pvpScore.hidden = true;
+  if (game.dom.ffaScore) game.dom.ffaScore.hidden = true;
+  if (game.dom.ffaHud) game.dom.ffaHud.hidden = true;
   if (document.pointerLockElement === game.renderer.domElement) {
     document.exitPointerLock();
   }
+}
+
+function pvpMatchOver(data) {
+  endCompetitiveMatch();
+  showPvPRankings(data.rankings || [], data.winnerId);
+}
+
+function ffaMatchOver(data) {
+  endCompetitiveMatch();
+  showFFARankings(data.rankings || [], data.winnerId);
 }
 
 function cleanupGame() {
@@ -399,7 +463,7 @@ function playerDiedLocal() {
     return;
   }
 
-  if (game.mode === "PVP") {
+  if (game.mode === "PVP" || game.mode === "FFA") {
     playerDiedLocalPvP();
     return;
   }
@@ -463,13 +527,13 @@ function playerDiedLocalPvP() {
   game.isAiming = false;
   game.audio.death();
   game.socket?.emit("playerDied", {
-    mode: "PVP",
+    mode: game.mode,
     killerId: game.lastDamageShooter || null,
     killerWeapon: game.lastDamageWeapon || null,
     stats: {
-      score: game.pvpKills,
-      kills: game.pvpKills,
-      totalKills: game.pvpKills,
+      score: game.mode === "FFA" ? game.ffaKills : game.pvpKills,
+      kills: game.mode === "FFA" ? game.ffaKills : game.pvpKills,
+      totalKills: game.mode === "FFA" ? game.ffaKills : game.pvpKills,
       wave: 0,
     },
   });
@@ -503,7 +567,7 @@ function playerDiedLocalPvP() {
   }, 850);
 
   window.setTimeout(() => {
-    if (game.mode !== "PVP" || game.state === "GAMEOVER") {
+    if ((game.mode !== "PVP" && game.mode !== "FFA") || game.state === "GAMEOVER") {
       game.dom.respawnFade.classList.remove("full");
       game.pvpDying = false;
       return;
@@ -534,7 +598,7 @@ function playerDiedLocalPvP() {
     game.visuals.player.playerGroup.visible = !game.isFPS;
     game.visuals.weapon.firstPersonGun.visible = game.isFPS;
     game.dom.crosshair.classList.remove("hidden");
-    setWeapon(WEAPON_ORDER[game.pvpWeaponIdx] || "pistol");
+    setWeapon(game.mode === "FFA" ? "pistol" : (WEAPON_ORDER[game.pvpWeaponIdx] || "pistol"));
     game.socket?.emit("playerRevived", { playerId: game.socket.id });
     updateHUD();
     // Trigger the fade-in: remove the .full class so opacity transitions from

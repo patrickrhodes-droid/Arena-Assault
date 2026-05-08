@@ -100,7 +100,10 @@ export const game = {
   weaponPickups: [],
   collectedWeapons: new Set(['pistol']),
   gameMode: 'endless',     // 'campaign' | 'endless' — set by server on match start
-  selectedGameMode: '',    // 'campaign' | 'endless' | 'pvp' — set when host clicks a mode card
+  selectedGameMode: '',    // 'campaign' | 'endless' | 'pvp' | 'ffa' — set when host clicks a mode card
+  ffaTimeLeft: 0,          // seconds remaining in an FFA match
+  ffaDuration: 300,        // chosen FFA duration in seconds
+  ffaKills: 0,             // local player's kill count in FFA
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"

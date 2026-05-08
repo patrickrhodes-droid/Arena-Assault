@@ -205,7 +205,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       }
     }
 
-    if (!shouldRemove && bullet.isPlayer && game.mode === "PVP"
+    if (!shouldRemove && bullet.isPlayer && (game.mode === "PVP" || game.mode === "FFA")
       && bullet.shooterId === game.socket?.id && !bullet.fromRemote) {
       const prevXZ = new THREE.Vector3(bullet.prevPos.x, 0, bullet.prevPos.z);
       const currXZ = new THREE.Vector3(position.x, 0, position.z);

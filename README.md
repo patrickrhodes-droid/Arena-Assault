@@ -1,6 +1,6 @@
 # Arena Assault
 
-Arena Assault is a browser-based multiplayer shooter built with `Three.js`, `Express`, and `Socket.IO`. Play co-op wave survival against enemy AI, or jump into a competitive **PvP Gun Game** with up to 4 players — all selectable from a clean two-screen lobby.
+Arena Assault is a browser-based multiplayer shooter built with `Three.js`, `Express`, and `Socket.IO`. Play co-op wave survival against enemy AI, or jump into two competitive PvP modes — **Gun Game** and **Free For All** — with up to 4 players, all selectable from a clean two-screen lobby.
 
 ## How to run
 
@@ -63,7 +63,7 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 The lobby uses two screens:
 
 1. **OPERATOR** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Click **READY UP** when you're in. Once every player in the room has readied, the host moves to the next screen automatically.
-2. **MODE & MAP** — The host picks a game mode (Campaign / Endless / Gun Game) and, for non-campaign modes, selects a map. All players see the selection update in real-time. Host clicks **START MISSION** (co-op) or **START GUN GAME** (PvP).
+2. **MODE & MAP** — The host picks a game mode (Campaign / Endless / Gun Game / Free For All) and, for non-campaign modes, selects a map. All players see the selection update in real-time. Host clicks **START MISSION** (co-op), **START GUN GAME**, or **START FREE FOR ALL**. PvP modes require 2+ players.
 
 ## Maps
 
@@ -109,13 +109,13 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 
 | Slot | Name | Damage | Notes |
 |---|---|---|---|
-| 1 | Service Pistol | 102 | Semi-auto, fast fire rate, always available |
+| 1 | Service Pistol | 150 | Semi-auto, fast fire rate, always available |
 | 2 | Assault Rifle | 30 per bullet | Full-auto, 60-round mag |
 | 3 | Shotgun | 72 per pellet (×8) | High close-range burst; damage falls off at range |
 | 4 | Sniper Rifle | 500 | Slow fire, heavy ADS zoom |
-| 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: 250 per swing |
+| 5 | Tactical Blade | 500 (melee) | One-hit kills in PvP; vs boss: **750 per swing (1.5× bonus)** |
 | 6 | Bazooka | 500 direct / 180 splash | 4-round mag, 6-unit splash radius, slow projectile |
-| 7 | Grapple Hook | 80 | Pulls you to walls or cover; if aimed at an enemy it deals 80 damage and yanks non-boss enemies close |
+| 7 | Grapple Hook | 300 | Pulls you to walls or cover; drags non-boss enemies to you; in PvP pulls target players toward you |
 
 In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 7 waves drops a weapon pickup over the last enemy's corpse — walk over it and press **E** to add it to your arsenal.
 
@@ -139,7 +139,9 @@ In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 
 - Dogs appear from wave 3, soldiers from wave 6.
 - All weapons are available from the start.
 
-## PvP Gun Game mode
+## PvP modes
+
+### Gun Game
 
 - Every **1 kill** automatically advances you to the next weapon.
 - Progression: Pistol → Assault Rifle → Shotgun → Sniper → Sword → Bazooka → **Grapple Hook**.
@@ -149,6 +151,22 @@ In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 
 - Inventory bar is replaced by a compact kill counter and rank indicator next to the health bar.
 - A **"SHOTGUN UNLOCKED"** style popup appears whenever your weapon progresses.
 
+### Free For All
+
+- All weapons are available from the start — full inventory bar shown at all times.
+- The host chooses a match duration: **3 min**, **5 min**, or **10 min**.
+- The player with the most kills when time runs out wins.
+- A **countdown timer** and your current **rank position** (e.g. `#1`, `#2`) are displayed in the top-left corner of the screen.
+- On death: same fade-and-respawn mechanic as Gun Game — respawn at the corner furthest from living players.
+- **Grapple Hook** in FFA pulls the hooked player toward you (260-unit impulse) and deals 300 damage.
+
+### PvP Grapple mechanics
+
+In both PvP modes, firing the Grapple Hook at another player will:
+1. Deal **300 damage** to the target.
+2. Apply a strong pull force, yanking them toward your position.
+3. Show a brief rope-and-hook visual flash on the shooter's screen.
+
 ## Enemies (Co-op)
 
 | Type | Appears | Behaviour |
@@ -156,9 +174,11 @@ In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 
 | Skeleton | Wave 1+ | 1 HP, fast melee rusher. Animated GLB model. |
 | Dog | Wave 3+ (Endless) / Wave 5+ (Campaign) | Fast melee rush. Chance increases each wave up to 55% in Endless. |
 | Soldier | Wave 6+ (Endless) / Wave 3+ (Campaign) | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
-| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. |
+| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. **Sword deals 1.5× (150%) damage to the boss.** |
 
 The boss attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2).
+
+In multiplayer, non-host clients now snap the boss's visual position to the authoritative attack origin when a hit arrives, preventing the "invisible attack" desync.
 
 ## Wave system
 
@@ -262,21 +282,23 @@ Current default values:
 
 | Weapon | Mag | Fire rate | Reload | Damage | Extra notes |
 |---|---:|---:|---:|---:|---|
-| Pistol | 14 | 0.3 s | 1.2 s | 102 | Bullet speed 96 |
+| Pistol | 14 | 0.3 s | 1.2 s | 150 | Bullet speed 96 |
 | Assault rifle | 60 | 0.05 s | 1.6 s | 30 | Bullet speed 90 |
 | Shotgun | 8 | 0.72 s | 2.2 s | 72 per pellet | 8 pellets, falls to 8 min damage |
 | Sniper | 5 | 1.15 s | 2.6 s | 500 | Bullet speed 160 |
-| Sword | 1 | 0.4 s | 0.1 s | 500 | Range 4.5, arc 1.2 |
+| Sword | 1 | 0.4 s | 0.1 s | 500 | Range 4.5, arc 1.2; 1.5× vs boss |
 | Bazooka | 4 | 1.8 s | 3.2 s | 500 direct / 180 splash | 6-unit splash radius; bullet speed 55 |
-| Grapple | — | 0.3 s | — | 80 | Pulls you to geometry; drags non-boss enemies |
+| Grapple | — | 0.3 s | — | 300 | Pulls you to geometry; drags non-boss enemies; pulls PvP players toward you |
 
 ### PvP settings
 
 | What | Current value | Where to change it |
 |---|---:|---|
 | Kills to advance weapon | 1 | `public/src/gameConstants.js` and `server.js` -> `PVP_KILLS_PER_WEAPON` |
-| Win condition | 1 grapple kill | `server.js` in `resolvePvPKill()` — `onGrapple && weaponUsed === 'grapple'` |
+| Gun Game win condition | 1 grapple kill | `server.js` in `resolvePvPKill()` — `onGrapple && weaponUsed === 'grapple'` |
 | Weapon progression order | Pistol→Assault→Shotgun→Sniper→Sword→Bazooka→Grapple | `public/src/gameConstants.js` and `server.js` -> `WEAPON_ORDER` |
+| FFA match durations | 3 / 5 / 10 min | `public/src/config.js` -> `FFA_DURATIONS`; dropdown options in `index.html` |
+| FFA grapple pull force | 260 | `public/src/network.js` -> `pvpGrapplePull` handler (`knockbackX/Z` multiplier) |
 
 ### Campaign settings
 
