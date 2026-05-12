@@ -1,5 +1,7 @@
 import { P_MAX_HP, PVP_CORNERS, WEAPON_ORDER } from "./config.js";
 import { createAudioController } from "./audio.js";
+import { initLobbyCanvas, tickMenuOrbit } from "./lobby-bg.js";
+import { tickBanter } from "./banter.js";
 import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
@@ -195,6 +197,12 @@ window.addEventListener("load", () => {
   }
 
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
+
+  // Start the canvas hex/particle overlay for the lobby background
+  initLobbyCanvas();
+
+  // Pre-load the default arena so the 3-D world shows behind the lobby immediately
+  rebuildArena("arena").catch(() => {});
 });
 
 requestAnimationFrame((time) => {
@@ -213,7 +221,8 @@ async function startGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
+  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
+  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
@@ -256,7 +265,8 @@ async function startPvPGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
+  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
+  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -307,7 +317,8 @@ async function startFFAGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg) game.dom.lobbyBg.style.display = "none";
+  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
+  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -754,7 +765,11 @@ function animate(time) {
   const doHUD      = game.frameIndex % 2 === 0;
   const doMinimap  = game.frameIndex % 3 === 0;
 
+  // Slowly orbit the camera around the arena during the lobby
+  if (game.state === "MENU") tickMenuOrbit(game.dt);
+
   if (game.state === "PLAYING") {
+    tickBanter(game.dt);
     updatePlayer(actions);
     updateGrapple();
     syncLocalPlayerState();

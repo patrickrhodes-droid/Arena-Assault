@@ -6,6 +6,8 @@ import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthP
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
+import { showCampaignCutscene } from "./story.js";
+import { fireBanter } from "./banter.js";
 
 function recordDamageAngle(sourceX, sourceZ) {
   const playerPos = game.visuals?.player?.playerGroup?.position;
@@ -157,7 +159,7 @@ export function initNetworking(actions) {
     }
   });
 
-  game.socket.on("matchStarted", (payload) => {
+  game.socket.on("matchStarted", async (payload) => {
     const mode = payload?.mode || "COOP";
     if (payload?.map) game.selectedMap = payload.map;
     if (payload?.gameMode) game.gameMode = payload.gameMode;
@@ -171,13 +173,11 @@ export function initNetworking(actions) {
       game.ffaKills = 0;
       actions.startFFAGame();
     } else if (mode === "PVP") {
-      // PvP gun game: all weapons available (game controls switching by kill count)
       game.collectedWeapons = new Set(WEAPON_ORDER);
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
       actions.startPvPGame();
     } else {
-      // COOP (both campaign and endless): start with pistol only, unlock via wave drops
-      // Set synchronously here — before the async startGame/rebuildArena to avoid race conditions
+      // COOP (both campaign and endless)
       const WAVE_DROPS = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka', 7:'pistol' };
       const sw = game.startingWave || 1;
       game.collectedWeapons = new Set(['pistol']);
@@ -186,6 +186,12 @@ export function initNetworking(actions) {
         if (drop) game.collectedWeapons.add(drop);
       }
       if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
+
+      // Campaign: show story cutscene before the map loads
+      if (payload?.gameMode === "campaign") {
+        const mapId = game.selectedMap || "arena";
+        await showCampaignCutscene(mapId);
+      }
       actions.startGame();
     }
     actions.tryPointerLock();
@@ -213,11 +219,14 @@ export function initNetworking(actions) {
     }
     if (data.wave > prevWave) {
       announceWave();
+      // Squad commentary for the new wave (campaign only)
+      fireBanter("wave_start", data.wave);
     }
     // Show wave-clear banner when wave ends (state transitions from ACTIVE → WAIT).
     if (prevState === "ACTIVE" && data.state === "WAIT" && prevWave > 0) {
       showWaveClear(prevWave);
       pushKillFeed(`WAVE ${prevWave} CLEARED`, "wave-start");
+      fireBanter("wave_clear", prevWave);
     }
     actions.updateHUD();
   });

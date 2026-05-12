@@ -90,6 +90,76 @@ export function applyCharacterHead(headGroup, characterId, options = {}) {
   }
 }
 
+// Cached character config loaded from /assets/characterConfig.json at startup.
+let _charConfig = null;
+
+async function loadCharConfig() {
+  try {
+    const res = await fetch('/api/character-config');
+    if (res.ok) _charConfig = await res.json();
+  } catch { /* offline / no server — ignore */ }
+}
+
+export function applyCharConfig() {
+  if (!_charConfig) return;
+  const wc = _charConfig.weapons;
+  if (wc && game.visuals?.weapon?.weaponModels) {
+    for (const [id, overrides] of Object.entries(wc)) {
+      const model = game.visuals.weapon.weaponModels[id];
+      if (!model) continue;
+      if (overrides.fpPos)    model.fpPos    = overrides.fpPos;
+      if (overrides.fpAdsPos) model.fpAdsPos = overrides.fpAdsPos;
+      if (overrides.fpScale)  model.fpScale  = overrides.fpScale;
+      if (overrides.tpPos)    model.tpPos    = overrides.tpPos;
+      if (overrides.tpScale)  model.tpScale  = overrides.tpScale;
+      if (typeof overrides.tpMuzzleZ === 'number') model.tpMuzzleZ = overrides.tpMuzzleZ;
+      if (typeof overrides.fpMuzzleZ === 'number') model.fpMuzzleZ = overrides.fpMuzzleZ;
+    }
+  }
+  const glbOverrides = _charConfig.weaponGlbs;
+  if (glbOverrides && game.visuals?.weapon?.glbGroups) {
+    for (const [id, ov] of Object.entries(glbOverrides)) {
+      const grp = game.visuals.weapon.glbGroups[id];
+      if (!grp) continue;
+      const fpCopy = grp.fpGroup?.children[0];
+      const tpCopy = grp.tpGroup?.children[0];
+      [fpCopy, tpCopy].forEach((obj) => {
+        if (!obj) return;
+        if (typeof ov.scale === 'number') obj.scale.setScalar(ov.scale);
+        if (typeof ov.rotY  === 'number') obj.rotation.y = ov.rotY;
+        if (typeof ov.posY  === 'number') obj.position.y = ov.posY;
+        if (typeof ov.posZ  === 'number') obj.position.z = ov.posZ;
+      });
+    }
+  }
+  // Player body part overrides
+  const pb = _charConfig.playerBody;
+  if (pb && game.visuals?.player) {
+    const pv = game.visuals.player;
+    const Y = -0.06;
+    const applyPart = (mesh, def) => {
+      if (!mesh || !def) return;
+      if (def.pos) mesh.position.set(def.pos[0], def.pos[1] + Y, def.pos[2] ?? 0);
+      if (def.size) {
+        const g = new THREE.BoxGeometry(def.size[0], def.size[1], def.size[2]);
+        mesh.geometry.dispose();
+        mesh.geometry = g;
+      }
+    };
+    if (pb.torso)      applyPart(pv.torso,      pb.torso);
+    if (pb.leftArm)    applyPart(pv.leftArm,    pb.leftArm);
+    if (pb.rightArm)   applyPart(pv.rightArm,   pb.rightArm);
+    if (pb.leftLeg)    applyPart(pv.leftLeg,    pb.leftLeg);
+    if (pb.rightLeg)   applyPart(pv.rightLeg,   pb.rightLeg);
+    if (pb.leftBoot)   applyPart(pv.leftBoot,   pb.leftBoot);
+    if (pb.rightBoot)  applyPart(pv.rightBoot,  pb.rightBoot);
+    if (pb.headGroup && typeof pb.headGroup.posY === 'number') {
+      pv.headGroup.position.y = pb.headGroup.posY + Y;
+    }
+    if (pb.visor && pv.visor) applyPart(pv.visor, pb.visor);
+  }
+}
+
 export function initScene() {
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x1b2734, 0.005);
@@ -117,6 +187,8 @@ export function initScene() {
   buildWeaponVisuals();
   buildGrappleVisuals();
   buildSharedRuntimeAssets();
+  // Load editor overrides asynchronously — apply once everything is built
+  loadCharConfig().then(applyCharConfig);
 }
 
 function buildGrappleVisuals() {

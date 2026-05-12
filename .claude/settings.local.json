@@ -24,7 +24,13 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\patri\\\\Arena-Assault\" -Recurse -Depth 3 -ErrorAction SilentlyContinue)",
       "Bash(Select-Object FullName, Extension)",
       "Bash(grep -E '\\\\.\\(js|json\\)$')",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\patri\\\\Arena-Assault\\\\public\" -Recurse | Where-Object { $_.Extension -eq '.js' } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\patri\\\\Arena-Assault\\\\public\" -Recurse | Where-Object { $_.Extension -eq '.js' } | Select-Object FullName)",
+      "Bash(git ls-files *)",
+      "Bash(ls maps/)",
+      "Bash(ls *.json)",
+      "Bash(dir /b \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\public\")",
+      "Bash(dir /b \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\public\\\\assets\\\\models\")",
+      "Bash(grep -v \"//\")"
     ]
   }
 }

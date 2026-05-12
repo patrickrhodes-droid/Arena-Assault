@@ -21,7 +21,9 @@
 <body>
   <div id="game-container"></div>
   <div id="lobby-bg"></div>
+  <canvas id="lobby-canvas"></canvas>
   <div id="vignette"></div>
+  <div id="landing-flash"></div>
 
   <!-- ── SCREEN 1: OPERATOR SELECT + READY ── -->
   <div id="screen-player" class="lobby-screen active">
@@ -38,19 +40,19 @@
         <div class="character-select-title">SELECT OPERATOR</div>
         <div id="character-grid">
           <button type="button" class="character-card" data-character="iestyn">
-            <div class="character-head" style="background:#ff5544;width:48px;height:48px"></div>
+            <canvas class="char-card-canvas" width="88" height="88"></canvas>
             <div class="character-name">IESTYN</div>
           </button>
           <button type="button" class="character-card" data-character="patrick">
-            <div class="character-head" style="background:#55aaff;width:32px;height:32px"></div>
+            <canvas class="char-card-canvas" width="88" height="88"></canvas>
             <div class="character-name">PATRICK</div>
           </button>
           <button type="button" class="character-card" data-character="will">
-            <div class="character-head" style="background:#66dd66;width:40px;height:40px"></div>
+            <canvas class="char-card-canvas" width="88" height="88"></canvas>
             <div class="character-name">WILL</div>
           </button>
           <button type="button" class="character-card" data-character="matt">
-            <div class="character-head" style="background:#ffcc33;width:26px;height:26px"></div>
+            <canvas class="char-card-canvas" width="88" height="88"></canvas>
             <div class="character-name">MATT</div>
           </button>
         </div>
@@ -122,29 +124,36 @@
           <div id="campaign-map-note" style="display:none;color:var(--muted);font-size:12px;letter-spacing:2px;margin-bottom:8px;text-align:center">CAMPAIGN: MAP ORDER IS AUTOMATIC</div>
           <div id="map-grid">
             <button type="button" class="map-card selected" data-map="arena">
-              <div class="map-preview" style="background:linear-gradient(135deg,#1b2734 0%,#2a3c4e 50%,#152030 100%)">
+              <div class="map-preview map-prev-arena">
+                <div class="map-prev-grid"></div>
+                <div class="map-prev-light" style="left:22%;top:28%"></div>
+                <div class="map-prev-light" style="right:18%;bottom:25%"></div>
                 <div class="map-preview-label" style="color:#3ce6cb">ARENA</div>
               </div>
               <div class="map-card-name">COMBAT ARENA</div>
               <div class="map-card-sub">Industrial Training Facility</div>
             </button>
             <button type="button" class="map-card" data-map="desert">
-              <div class="map-preview" style="background:linear-gradient(135deg,#c27a30 0%,#8B5A20 50%,#d48840 100%)">
-                <div class="map-preview-label" style="color:#ff9933">DESERT</div>
+              <div class="map-preview map-prev-desert">
+                <div class="map-prev-sun"></div>
+                <div class="map-preview-label" style="color:#ffa840">DESERT</div>
               </div>
               <div class="map-card-name">DUST BOWL</div>
               <div class="map-card-sub">Abandoned Desert Outpost</div>
             </button>
             <button type="button" class="map-card" data-map="city">
-              <div class="map-preview" style="background:linear-gradient(135deg,#8ec5f4 0%,#d8b27a 52%,#f2dfbf 100%)">
+              <div class="map-preview map-prev-city">
+                <div class="map-prev-buildings"></div>
                 <div class="map-preview-label" style="color:#ff8a3d">CITY</div>
               </div>
               <div class="map-card-name">DOWNTOWN</div>
               <div class="map-card-sub">Sunlit Urban Warzone</div>
             </button>
             <button type="button" class="map-card" data-map="blacksite">
-              <div class="map-preview" style="background:linear-gradient(135deg,#0a0d12 0%,#1a0808 52%,#0d0a0f 100%)">
-                <div class="map-preview-label" style="color:#ff2a1a">BLACKSITE</div>
+              <div class="map-preview map-prev-blacksite">
+                <div class="map-prev-danger" style="left:14%;bottom:18%"></div>
+                <div class="map-prev-danger" style="right:16%;top:22%"></div>
+                <div class="map-preview-label" style="color:#ff3322">BLACKSITE</div>
               </div>
               <div class="map-card-name">BLACKSITE</div>
               <div class="map-card-sub">Abandoned Research Compound</div>
@@ -152,7 +161,7 @@
           </div>
         </div>
 
-        <div id="join-link-box" hidden style="margin-top:10px">
+        <div id="join-link-box" hidden>
           <div id="host-controls">
             <div class="host-controls-title">HOST CONTROLS</div>
             <div class="host-control-row">
@@ -171,8 +180,10 @@
               <input type="text" id="room-password-input" maxlength="12" placeholder="(optional)" style="width:100px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--text);padding:3px 6px;font-family:inherit;font-size:12px">
             </div>
           </div>
-          <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
-          <div id="copy-join-link-status" aria-live="polite"></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
+            <div id="copy-join-link-status" aria-live="polite"></div>
+          </div>
         </div>
 
         <!-- Start buttons — hidden until mode selected -->
@@ -317,6 +328,15 @@
     <!-- wave-clear banner -->
     <div id="wave-clear"></div>
 
+    <!-- in-game squad banter (campaign) -->
+    <div id="banter-box">
+      <canvas class="banter-face" width="34" height="34"></canvas>
+      <div class="banter-body">
+        <div class="banter-speaker"></div>
+        <div class="banter-text"></div>
+      </div>
+    </div>
+
     <canvas id="minimap" width="220" height="220"></canvas>
   </div>
 
@@ -384,6 +404,36 @@
   <div id="spectator-overlay">
     <div class="spectator-title">SPECTATING</div>
     <div class="spectator-subtitle">Waiting for the next wave respawn</div>
+  </div>
+
+  <!-- ── CAMPAIGN CUTSCENE OVERLAY ── -->
+  <div id="cutscene-overlay">
+    <!-- Chapter title card (full-screen, shown briefly) -->
+    <div id="cutscene-chapter-card" style="display:none">
+      <div class="chapter-eyebrow"></div>
+      <div class="chapter-title"></div>
+      <div class="chapter-location"></div>
+    </div>
+
+    <!-- Story dialogue bar -->
+    <div id="cutscene-bar">
+      <div id="cutscene-portrait">
+        <canvas id="cutscene-portrait-canvas" width="160" height="160"></canvas>
+      </div>
+      <div id="cutscene-dialogue">
+        <div class="cutscene-speaker-name"></div>
+        <div class="cutscene-text"></div>
+        <div class="cutscene-hint">CLICK OR PRESS ENTER TO CONTINUE</div>
+      </div>
+    </div>
+
+    <!-- Between-map character select (appears after dialogue ends) -->
+    <div id="cutscene-char-panel" style="display:none">
+      <div class="cs-unlock-banner" id="cs-unlock-banner" style="display:none"></div>
+      <div class="cs-heading">CHOOSE YOUR OPERATOR</div>
+      <div id="cs-char-grid"></div>
+      <button id="cs-deploy-btn" class="deploy-btn" style="margin-top:18px">DEPLOY</button>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

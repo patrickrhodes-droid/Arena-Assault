@@ -76,6 +76,7 @@ export const game = {
   bossImperviousTimeout: null,
   fpRecoilZ: 0,
   fpRecoilRX: 0,
+  recoilOffset: 0,  // auto-recovering camera pitch kick (radians, applied on top of camPhi)
   coyoteTmr: 0,
   lastDamageAngle: 0,
   lastDamageTmr: 0,
@@ -174,6 +175,7 @@ export function resetSessionState() {
   game.knockbackZ = 0;
   game.fpRecoilZ = 0;
   game.fpRecoilRX = 0;
+  game.recoilOffset = 0;
   game.coyoteTmr = 0;
   game.lastDamageAngle = 0;
   game.lastDamageTmr = 0;

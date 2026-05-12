@@ -28,6 +28,11 @@ import {
 import { getBossEnemy } from "./enemies.js";
 
 let bossAlertCooldown = 0;
+let _prevVelY       = 0; // track vertical velocity between frames for landing detection
+let _swayX          = 0; // current weapon sway offset X
+let _swayY          = 0; // current weapon sway offset Y
+let _mouseDeltaX    = 0; // accumulated mouse X delta since last weapon update
+let _mouseDeltaY    = 0;
 
 function findEnemyFromHit(object) {
   let current = object;
@@ -351,6 +356,10 @@ export function setupInput(actions) {
     } else {
       game.camPhi = Math.max(-0.55, Math.min(0.85, game.camPhi - event.movementY * game.sens));
     }
+
+    // Accumulate for weapon sway
+    _mouseDeltaX += event.movementX;
+    _mouseDeltaY += event.movementY;
   });
 
   document.addEventListener("wheel", (event) => {
@@ -539,6 +548,42 @@ export function updatePlayer(actions) {
   game.visuals.player.playerGroup.position.x = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.x));
   game.visuals.player.playerGroup.position.z = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.z));
 
+  // ── Landing impact ──────────────────────────────────────────────────────
+  const justLanded = !wasGrounded && game.isGrounded && _prevVelY < -7;
+  if (justLanded) {
+    const impactAmt = Math.min(0.55, Math.abs(_prevVelY) * 0.018);
+    addShake(impactAmt);
+    // Squish player model briefly (lerps back in animatePlayerBody)
+    game.visuals.player.playerGroup.scale.y = Math.max(0.5, game.visuals.player.playerGroup.scale.y - impactAmt * 1.8);
+    // Landing flash overlay
+    const lf = game.dom?.landingFlash;
+    if (lf) {
+      lf.classList.remove("active");
+      void lf.offsetWidth;
+      lf.classList.add("active");
+    }
+  }
+  _prevVelY = game.playerVelY;
+
+  // ── Crosshair spread class ───────────────────────────────────────────────
+  const xh = game.dom?.crosshair;
+  if (xh) {
+    const isScopedOrRed = usingScopedSniperView() ||
+      (game.isAiming && (game.currentWeapon === "pistol" || game.currentWeapon === "assault"));
+    if (!isScopedOrRed) {
+      if (game.isAiming) {
+        xh.classList.add("xh-tight");
+        xh.classList.remove("xh-spread");
+      } else if (game.isSprinting && game.isMoving) {
+        xh.classList.add("xh-spread");
+        xh.classList.remove("xh-tight");
+      } else {
+        xh.classList.remove("xh-spread", "xh-tight");
+      }
+    }
+  }
+
+
   animatePlayerBody();
   handleReload();
   handleRevive(actions);
@@ -689,8 +734,28 @@ function handleFiring(actions) {
     if (bossAlertCooldown > 0) bossAlertCooldown -= game.dt;
     game.audio.playWeapon(weapon);
     addShake(weapon.shake);
-    game.fpRecoilZ = weapon.recoilZ;
+    game.fpRecoilZ  = weapon.recoilZ;
     game.fpRecoilRX = weapon.recoilRX;
+
+    // Camera recoil kick — snaps up, then auto-recovers in updateCamera
+    game.recoilOffset += weapon.recoilRX * 2.4;
+    game.recoilOffset  = Math.min(0.28, game.recoilOffset); // cap so it can't fly off screen
+
+    // Bazooka self-knockback — push player away from aim direction
+    if (weapon.mode === "bazooka") {
+      const phi  = game.camPhi + game.recoilOffset;
+      const aimX = -Math.sin(game.camTheta) * Math.cos(phi);
+      const aimY = Math.sin(phi);
+      const aimZ = -Math.cos(game.camTheta) * Math.cos(phi);
+      const bazForce = 34;
+      game.knockbackX -= aimX * bazForce;
+      game.knockbackZ -= aimZ * bazForce;
+      // Aimed downward → rocket-jump: push upward proportionally
+      if (aimY < -0.15) {
+        game.playerVelY = Math.max(game.playerVelY, -aimY * bazForce * 0.6);
+        game.isGrounded  = false;
+      }
+    }
 
     const muzzlePosition = new THREE.Vector3();
     (usingFirstPersonView() ? game.visuals.weapon.fpMuzzle : game.visuals.weapon.tpMuzzle).getWorldPosition(muzzlePosition);
@@ -761,14 +826,30 @@ function updateWeaponVisuals() {
     }
   }
 
-  game.fpRecoilZ *= PLAYER_MOVEMENT.recoilDecay;
+  game.fpRecoilZ  *= PLAYER_MOVEMENT.recoilDecay;
   game.fpRecoilRX *= PLAYER_MOVEMENT.recoilDecay;
 
-  const model = game.visuals.weapon.weaponModels[game.currentWeapon];
+  // ── Weapon sway from mouse movement ──────────────────────────────────────
+  const swayStrength = game.isAiming ? 0.00012 : 0.00028;
+  _swayX += (_mouseDeltaX * swayStrength - _swayX) * 0.25;
+  _swayY += (_mouseDeltaY * swayStrength - _swayY) * 0.25;
+  _mouseDeltaX *= 0.8;
+  _mouseDeltaY *= 0.8;
+
+  // ── Idle weapon breathe (only when still) ────────────────────────────────
+  const t = performance.now() * 0.001;
+  const idleX = game.isMoving ? 0 : Math.sin(t * 0.85) * 0.0035;
+  const idleY = game.isMoving ? 0 : Math.sin(t * 1.7)  * 0.0025;
+
+  const model       = game.visuals.weapon.weaponModels[game.currentWeapon];
   const basePosition = game.isAiming ? model.fpAdsPos : model.fpPos;
-  game.visuals.weapon.firstPersonGun.position.x += (basePosition[0] - game.visuals.weapon.firstPersonGun.position.x) * 0.22;
-  game.visuals.weapon.firstPersonGun.position.y += (basePosition[1] - game.visuals.weapon.firstPersonGun.position.y) * 0.22;
-  game.visuals.weapon.firstPersonGun.position.z += ((basePosition[2] + game.fpRecoilZ) - game.visuals.weapon.firstPersonGun.position.z) * 0.22;
+  const targetX = basePosition[0] + _swayX + idleX;
+  const targetY = basePosition[1] + _swayY + idleY;
+  const targetZ = basePosition[2] + game.fpRecoilZ;
+
+  game.visuals.weapon.firstPersonGun.position.x += (targetX - game.visuals.weapon.firstPersonGun.position.x) * 0.22;
+  game.visuals.weapon.firstPersonGun.position.y += (targetY - game.visuals.weapon.firstPersonGun.position.y) * 0.22;
+  game.visuals.weapon.firstPersonGun.position.z += (targetZ  - game.visuals.weapon.firstPersonGun.position.z) * 0.22;
   game.visuals.weapon.firstPersonGun.rotation.x += (game.fpRecoilRX - game.visuals.weapon.firstPersonGun.rotation.x) * 0.18;
 }
 
@@ -832,10 +913,21 @@ export function updateCamera() {
     game.shakeAmt = 0;
   }
 
+  // Decay camera recoil offset — recovers to zero in ~0.18 s
+  if (game.recoilOffset > 0.001) {
+    game.recoilOffset *= Math.pow(0.04, game.dt);
+  } else {
+    game.recoilOffset = 0;
+  }
+
   if (inFirstPerson) {
     game.camera.rotation.y = game.camTheta;
-    game.camera.rotation.x = -game.camPhi;
-    game.camera.rotation.z = 0;
+    game.camera.rotation.x = -(game.camPhi + game.recoilOffset); // include recoil kick
+
+    // Sprint tilt: very subtle lean into strafe direction
+    const strafeInput = (game.keys.KeyD ? 1 : 0) - (game.keys.KeyA ? 1 : 0);
+    const targetRoll = game.isSprinting && game.isMoving ? strafeInput * -0.016 : 0;
+    game.camera.rotation.z += (targetRoll - game.camera.rotation.z) * Math.min(1, 6 * game.dt);
   } else {
     const lookTarget = game.visuals.player.playerGroup.position.clone();
     lookTarget.y += 1.65;

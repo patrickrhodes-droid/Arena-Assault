@@ -4,8 +4,8 @@ import { Server } from 'socket.io';
 import { join, dirname } from 'path';
 import { networkInterfaces } from 'os';
 import { fileURLToPath } from 'url';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { readFile } from 'fs/promises';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFile, writeFile, readdir } from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -96,6 +96,78 @@ function recordPvpGame(rankings) {
 
 app.get('/api/leaderboard', (_req, res) => {
     res.json(leaderboard);
+});
+
+// ── Editor API: maps ───────────────────────────────────────────────────────────
+const _editorMapsDir = join(__dirname, 'public', 'maps');
+const _assetsDir     = join(__dirname, 'public', 'assets', 'models');
+
+app.get('/api/maps', async (_req, res) => {
+    try {
+        const files = await readdir(_editorMapsDir);
+        const maps = files
+            .filter(f => f.endsWith('.json'))
+            .map(f => f.replace('.json', ''));
+        res.json({ maps });
+    } catch { res.json({ maps: [] }); }
+});
+
+app.get('/api/maps/:name', async (req, res) => {
+    const name = req.params.name.replace(/[^a-zA-Z0-9_\-]/g, '');
+    const file = join(_editorMapsDir, `${name}.json`);
+    try {
+        const text = await readFile(file, 'utf8');
+        res.json(JSON.parse(text));
+    } catch { res.status(404).json({ error: 'Not found' }); }
+});
+
+app.put('/api/maps/:name', express.json({ limit: '4mb' }), async (req, res) => {
+    const name = req.params.name.replace(/[^a-zA-Z0-9_\-]/g, '');
+    if (!name) return res.status(400).json({ error: 'Invalid name' });
+    const file = join(_editorMapsDir, `${name}.json`);
+    try {
+        await writeFile(file, JSON.stringify(req.body, null, 2) + '\n', 'utf8');
+        _mapJsonCache.delete(name); // bust server-side cache
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Recursively list GLB files for the asset picker
+async function listGlbs(dir, base = '') {
+    let results = [];
+    let entries = [];
+    try { entries = await readdir(dir, { withFileTypes: true }); } catch { return results; }
+    for (const entry of entries) {
+        const rel = base ? `${base}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) {
+            results = results.concat(await listGlbs(join(dir, entry.name), rel));
+        } else if (entry.name.endsWith('.glb')) {
+            results.push(`/assets/models/${rel}`);
+        }
+    }
+    return results;
+}
+
+app.get('/api/assets', async (_req, res) => {
+    const assets = await listGlbs(_assetsDir);
+    res.json({ assets });
+});
+
+// ── Editor API: character config ──────────────────────────────────────────────
+const _charConfigFile = join(__dirname, 'public', 'assets', 'characterConfig.json');
+
+app.get('/api/character-config', (_req, res) => {
+    try {
+        const text = existsSync(_charConfigFile) ? readFileSync(_charConfigFile, 'utf8') : '{}';
+        res.json(JSON.parse(text));
+    } catch { res.json({}); }
+});
+
+app.put('/api/character-config', express.json({ limit: '512kb' }), (req, res) => {
+    try {
+        writeFileSync(_charConfigFile, JSON.stringify(req.body, null, 2) + '\n', 'utf8');
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 // ── PvP constants ─────────────────────────────────────────────────────────────

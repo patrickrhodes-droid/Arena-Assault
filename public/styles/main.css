@@ -39,66 +39,31 @@ canvas {
   display: block;
 }
 
-/* ── Lobby stylized background ── */
+/* ── Lobby background — semi-transparent so 3-D world shows through ── */
 #lobby-bg {
   position: fixed;
   inset: 0;
   z-index: 2;
+  /* Strong bottom fade keeps panels readable; top is mostly clear */
   background:
-    radial-gradient(ellipse 70% 55% at 50% 55%, rgba(0, 30, 40, 0.95) 0%, transparent 100%),
-    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(0, 204, 170, 0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 90% 10%, rgba(255, 119, 51, 0.07) 0%, transparent 60%),
-    linear-gradient(170deg, #050a10 0%, #0a1620 45%, #06100a 100%);
-  overflow: hidden;
+    linear-gradient(180deg,
+      rgba(4, 8, 14, 0.30)  0%,
+      rgba(4, 8, 14, 0.55) 45%,
+      rgba(4, 8, 14, 0.88) 100%
+    ),
+    radial-gradient(ellipse 80% 50% at 50% 0%,
+      rgba(0, 120, 100, 0.12) 0%, transparent 70%
+    );
   pointer-events: none;
 }
 
-#lobby-bg::before {
-  content: '';
-  position: absolute;
-  inset: -120px;
-  background-image:
-    repeating-linear-gradient(
-      -55deg,
-      transparent 0px,
-      transparent 90px,
-      rgba(0, 204, 170, 0.045) 90px,
-      rgba(0, 204, 170, 0.045) 92px,
-      transparent 92px,
-      transparent 180px,
-      rgba(0, 204, 170, 0.02) 180px,
-      rgba(0, 204, 170, 0.02) 181px
-    );
-  animation: lobbyDiagScroll 35s linear infinite;
-}
-
-#lobby-bg::after {
-  content: '';
-  position: absolute;
-  inset: -120px;
-  background-image:
-    repeating-linear-gradient(
-      35deg,
-      transparent 0px,
-      transparent 140px,
-      rgba(255, 119, 51, 0.025) 140px,
-      rgba(255, 119, 51, 0.025) 141px,
-      transparent 141px,
-      transparent 280px,
-      rgba(0, 204, 170, 0.018) 280px,
-      rgba(0, 204, 170, 0.018) 281px
-    );
-  animation: lobbyDiagScrollReverse 50s linear infinite;
-}
-
-@keyframes lobbyDiagScroll {
-  0%   { transform: translate(0, 0); }
-  100% { transform: translate(180px, 180px); }
-}
-
-@keyframes lobbyDiagScrollReverse {
-  0%   { transform: translate(0, 0); }
-  100% { transform: translate(-280px, 280px); }
+/* ── Canvas overlay (hex grid + particles) ── */
+#lobby-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  display: block;
 }
 
 /* ── Multi-screen lobby ── */
@@ -125,7 +90,12 @@ canvas {
   gap: 16px;
   width: 100%;
   max-width: 540px;
-  padding: 0 16px;
+  padding: 24px 20px;
+  background: rgba(4, 9, 16, 0.72);
+  border: 1px solid rgba(0, 204, 170, 0.18);
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(0,204,170,0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .screen-title {
@@ -259,13 +229,11 @@ canvas {
 }
 
 #join-link-box {
-  position: absolute;
-  left: 24px;
-  bottom: 24px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 8px;
+  margin-top: 8px;
 }
 
 #join-link-box[hidden] {
@@ -1850,3 +1818,492 @@ canvas {
   z-index: 80;
   clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHARACTER SELECT — spinning 3-D head preview
+   ═══════════════════════════════════════════════════════════════════════════ */
+.char-card-canvas {
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: 4px;
+  background: rgba(10, 18, 26, 0.85);
+}
+/* Per-character fallback glow so blank canvas doesn't look broken */
+.character-card[data-character="iestyn"]  .char-card-canvas { background: radial-gradient(circle at 50% 60%, rgba(255,85,68,0.22) 0%, rgba(10,18,26,0.9) 65%); }
+.character-card[data-character="patrick"] .char-card-canvas { background: radial-gradient(circle at 50% 60%, rgba(85,170,255,0.22) 0%, rgba(10,18,26,0.9) 65%); }
+.character-card[data-character="will"]    .char-card-canvas { background: radial-gradient(circle at 50% 60%, rgba(102,221,102,0.22) 0%, rgba(10,18,26,0.9) 65%); }
+.character-card[data-character="matt"]    .char-card-canvas { background: radial-gradient(circle at 50% 60%, rgba(255,204,51,0.22) 0%, rgba(10,18,26,0.9) 65%); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CAMPAIGN CUTSCENE OVERLAY
+   ═══════════════════════════════════════════════════════════════════════════ */
+#cutscene-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: all;
+  /* dark gradient fades in from top; letter-box feel */
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.55) 0%,
+    rgba(0,0,0,0)    45%,
+    rgba(0,0,0,0)    55%,
+    rgba(0,0,0,0.75) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.38s ease;
+}
+#cutscene-overlay.show {
+  opacity: 1;
+}
+
+#cutscene-bar {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 0 24px;
+}
+
+#cutscene-portrait {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  border: 2px solid rgba(0,204,170,0.5);
+  background: rgba(5,12,18,0.88);
+  box-shadow: 0 0 28px rgba(0,204,170,0.25), inset 0 0 18px rgba(0,0,0,0.5);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  overflow: hidden;
+}
+#cutscene-portrait-canvas {
+  display: block;
+  width: 160px;
+  height: 160px;
+}
+
+#cutscene-dialogue {
+  flex: 1;
+  background: rgba(5,12,20,0.92);
+  border: 1px solid rgba(0,204,170,0.35);
+  padding: 18px 22px 16px;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  box-shadow: 0 0 22px rgba(0,0,0,0.6);
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cutscene-speaker-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--accent2);
+  margin-bottom: 10px;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.cutscene-text {
+  font-size: 17px;
+  line-height: 1.55;
+  color: #ddeeff;
+  letter-spacing: 0.5px;
+  flex: 1;
+  min-height: 54px;
+}
+
+.cutscene-hint {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(120,160,180,0.55);
+  text-align: right;
+  margin-top: 10px;
+  animation: hintPulse 2.2s ease-in-out infinite;
+}
+@keyframes hintPulse {
+  0%,100% { opacity: 0.4; }
+  50%      { opacity: 0.9; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DYNAMIC CROSSHAIR — spread classes applied by player.js
+   ═══════════════════════════════════════════════════════════════════════════ */
+#crosshair {
+  transition: transform 0.12s ease;
+}
+/* spread: sprinting or moving hipfire */
+#crosshair.xh-spread {
+  transform: translate(-50%, -50%) scale(1.75);
+  opacity: 0.7;
+}
+/* tight: aiming down sights */
+#crosshair.xh-tight {
+  transform: translate(-50%, -50%) scale(0.65);
+  opacity: 0.95;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEALTH BAR — color shifts green → yellow → red at runtime via JS
+   ═══════════════════════════════════════════════════════════════════════════ */
+#health-bar-fill {
+  transition: width 0.15s, background 0.6s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOW-HEALTH VIGNETTE PULSE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes lowHealthPulse {
+  0%, 100% {
+    background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.50) 100%);
+  }
+  50% {
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(180,0,0,0.42) 75%, rgba(0,0,0,0.72) 100%);
+  }
+}
+#vignette.low-health {
+  animation: lowHealthPulse 1.4s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDING IMPACT — brief flash of white tint at screen edge
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes landFlash {
+  0%   { opacity: 0.18; }
+  100% { opacity: 0; }
+}
+#landing-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.22) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 58;
+  opacity: 0;
+}
+#landing-flash.active {
+  animation: landFlash 0.22s ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IN-GAME SQUAD BANTER BOX (campaign mode)
+   ═══════════════════════════════════════════════════════════════════════════ */
+#banter-box {
+  position: absolute;
+  bottom: 258px; /* just above the minimap */
+  left: 20px;
+  width: 290px;
+  background: rgba(4, 9, 16, 0.82);
+  border: 1px solid rgba(0, 204, 170, 0.28);
+  border-left: 3px solid rgba(0, 204, 170, 0.7);
+  padding: 9px 13px 10px;
+  pointer-events: none;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  opacity: 0;
+  transform: translateX(-18px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#banter-box.show {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.banter-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.banter-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
+.banter-speaker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+
+.banter-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #cce4f0;
+  letter-spacing: 0.2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BANTER BOX LAYOUT UPDATE — face canvas + body
+   ═══════════════════════════════════════════════════════════════════════════ */
+#banter-box {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px 9px;
+}
+
+.banter-face {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: block;
+  margin-top: 1px;
+}
+
+.banter-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.banter-speaker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAP CARD VISUAL OVERHAUL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Base map preview is now taller for impact */
+.map-preview {
+  height: 110px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ARENA — industrial teal grid */
+.map-prev-arena {
+  background:
+    radial-gradient(circle at 24% 30%, rgba(45,225,208,0.28) 0%, transparent 38%),
+    radial-gradient(circle at 78% 72%, rgba(45,225,208,0.18) 0%, transparent 32%),
+    repeating-linear-gradient(0deg,   transparent 0, transparent 29px, rgba(45,225,208,0.07) 29px, rgba(45,225,208,0.07) 30px),
+    repeating-linear-gradient(90deg,  transparent 0, transparent 29px, rgba(45,225,208,0.07) 29px, rgba(45,225,208,0.07) 30px),
+    linear-gradient(155deg, #0c1e2c 0%, #152a3a 50%, #091a24 100%);
+}
+
+.map-prev-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(45deg, transparent 0, transparent 18px, rgba(45,225,208,0.04) 18px, rgba(45,225,208,0.04) 19px);
+}
+
+.map-prev-light {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(45,225,208,0.9);
+  box-shadow: 0 0 8px 4px rgba(45,225,208,0.4);
+}
+
+/* DESERT — heat haze, dune ripples */
+.map-prev-desert {
+  background:
+    repeating-linear-gradient( 20deg, rgba(194,122,48,0.14) 0, rgba(194,122,48,0.14) 1px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(-20deg, rgba(210,140,60,0.09) 0, rgba(210,140,60,0.09) 1px, transparent 1px, transparent 24px),
+    radial-gradient(ellipse at 68% 12%, rgba(255,220,100,0.55) 0%, rgba(220,160,60,0.2) 30%, transparent 58%),
+    radial-gradient(ellipse at 25% 88%, rgba(160,90,25,0.5) 0%, transparent 45%),
+    linear-gradient(160deg, #d49040 0%, #9a6028 45%, #c07830 100%);
+}
+
+.map-prev-sun {
+  position: absolute;
+  top: 6%;
+  right: 18%;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,240,160,0.95) 30%, rgba(255,200,60,0.4) 70%, transparent 100%);
+  box-shadow: 0 0 18px 8px rgba(255,200,60,0.35);
+}
+
+/* CITY — urban rooftop grid with sunset glow */
+.map-prev-city {
+  background:
+    repeating-linear-gradient(0deg,  rgba(0,0,0,0.35) 0, rgba(0,0,0,0.35) 9px,  transparent 9px,  transparent 36px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0, rgba(0,0,0,0.35) 9px,  transparent 9px,  transparent 36px),
+    repeating-linear-gradient(0deg,  rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 1px,  transparent 1px,  transparent 36px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 1px,  transparent 1px,  transparent 36px),
+    radial-gradient(ellipse at 52% 0%, rgba(255,145,55,0.65) 0%, rgba(220,130,40,0.2) 45%, transparent 65%),
+    radial-gradient(ellipse at 18% 90%, rgba(255,110,35,0.35) 0%, transparent 42%),
+    linear-gradient(160deg, #9ac4e4 0%, #d8a870 52%, #e8cc98 100%);
+}
+
+.map-prev-buildings {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 45%;
+  background:
+    /* Building silhouettes */
+    linear-gradient(to top,
+      rgba(40,30,18,0.9) 0%,
+      rgba(40,30,18,0.0) 100%
+    );
+}
+
+/* BLACKSITE — dark concrete, red emergency grid */
+.map-prev-blacksite {
+  background:
+    repeating-linear-gradient(0deg,  rgba(255,25,12,0.045) 0, rgba(255,25,12,0.045) 1px, transparent 1px, transparent 42px),
+    repeating-linear-gradient(90deg, rgba(255,25,12,0.045) 0, rgba(255,25,12,0.045) 1px, transparent 1px, transparent 42px),
+    radial-gradient(ellipse at 50% 50%, rgba(20,42,30,0.5) 0%, rgba(4,7,10,0.95) 100%),
+    linear-gradient(135deg, #07090e 0%, #1c0504 52%, #0b0710 100%);
+}
+
+.map-prev-danger {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,30,15,0.95);
+  box-shadow: 0 0 10px 5px rgba(255,20,10,0.5);
+  animation: dangerPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dangerPulse {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.25); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUTSCENE — chapter title card
+   ═══════════════════════════════════════════════════════════════════════════ */
+#cutscene-chapter-card {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 8, 14, 0.88);
+  text-align: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#cutscene-chapter-card.show { opacity: 1; }
+
+.chapter-eyebrow {
+  font-size: 11px;
+  letter-spacing: 6px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.chapter-title {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: var(--text);
+  text-shadow: 0 0 40px rgba(0,204,170,0.35);
+}
+.chapter-location {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUTSCENE — between-map character select panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+#cutscene-char-panel {
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto 32px;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  display: none;
+}
+
+.cs-unlock-banner {
+  background: rgba(0,204,170,0.15);
+  border: 1px solid rgba(0,204,170,0.6);
+  color: var(--accent2);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 8px 20px;
+  text-align: center;
+  width: 100%;
+  animation: unlockFlash 0.6s ease-out;
+}
+
+.cs-heading {
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+#cs-char-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.cs-char-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  background: rgba(5,12,18,0.8);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.cs-char-card:hover:not(.locked) {
+  border-color: var(--char-color, var(--accent));
+}
+.cs-char-card.selected {
+  border-color: var(--char-color, var(--accent2));
+  background: rgba(0,255,204,0.08);
+  box-shadow: 0 0 12px var(--char-color, var(--accent));
+}
+.cs-char-card.locked {
+  opacity: 0.38;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOBBY — locked character cards
+   ═══════════════════════════════════════════════════════════════════════════ */
+.character-card.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+.character-card.locked:hover {
+  border-color: var(--border);
+  color: var(--muted);
+}
+.char-lock-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-align: center;
+}
+

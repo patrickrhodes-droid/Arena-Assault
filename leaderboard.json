@@ -1,6 +1,34 @@
 {
   "coop": [
     {
+      "playerName": "Iestyn",
+      "score": 4825,
+      "wave": 7,
+      "kills": 52,
+      "date": "2026-05-08"
+    },
+    {
+      "playerName": "Patrick",
+      "score": 2075,
+      "wave": 7,
+      "kills": 34,
+      "date": "2026-05-08"
+    },
+    {
+      "playerName": "Patrick",
+      "score": 1275,
+      "wave": 7,
+      "kills": 20,
+      "date": "2026-05-08"
+    },
+    {
+      "playerName": "Iestyn",
+      "score": 975,
+      "wave": 7,
+      "kills": 21,
+      "date": "2026-05-08"
+    },
+    {
       "playerName": "Patrick",
       "score": 900,
       "wave": 5,
@@ -8,5 +36,11 @@
       "date": "2026-05-07"
     }
   ],
-  "pvp": []
+  "pvp": [
+    {
+      "playerName": "Patrick",
+      "kills": 1,
+      "date": "2026-05-08"
+    }
+  ]
 }

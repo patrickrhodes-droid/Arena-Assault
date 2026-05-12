@@ -2,7 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import { dirname, extname, join, relative, resolve } from "path";
 import { fileURLToPath } from "url";
-import { existsSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,6 +125,31 @@ app.put("/api/maps/:name", async (req, res) => {
   }
 });
 
+// ── Character config API ──────────────────────────────────────────────────────
+const charConfigFile = join(publicDir, "assets", "characterConfig.json");
+
+app.get("/api/character-config", (_req, res) => {
+  try {
+    const text = existsSync(charConfigFile) ? readFileSync(charConfigFile, "utf8") : "{}";
+    res.json(JSON.parse(text));
+  } catch { res.json({}); }
+});
+
+app.put("/api/character-config", async (req, res) => {
+  try {
+    await writeFile(charConfigFile, `${JSON.stringify(req.body, null, 2)}\n`, "utf8");
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Serve character editor HTML directly at /character
+app.get("/character", (_req, res) => {
+  res.sendFile(join(publicDir, "editor", "character.html"));
+});
+
 http.listen(PORT, () => {
   console.log(`Arena Assault map editor running at http://localhost:${PORT}`);
+  console.log(`Character editor running at http://localhost:${PORT}/editor/character.html`);
 });

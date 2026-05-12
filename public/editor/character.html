@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arena Assault — Character &amp; Weapon Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/editor/styles.css">
+  <link rel="stylesheet" href="/editor/character.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="app">
+
+    <!-- ── LEFT PANEL ── -->
+    <aside id="left-panel">
+      <header class="brand">
+        <div class="brand-kicker">Arena Assault</div>
+        <h1>Char &amp; Gun Editor</h1>
+        <button id="fullscreen-btn" type="button" class="fullscreen-btn" title="Toggle fullscreen">⛶</button>
+      </header>
+
+      <!-- Mode tabs -->
+      <section class="tool-section">
+        <div class="tab-row">
+          <button class="tab-btn selected" data-tab="character">Character</button>
+          <button class="tab-btn" data-tab="weapon">Weapon</button>
+        </div>
+      </section>
+
+      <!-- CHARACTER tab -->
+      <div id="tab-character">
+        <section class="tool-section">
+          <label for="char-select">Operator</label>
+          <select id="char-select">
+            <option value="iestyn">Iestyn</option>
+            <option value="patrick">Patrick</option>
+            <option value="will">Will</option>
+            <option value="matt">Matt</option>
+          </select>
+          <label class="check-row" style="margin-top:6px">
+            <input id="anim-toggle" type="checkbox"> Animate walk
+          </label>
+          <label class="check-row">
+            <input id="show-axes-toggle" type="checkbox"> Show axes
+          </label>
+        </section>
+
+        <section class="tool-section grow">
+          <div class="section-title">Body Parts</div>
+          <div id="part-list">
+            <div class="part-row" data-part="headGroup">Head</div>
+            <div class="part-row" data-part="torso">Torso</div>
+            <div class="part-row" data-part="visor">Visor</div>
+            <div class="part-row" data-part="leftArm">Left Arm</div>
+            <div class="part-row" data-part="rightArm">Right Arm</div>
+            <div class="part-row" data-part="leftLeg">Left Leg</div>
+            <div class="part-row" data-part="rightLeg">Right Leg</div>
+            <div class="part-row" data-part="leftBoot">Left Boot</div>
+            <div class="part-row" data-part="rightBoot">Right Boot</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- WEAPON tab -->
+      <div id="tab-weapon" style="display:none">
+        <section class="tool-section">
+          <label for="weapon-select">Weapon</label>
+          <select id="weapon-select">
+            <option value="pistol">Pistol</option>
+            <option value="assault">Assault Rifle</option>
+            <option value="shotgun">Shotgun</option>
+            <option value="sniper">Sniper</option>
+            <option value="sword">Sword</option>
+            <option value="bazooka">Bazooka</option>
+            <option value="grapple">Grapple</option>
+          </select>
+
+          <div class="tab-row" style="margin-top:8px">
+            <button class="tab-btn selected" data-view="fp">FPS View</button>
+            <button class="tab-btn" data-view="tp">3P View</button>
+          </div>
+
+          <div class="section-title" style="margin-top:10px">Preview State</div>
+          <div class="tab-row">
+            <button class="tab-btn selected" data-ads="idle">Idle</button>
+            <button class="tab-btn" data-ads="ads">ADS</button>
+          </div>
+        </section>
+
+        <section class="tool-section grow">
+          <div class="section-title">Weapon Parts</div>
+          <div id="weapon-part-list">
+            <div class="part-row" data-wpart="fpGroup">FPS Model</div>
+            <div class="part-row" data-wpart="fpMuzzle">FPS Muzzle</div>
+            <div class="part-row" data-wpart="tpGroup">3P Model</div>
+            <div class="part-row" data-wpart="tpMuzzle">3P Muzzle</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Save/Copy -->
+      <section class="tool-section" style="margin-top:auto">
+        <div class="inline">
+          <button id="save-config" type="button" class="primary">Save</button>
+          <button id="copy-config" type="button">Copy JSON</button>
+          <button id="reset-config" type="button" class="danger">Reset</button>
+        </div>
+        <div id="save-status" style="font-size:11px;color:var(--muted);margin-top:4px;min-height:16px"></div>
+      </section>
+    </aside>
+
+    <!-- ── VIEWPORT ── -->
+    <section id="viewport-wrap">
+      <canvas id="viewport"></canvas>
+      <div id="status-bar">
+        <span id="status-text">Ready</span>
+        <span id="sel-info"></span>
+      </div>
+    </section>
+
+    <!-- ── RIGHT PANEL ── -->
+    <aside id="right-panel">
+
+      <!-- Transform -->
+      <section class="tool-section">
+        <div class="section-title">Transform Mode</div>
+        <div class="button-grid">
+          <button data-mode="translate" class="selected">Move</button>
+          <button data-mode="rotate">Rotate</button>
+          <button data-mode="scale">Scale</button>
+        </div>
+        <label class="check-row" style="margin-top:4px">
+          <input id="snap-toggle" type="checkbox" checked> Snap
+        </label>
+      </section>
+
+      <!-- Selected part inspector -->
+      <section class="tool-section">
+        <div class="section-title">Selected: <span id="sel-name">—</span></div>
+
+        <div class="field-group">
+          <div class="field-group-label">Position</div>
+          <div class="field-grid">
+            <label>X<input data-field="px" type="number" step="0.01"></label>
+            <label>Y<input data-field="py" type="number" step="0.01"></label>
+            <label>Z<input data-field="pz" type="number" step="0.01"></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-label">Rotation (°)</div>
+          <div class="field-grid">
+            <label>X<input data-field="rx" type="number" step="1"></label>
+            <label>Y<input data-field="ry" type="number" step="1"></label>
+            <label>Z<input data-field="rz" type="number" step="1"></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-label">Size / Scale</div>
+          <div class="field-grid">
+            <label>X<input data-field="sx" type="number" step="0.01" min="0.001"></label>
+            <label>Y<input data-field="sy" type="number" step="0.01" min="0.001"></label>
+            <label>Z<input data-field="sz" type="number" step="0.01" min="0.001"></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Head-specific controls (shown only when headGroup selected in char mode) -->
+      <section class="tool-section" id="head-controls" style="display:none">
+        <div class="section-title">Head Options</div>
+        <label>Head Scale
+          <input id="head-scale" type="number" step="0.05" min="0.1" max="4" value="1">
+        </label>
+        <label style="margin-top:6px">Head Rotation Y (°)
+          <input id="head-rot-y" type="number" step="1" value="0">
+        </label>
+      </section>
+
+      <!-- Weapon-specific FPS/ADS position editors -->
+      <section class="tool-section" id="weapon-pos-controls" style="display:none">
+        <div class="section-title">FPS Positions</div>
+        <div class="field-group">
+          <div class="field-group-label">Idle (fpPos)</div>
+          <div class="field-grid">
+            <label>X<input data-wfield="fpPos.0" type="number" step="0.01"></label>
+            <label>Y<input data-wfield="fpPos.1" type="number" step="0.01"></label>
+            <label>Z<input data-wfield="fpPos.2" type="number" step="0.01"></label>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-label">ADS (fpAdsPos)</div>
+          <div class="field-grid">
+            <label>X<input data-wfield="fpAdsPos.0" type="number" step="0.01"></label>
+            <label>Y<input data-wfield="fpAdsPos.1" type="number" step="0.01"></label>
+            <label>Z<input data-wfield="fpAdsPos.2" type="number" step="0.01"></label>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-label">FPS Scale</div>
+          <div class="field-grid">
+            <label>X<input data-wfield="fpScale.0" type="number" step="0.01" min="0.001"></label>
+            <label>Y<input data-wfield="fpScale.1" type="number" step="0.01" min="0.001"></label>
+            <label>Z<input data-wfield="fpScale.2" type="number" step="0.01" min="0.001"></label>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-label">3P Position</div>
+          <div class="field-grid">
+            <label>X<input data-wfield="tpPos.0" type="number" step="0.01"></label>
+            <label>Y<input data-wfield="tpPos.1" type="number" step="0.01"></label>
+            <label>Z<input data-wfield="tpPos.2" type="number" step="0.01"></label>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-group-label">3P Scale</div>
+          <div class="field-grid">
+            <label>X<input data-wfield="tpScale.0" type="number" step="0.01" min="0.001"></label>
+            <label>Y<input data-wfield="tpScale.1" type="number" step="0.01" min="0.001"></label>
+            <label>Z<input data-wfield="tpScale.2" type="number" step="0.01" min="0.001"></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-label">GLB Model</div>
+          <div class="field-grid">
+            <label>Scl<input data-wfield="glbScale" type="number" step="0.005" min="0.001"></label>
+            <label>RotY<input data-wfield="glbRotY" type="number" step="1"></label>
+          </div>
+          <div class="field-grid" style="margin-top:4px">
+            <label>PosY<input data-wfield="glbPosY" type="number" step="0.01"></label>
+            <label>PosZ<input data-wfield="glbPosZ" type="number" step="0.01"></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- JSON output -->
+      <section class="tool-section">
+        <div class="section-title">Config JSON</div>
+        <textarea id="json-out" readonly rows="8" style="width:100%;font-size:10px;font-family:monospace;background:#0a0f14;border:1px solid var(--line);color:var(--muted);padding:6px;resize:vertical"></textarea>
+      </section>
+
+    </aside>
+  </main>
+
+  <script type="module" src="/editor/character.js"></script>
+</body>
+</html>

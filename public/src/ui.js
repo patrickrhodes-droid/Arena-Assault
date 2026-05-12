@@ -3,6 +3,7 @@ import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
 import { applyCharacterHead, rebuildArena } from "./scene.js";
+import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, getUnlockedCharacters } from "./story.js";
 
 export function cacheDom() {
   game.dom = {
@@ -121,9 +122,31 @@ export function cacheDom() {
     waveEnemyCount: document.getElementById("wave-enemy-count"),
     bossPhaseLabel: document.getElementById("boss-phase-label"),
     scorePopups: document.getElementById("score-popups"),
+    vignette: document.getElementById("vignette"),
+    landingFlash: document.getElementById("landing-flash"),
+    lobbyCanvas: document.getElementById("lobby-canvas"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
+}
+
+function refreshCharacterLockState() {
+  const unlocked = getUnlockedCharacters();
+  game.dom.characterCards?.forEach((card) => {
+    const id = card.dataset.character;
+    const isLocked = id && !unlocked.has(id);
+    card.classList.toggle("locked", !!isLocked);
+    // Update the name label
+    const nameEl = card.querySelector(".character-name");
+    if (nameEl) {
+      if (isLocked) {
+        nameEl.dataset.origName = nameEl.dataset.origName || nameEl.textContent;
+        nameEl.textContent = "🔒";
+      } else if (nameEl.dataset.origName) {
+        nameEl.textContent = nameEl.dataset.origName;
+      }
+    }
+  });
 }
 
 function showScreen(id) {
@@ -230,16 +253,27 @@ export function bindMenuControls(actions) {
   }
 
   game.dom.characterCards.forEach((card) => {
+    const canvas = card.querySelector(".char-card-canvas");
+    const charId = card.dataset.character;
+
+    // Start preview on hover (only if unlocked)
+    card.addEventListener("mouseenter", () => {
+      const unlocked = getUnlockedCharacters();
+      if (!charId || !canvas || !unlocked.has(charId)) return;
+      setCharacterPreview(charId, canvas);
+    });
+
     card.addEventListener("click", () => {
-      const characterId = card.dataset.character;
-      if (!characterId || !CHARACTERS[characterId]) return;
-      game.myCharacter = characterId;
+      const unlocked = getUnlockedCharacters();
+      if (!charId || !CHARACTERS[charId] || !unlocked.has(charId)) return;
+      game.myCharacter = charId;
       game.dom.characterCards.forEach((c) => c.classList.toggle("selected", c === card));
       game.dom.characterSelect.style.borderColor = "";
+      if (canvas) setCharacterPreview(charId, canvas);
       if (game.visuals?.player?.headGroup) {
-        applyCharacterHead(game.visuals.player.headGroup, characterId, { visor: game.visuals.player.visor });
+        applyCharacterHead(game.visuals.player.headGroup, charId, { visor: game.visuals.player.visor });
       }
-      game.socket?.emit("playerCharacterUpdate", { character: characterId });
+      game.socket?.emit("playerCharacterUpdate", { character: charId });
     });
   });
 
@@ -419,7 +453,13 @@ export function updateLobbyUI(players) {
   }
 
   const hasName = Boolean(localPlayer.playerName);
+  const wasHidden = game.dom.characterSelect.hidden;
   game.dom.characterSelect.hidden = !hasName;
+  if (wasHidden && hasName) {
+    paintAllCharacterPreviews();
+    // Apply locked styling based on current unlock state
+    refreshCharacterLockState();
+  }
 
   // Ready button: only update it if the player hasn't clicked ready yet
   if (!localPlayer.isReady) {
@@ -463,6 +503,20 @@ export function updateHUD() {
   const percent = Math.max(0, game.hp / game.effectiveMaxHP);
   game.dom.hpFill.style.width = `${percent * 100}%`;
   game.dom.hpText.textContent = Math.ceil(game.hp);
+
+  // Health bar color: green → yellow → red
+  if (percent > 0.6) {
+    game.dom.hpFill.style.background = "linear-gradient(90deg,#22bb44,#44ee66)";
+  } else if (percent > 0.3) {
+    game.dom.hpFill.style.background = "linear-gradient(90deg,#cc8800,#ffcc33)";
+  } else {
+    game.dom.hpFill.style.background = "linear-gradient(90deg,var(--danger),#ff6644)";
+  }
+
+  // Low-health vignette pulse
+  if (game.dom.vignette) {
+    game.dom.vignette.classList.toggle("low-health", percent < 0.3 && game.state === "PLAYING");
+  }
 
   const isPvP = game.mode === "PVP";
   const isFFA = game.mode === "FFA";

@@ -1,0 +1,93 @@
+/* Character/Weapon editor extra styles */
+
+.tab-row {
+  display: flex;
+  gap: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  font-size: 11px;
+  padding: 5px 4px;
+  letter-spacing: 0.08em;
+}
+
+.tab-btn.selected {
+  background: rgba(45, 225, 208, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Part list */
+.part-row {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--line);
+  background: #11171e;
+  cursor: pointer;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.part-row:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.part-row.selected {
+  border-color: var(--accent);
+  background: rgba(45, 225, 208, 0.12);
+  color: var(--accent);
+}
+
+/* Field groups in right panel */
+.field-group {
+  margin-bottom: 10px;
+}
+
+.field-group-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* Override field-grid to be 3-column for X/Y/Z */
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+
+.field-grid label {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-grid input {
+  width: 100%;
+  padding: 3px 5px;
+  font-size: 11px;
+}
+
+/* Right panel scrolls */
+#right-panel {
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+/* Axes helper indicator */
+#sel-info {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
