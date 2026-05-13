@@ -386,7 +386,14 @@ function showCharSelect() {
   const grid     = document.getElementById("cs-char-grid");
   const banner   = document.getElementById("cs-unlock-banner");
   const confirm  = document.getElementById("cs-deploy-btn");
-  const unlocked = getUnlockedCharacters();
+
+  // Arena is always the first map — force only Iestyn and Patrick, regardless
+  // of any previously stored unlock data (Will/Matt haven't been met yet).
+  // All other maps use the persisted unlock state from localStorage.
+  const isFirstMap = (_currentMapId === "arena");
+  const unlocked = isFirstMap
+    ? new Set(["iestyn", "patrick"])
+    : getUnlockedCharacters();
 
   // Announce newly unlocked characters if any
   const newUnlocks = (_pendingUnlocks || []).filter((id) => !Array.from(unlocked).includes(id) || true);
@@ -482,6 +489,7 @@ function closeFullCutscene() {
 
 // ── Public: show cutscene ─────────────────────────────────────────────────────
 let _pendingUnlocks = [];
+let _currentMapId   = "";
 
 export function showCampaignCutscene(mapId) {
   const storyDef = CAMPAIGN_STORY[mapId];
@@ -492,8 +500,9 @@ export function showCampaignCutscene(mapId) {
 
   return new Promise(async (resolve) => {
     _cutsceneResolve = resolve;
-    _lines     = storyDef.lines || [];
-    _lineIndex = 0;
+    _lines       = storyDef.lines || [];
+    _lineIndex   = 0;
+    _currentMapId = mapId;
 
     ensureRenderer();
 

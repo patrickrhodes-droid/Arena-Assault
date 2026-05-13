@@ -58,15 +58,6 @@
         </div>
       </div>
 
-      <!-- Lobby chat -->
-      <div id="lobby-chat-wrap">
-        <div id="lobby-chat-log"></div>
-        <form id="lobby-chat-form">
-          <input id="lobby-chat-input" type="text" maxlength="100" placeholder="Say something...">
-          <button id="lobby-chat-send" type="button">SEND</button>
-        </form>
-      </div>
-
       <!-- Players waiting list -->
       <div id="lobby-status" style="margin-top:12px">
         <div id="player-list" style="font-size:13px;color:var(--muted)">Connecting...</div>
@@ -210,6 +201,15 @@
   <div id="screen-lobby" class="lobby-screen" style="display:none">
     <div class="lobby-panel">
       <button class="deploy-btn" id="deploy-btn-lobby" style="display:none">READY UP</button>
+    </div>
+  </div>
+
+  <!-- Floating lobby chat — body level so it's always visible on any lobby screen -->
+  <div id="lobby-chat-panel">
+    <div id="lobby-chat-log"></div>
+    <div id="lobby-chat-input-row">
+      <input id="lobby-chat-input" type="text" maxlength="100" placeholder="Say something...">
+      <button id="lobby-chat-send" type="button">→</button>
     </div>
   </div>
 

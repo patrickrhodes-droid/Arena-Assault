@@ -69,7 +69,7 @@ export function initNetworking(actions) {
 
   // ── Lobby chat ───────────────────────────────────────────────────────────
   game.socket.on("chatMessage", (data) => {
-    const log = game.dom?.lobbyChatLog;
+    const log = game.dom?.lobbyChatLog ?? document.getElementById("lobby-chat-log");
     if (!log) return;
     const row = document.createElement("div");
     row.className = "chat-msg";
@@ -84,8 +84,8 @@ export function initNetworking(actions) {
     log.scrollTop = log.scrollHeight;
   });
 
-  // Bind chat — direct button click + Enter key (more reliable than form submit)
-  const chatInput = game.dom?.lobbyChatInput;
+  // Bind floating chat panel send button + Enter key
+  const chatInput  = document.getElementById("lobby-chat-input");
   const chatSendBtn = document.getElementById("lobby-chat-send");
   if (chatInput && chatSendBtn && !chatSendBtn._chatBound) {
     chatSendBtn._chatBound = true;
@@ -96,7 +96,9 @@ export function initNetworking(actions) {
       chatInput.value = "";
     };
     chatSendBtn.addEventListener("click", sendMsg);
-    chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendMsg(); } });
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); sendMsg(); }
+    });
   }
 
   // Room lock status — show password prompt to non-hosts if room is locked.

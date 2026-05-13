@@ -226,6 +226,9 @@ window.addEventListener("load", () => {
   // Start the canvas hex/particle overlay for the lobby background
   initLobbyCanvas();
 
+  // Show the floating chat panel in the lobby
+  if (game.dom?.lobbyChatPanel) game.dom.lobbyChatPanel.classList.add("visible");
+
   // Pre-load the default arena so the 3-D world shows behind the lobby immediately
   rebuildArena("arena").catch(() => {});
 });
@@ -246,8 +249,9 @@ async function startGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
-  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
+  if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
+  if (game.dom.lobbyCanvas)  game.dom.lobbyCanvas.style.display   = "none";
+  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.remove("visible");
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
@@ -290,8 +294,9 @@ async function startPvPGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
-  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
+  if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
+  if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
+  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.remove("visible");
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -342,8 +347,9 @@ async function startFFAGame() {
   game.state = "PLAYING";
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
-  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
+  if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
+  if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
+  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.remove("visible");
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";

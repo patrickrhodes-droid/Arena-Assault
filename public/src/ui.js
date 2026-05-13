@@ -127,9 +127,9 @@ export function cacheDom() {
     lobbyCanvas: document.getElementById("lobby-canvas"),
     barrelWarning: document.getElementById("barrel-warning"),
     pingDisplay: document.getElementById("ping-display"),
+    lobbyChatPanel: document.getElementById("lobby-chat-panel"),
     lobbyChatLog: document.getElementById("lobby-chat-log"),
     lobbyChatInput: document.getElementById("lobby-chat-input"),
-    lobbyChatForm: document.getElementById("lobby-chat-form"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
