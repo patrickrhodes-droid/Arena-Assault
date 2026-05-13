@@ -571,7 +571,12 @@ export function updateHUD() {
   const isCompetitive = isPvP || isFFA;
   game.dom.pvpScore.hidden = !isPvP;
   if (game.dom.ffaScore) game.dom.ffaScore.hidden = !isFFA;
-  if (game.dom.ffaHud) game.dom.ffaHud.hidden = !isFFA;
+  // Use style.display explicitly — the element has inline display:flex which can
+  // override the [hidden] attribute in some browsers.
+  if (game.dom.ffaHud) {
+    game.dom.ffaHud.hidden = !isFFA;
+    game.dom.ffaHud.style.display = isFFA ? "flex" : "none";
+  }
   game.dom.waveDisplay.style.display = isCompetitive ? "none" : "";
   game.dom.inventoryBar.style.display = isPvP ? "none" : "";
   if (isPvP) {

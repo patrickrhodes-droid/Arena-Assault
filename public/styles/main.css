@@ -2402,9 +2402,8 @@ canvas {
   padding: 6px 8px;
   font-size: 11px;
   color: var(--muted);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  /* block layout so scrollTop works reliably */
+  display: block;
 }
 .chat-msg { color: var(--text); }
 .chat-msg .chat-name { color: var(--accent); font-weight: 700; margin-right: 4px; }

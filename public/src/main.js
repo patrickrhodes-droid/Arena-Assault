@@ -111,6 +111,7 @@ const actions = {
   startFFAGame,
   pvpMatchOver,
   ffaMatchOver,
+  enterCutsceneMode,
   startMatch: () => {
     if (game.isHost) {
       game.audio.init();
