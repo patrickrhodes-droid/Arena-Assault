@@ -251,7 +251,8 @@ async function startGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
   if (game.dom.lobbyCanvas)  game.dom.lobbyCanvas.style.display   = "none";
-  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.add("hidden-chat");
+  // Chat panel stays visible during gameplay too — messages from other players
+  // (still in lobby or mid-match) should never go un-seen.
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
@@ -296,7 +297,8 @@ async function startPvPGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.add("hidden-chat");
+  // Chat panel stays visible during gameplay too — messages from other players
+  // (still in lobby or mid-match) should never go un-seen.
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -349,7 +351,8 @@ async function startFFAGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  if (game.dom.lobbyChatPanel) game.dom.lobbyChatPanel.classList.add("hidden-chat");
+  // Chat panel stays visible during gameplay too — messages from other players
+  // (still in lobby or mid-match) should never go un-seen.
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
