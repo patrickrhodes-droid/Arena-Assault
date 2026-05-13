@@ -49,7 +49,7 @@ const enemyMaterials = {
   bossEye: new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xff8833, emissiveIntensity: 2.5 }),
 };
 
-const BOSS_ESCAPE_HEIGHT = 50 / 6;
+const BOSS_ESCAPE_HEIGHT = (50 / 6) * 2; // doubled so the mech leaps twice as high
 const MAX_LIVE_ENEMIES = 60;
 const MAX_SKELETON_CORPSES = 5;
 
@@ -301,54 +301,82 @@ export function createDog(position, id = Math.random()) {
 
 export function createBoss(position, id = Math.random(), options = {}) {
   const group = new THREE.Group();
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 1.2), enemyMaterials.bossBody);
-  torso.position.y = 2.35;
-  group.add(torso);
 
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(2.15, 1.2, 1.32), enemyMaterials.bossArmor);
-  chest.position.set(0, 2.45, 0.08);
-  group.add(chest);
+  let mixer = null;
+  let walkAction = null;
+  let jumpAction = null;
+  let landingAction = null;
+  let kickAction = null;
+  let hitAction = null;
+  let deathAction = null;
+  let currentAction = null;
+  let flashPart = null;
 
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), enemyMaterials.bossBody);
-  head.position.y = 4.15;
-  group.add(head);
+  const mechGltf = game.shared.mechGltf;
+  let mechBoundsRadius = 0;
+  let mechBoundsHeight = 0;
+  if (mechGltf) {
+    const model = cloneSkinnedScene(mechGltf.scene);
+    // Render the mech at its native size — no scaling.
+    model.rotation.y = Math.PI; // face forward
+    model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+    group.add(model);
 
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.28, 0.65), enemyMaterials.bossBody);
-  jaw.position.set(0, 3.72, 0.12);
-  group.add(jaw);
+    // Measure the model so the collision hitbox matches its visual size.
+    const bbox = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    mechBoundsHeight = size.y;
+    mechBoundsRadius = Math.max(size.x, size.z) * 0.5;
 
-  const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 0.04), enemyMaterials.bossEye);
-  eyes.position.set(0, 4.18, -0.46);
-  group.add(eyes);
+    mixer = new THREE.AnimationMixer(model);
+    const anims = mechGltf.animations ?? [];
+    const findClip = (...names) => {
+      for (const n of names) {
+        const exact = anims.find((a) => a.name === n);
+        if (exact) return exact;
+      }
+      for (const n of names) {
+        const fuzzy = anims.find((a) => new RegExp(n, "i").test(a.name));
+        if (fuzzy) return fuzzy;
+      }
+      return null;
+    };
+    const walkClip    = findClip("Walk", "walk");
+    const jumpClip    = findClip("Jump", "jump");
+    const landingClip = findClip("Jump_Landing", "Landing", "land");
+    const kickClip    = findClip("Kick", "kick");
+    const hitClip     = findClip("HitRecieve_2", "HitReceive_2", "HitRecieve", "HitReceive", "Hit");
+    const deathClip   = findClip("Death", "Die");
 
-  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.75, 0.45), enemyMaterials.bossBody);
-  leftArm.position.set(-1.22, 2.45, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.75, 0.45), enemyMaterials.bossBody);
-  rightArm.position.set(1.22, 2.45, 0);
-  group.add(rightArm);
-
-  const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.9, 0.55), enemyMaterials.bossBody);
-  leftLeg.position.set(-0.52, 0.98, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.9, 0.55), enemyMaterials.bossBody);
-  rightLeg.position.set(0.52, 0.98, 0);
-  group.add(rightLeg);
-
-  const club = new THREE.Group();
-  const clubHandle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.11, 2.7, 8),
-    game.shared.worldMaterials.crateMat,
-  );
-  clubHandle.rotation.z = Math.PI / 2;
-  club.add(clubHandle);
-  const clubHead = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.58, 0.58), enemyMaterials.bossArmor);
-  clubHead.position.x = 1.15;
-  club.add(clubHead);
-  club.position.set(1.75, 2.3, -0.05);
-  group.add(club);
+    if (walkClip)    { walkAction    = mixer.clipAction(walkClip);    walkAction.setLoop(THREE.LoopRepeat, Infinity); walkAction.play(); currentAction = walkAction; }
+    if (jumpClip)    { jumpAction    = mixer.clipAction(jumpClip);    jumpAction.setLoop(THREE.LoopOnce);    jumpAction.clampWhenFinished = false; }
+    if (landingClip) { landingAction = mixer.clipAction(landingClip); landingAction.setLoop(THREE.LoopOnce); landingAction.clampWhenFinished = false; }
+    if (kickClip)    { kickAction    = mixer.clipAction(kickClip);    kickAction.setLoop(THREE.LoopOnce);    kickAction.clampWhenFinished = false; }
+    if (hitClip)     { hitAction     = mixer.clipAction(hitClip);     hitAction.setLoop(THREE.LoopOnce);     hitAction.clampWhenFinished = false; }
+    if (deathClip)   { deathAction   = mixer.clipAction(deathClip);   deathAction.setLoop(THREE.LoopOnce);   deathAction.clampWhenFinished = true; }
+  } else {
+    // Fallback box boss if Mech.glb hasn't loaded yet
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 1.2), enemyMaterials.bossBody);
+    torso.position.y = 2.35;
+    group.add(torso);
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(2.15, 1.2, 1.32), enemyMaterials.bossArmor);
+    chest.position.set(0, 2.45, 0.08);
+    group.add(chest);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), enemyMaterials.bossBody);
+    head.position.y = 4.15;
+    group.add(head);
+    const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 0.04), enemyMaterials.bossEye);
+    eyes.position.set(0, 4.18, -0.46);
+    group.add(eyes);
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.9, 0.55), enemyMaterials.bossBody);
+    leftLeg.position.set(-0.52, 0.98, 0);
+    group.add(leftLeg);
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.9, 0.55), enemyMaterials.bossBody);
+    rightLeg.position.set(0.52, 0.98, 0);
+    group.add(rightLeg);
+    flashPart = chest;
+  }
 
   group.position.copy(position);
   game.scene.add(group);
@@ -370,16 +398,18 @@ export function createBoss(position, id = Math.random(), options = {}) {
     id,
     type: "boss",
     group,
-    torso,
-    chest,
-    head,
-    leftArm,
-    rightArm,
-    leftLeg,
-    rightLeg,
-    club,
-    flashPart: chest,
-    radius: 1.45,
+    mixer,
+    walkAction,
+    jumpAction,
+    landingAction,
+    kickAction,
+    hitAction,
+    deathAction,
+    currentAction,
+    flashPart,
+    // Hitbox matches the actual GLB bounds when available; falls back to the box-boss radius.
+    radius: mechBoundsRadius > 0 ? mechBoundsRadius : 1.45,
+    bossHeight: mechBoundsHeight > 0 ? mechBoundsHeight : 4.6,
     hp: hpMax,
     maxHp: hpMax,
     spd: BOSS_TUNING.moveSpeed,
@@ -483,6 +513,29 @@ function playSkeletonDeathEffect(position, rotationY) {
   game.skeletonCorpses.push({ model, mixer, elapsed: 0, duration: deathClip.duration + 0.4 });
 }
 
+function playBossDeathEffect(enemy) {
+  const gltf = game.shared.mechGltf;
+  if (!gltf) return;
+  const deathClip = gltf.animations?.find((c) => c.name === "Death")
+    ?? gltf.animations?.find((c) => /death|die/i.test(c.name));
+  if (!deathClip) return;
+
+  const model = cloneSkinnedScene(gltf.scene);
+  // Native scale — matches createBoss
+  model.position.copy(enemy.group.position);
+  model.rotation.y = enemy.group.rotation.y;
+  model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+  game.scene.add(model);
+
+  const mixer = new THREE.AnimationMixer(model);
+  const action = mixer.clipAction(deathClip);
+  action.setLoop(THREE.LoopOnce);
+  action.clampWhenFinished = true;
+  action.play();
+
+  game.skeletonCorpses.push({ model, mixer, elapsed: 0, duration: deathClip.duration + 0.6 });
+}
+
 function playSwatDeathEffect(position, rotationY) {
   const gltf = game.shared.swatGltf;
   if (!gltf || !gltf.animations?.length || game.skeletonCorpses.length >= MAX_SKELETON_CORPSES) {
@@ -522,6 +575,8 @@ export function removeEnemy(index) {
     enemy.mixer.stopAllAction();
   } else if (enemy.type === "soldier" && game.shared.swatGltf) {
     playSwatDeathEffect(enemy.group.position, enemy.group.rotation.y);
+  } else if (enemy.type === "boss" && enemy.deathAction && enemy.mixer) {
+    playBossDeathEffect(enemy);
   }
 
   game.scene.remove(enemy.group);
@@ -560,6 +615,25 @@ export function updateEnemies() {
   const syncBatch = [];
 
   game.enemies.forEach((enemy) => {
+    // Boss hit-reaction timer (runs on every client so the animation plays everywhere)
+    if (enemy.type === "boss") {
+      if ((enemy.hitCooldown || 0) > 0) enemy.hitCooldown -= game.dt;
+      if ((enemy.hitTmr || 0) > 0) enemy.hitTmr -= game.dt;
+      // Fall-back to Walk whenever the boss is upright, not mid-attack, and the
+      // current action has finished. This prevents the mech "gliding" after a
+      // one-shot clip (hit/kick/landing) clamps and stops driving the skeleton.
+      if (
+        enemy.walkAction
+        && enemy.currentAction !== enemy.walkAction
+        && !enemy.escaping
+        && (enemy.hitTmr || 0) <= 0
+        && (enemy.landingTmr || 0) <= 0
+        && (enemy.swingTmr || 0) <= 0
+        && (enemy.windupTmr || 0) <= 0
+      ) {
+        crossfadeToAction(enemy, enemy.walkAction, 0.15);
+      }
+    }
     if (runAI) {
       runOwnedEnemyAI(enemy);
       if (doSync) {
@@ -579,9 +653,14 @@ export function updateEnemies() {
     }
     updateHealthBar(enemy);
     if (enemy.mixer) {
-      const camDx = enemy.group.position.x - game.camera.position.x;
-      const camDz = enemy.group.position.z - game.camera.position.z;
-      if (camDx * camDx + camDz * camDz < 30 * 30) enemy.mixer.update(game.dt);
+      // Bosses are always animated; smaller enemies skip past 30 units to save cycles
+      if (enemy.type === "boss") {
+        enemy.mixer.update(game.dt);
+      } else {
+        const camDx = enemy.group.position.x - game.camera.position.x;
+        const camDz = enemy.group.position.z - game.camera.position.z;
+        if (camDx * camDx + camDz * camDz < 30 * 30) enemy.mixer.update(game.dt);
+      }
     }
   });
 
@@ -736,8 +815,12 @@ function applyMeleeDamage(enemy, target, damage) {
 // Smoothly crossfade an enemy's animation to a new action.
 function crossfadeToAction(enemy, toAction, duration) {
   if (!toAction || !enemy.mixer || enemy.currentAction === toAction) return;
+  // Always reset+play the target action so a previously clamped one-shot
+  // (e.g. Walk that finished, or Hit that ended) starts driving the skeleton again.
+  toAction.reset();
+  toAction.setEffectiveWeight(1);
+  toAction.play();
   if (enemy.currentAction) enemy.currentAction.crossFadeTo(toAction, duration, false);
-  else toAction.reset().play();
   enemy.currentAction = toAction;
 }
 
@@ -952,8 +1035,21 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
     pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + (enemy.bossEfx || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
     pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + (enemy.bossEfz || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
-    if (pos.y <= 0) { pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false; }
+    if (pos.y <= 0) {
+      pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false;
+      // Play landing animation on touchdown
+      if (enemy.landingAction) {
+        enemy.landingAction.reset();
+        crossfadeToAction(enemy, enemy.landingAction, 0.06);
+        enemy.landingTmr = enemy.landingAction.getClip().duration;
+      }
+    }
     return;
+  }
+  // While landing animation plays, hold movement so the recovery reads cleanly
+  if ((enemy.landingTmr || 0) > 0) {
+    enemy.landingTmr -= game.dt;
+    if (enemy.landingTmr <= 0 && enemy.walkAction) crossfadeToAction(enemy, enemy.walkAction, 0.15);
   }
   const prevX = pos.x;
   const prevZ = pos.z;
@@ -990,6 +1086,21 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     enemy.stuckTmr = 0;
     // Clear attack timers so a ghost hit can't fire after landing somewhere new.
     enemy.windupTmr = 0; enemy.swingTmr = 0;
+    // Switch to jump animation while airborne
+    if (enemy.jumpAction) { enemy.jumpAction.reset(); crossfadeToAction(enemy, enemy.jumpAction, 0.05); }
+  }
+
+  // Drive the boss locomotion / attack animation between Walk and Kick
+  if (enemy.mixer && !(enemy.landingTmr > 0) && !(enemy.hitTmr > 0)) {
+    const swinging = (enemy.swingTmr || 0) > 0 || (enemy.windupTmr || 0) > 0;
+    if (swinging && enemy.kickAction) {
+      if (enemy.currentAction !== enemy.kickAction) {
+        enemy.kickAction.reset();
+        crossfadeToAction(enemy, enemy.kickAction, 0.05);
+      }
+    } else if (!swinging && enemy.walkAction && enemy.currentAction !== enemy.walkAction) {
+      crossfadeToAction(enemy, enemy.walkAction, 0.15);
+    }
   }
 }
 
@@ -1011,7 +1122,11 @@ function updateHealthBar(enemy) {
   if (enemy.type === "skeleton") {
     return;
   }
-  const hpY = enemy.type === "soldier" ? 2.3 : enemy.type === "dog" ? 1.3 : 5.3;
+  const hpY = enemy.type === "soldier"
+    ? 2.3
+    : enemy.type === "dog"
+      ? 1.3
+      : ((enemy.bossHeight || 4.6) + 0.6);
   enemy.hpBar.position.copy(enemy.group.position).setY(enemy.group.position.y + hpY);
   enemy.hpBar.lookAt(game.camera.position);
   enemy.hpFg.scale.x = Math.max(0, enemy.hp / enemy.maxHp);
@@ -1082,6 +1197,15 @@ export function handleEnemyDamaged(data) {
   if (!enemy) return;
   enemy.hp -= data.damage;
   enemy.flashTmr = 0.1;
+  // Boss hit-reaction: play HitRecieve_2 briefly without breaking the AI loop
+  if (enemy.type === "boss" && enemy.hitAction && !enemy.escaping && enemy.hp > 0) {
+    if ((enemy.hitCooldown || 0) <= 0) {
+      enemy.hitAction.reset();
+      crossfadeToAction(enemy, enemy.hitAction, 0.05);
+      enemy.hitTmr = Math.min(0.35, enemy.hitAction.getClip().duration);
+      enemy.hitCooldown = 0.6; // throttle so rapid bullets don't spam the clip
+    }
+  }
   // Server handles enemy death; the enemy vanishes from the next enemiesSynced broadcast.
 }
 

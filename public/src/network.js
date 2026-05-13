@@ -68,20 +68,25 @@ export function initNetworking(actions) {
   });
 
   // ── Lobby chat ───────────────────────────────────────────────────────────
-  game.socket.on("chatMessage", (data) => {
+  const appendChatRow = (playerName, text, isSelf = false) => {
     const log = game.dom?.lobbyChatLog ?? document.getElementById("lobby-chat-log");
     if (!log) return;
     const row = document.createElement("div");
-    row.className = "chat-msg";
+    row.className = "chat-msg" + (isSelf ? " self" : "");
     const nameSpan = document.createElement("span");
     nameSpan.className = "chat-name";
-    nameSpan.textContent = (data.playerName || "?").slice(0, 20) + ":";
+    nameSpan.textContent = (playerName || "?").slice(0, 20) + ":";
     row.appendChild(nameSpan);
-    row.appendChild(document.createTextNode(String(data.text || "").slice(0, 120)));
+    row.appendChild(document.createTextNode(" " + String(text || "").slice(0, 120)));
     log.appendChild(row);
-    // Keep max 40 messages
     while (log.children.length > 40) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
+  };
+
+  game.socket.on("chatMessage", (data) => {
+    // Skip echo for messages we already added locally
+    if (data.fromSocketId && data.fromSocketId === game.socket?.id) return;
+    appendChatRow(data.playerName, data.text, false);
   });
 
   // Bind floating chat panel send button + Enter key
@@ -92,12 +97,17 @@ export function initNetworking(actions) {
     const sendMsg = () => {
       const text = chatInput.value.trim();
       if (!text) return;
+      // Optimistic local echo so the message shows up instantly
+      const myName = game.dom?.playerName?.value?.trim() || "You";
+      appendChatRow(myName, text, true);
       game.socket?.emit("chatMessage", { text });
       chatInput.value = "";
+      chatInput.focus();
     };
     chatSendBtn.addEventListener("click", sendMsg);
     chatInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); sendMsg(); }
+      e.stopPropagation();
     });
   }
 
@@ -111,6 +121,8 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("matchStartError", (data) => {
+    // Re-show host controls so the host can try again
+    game.matchStarting = false;
     const el = document.getElementById("match-start-error");
     if (!el) return;
     el.textContent = data?.reason || "Could not start match.";

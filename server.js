@@ -1456,7 +1456,7 @@ io.on('connection', (socket) => {
         const text = String(data?.text ?? '').slice(0, 120).trim();
         if (!text) return;
         const playerName = players[socket.id]?.playerName || 'Anonymous';
-        io.emit('chatMessage', { playerName, text });
+        io.emit('chatMessage', { playerName, text, fromSocketId: socket.id });
     });
 
     // Client reports their bullet hit an enemy — server is now authoritative

@@ -1710,6 +1710,11 @@ function buildSharedRuntimeAssets() {
     }
   });
 
+  game.shared.mechGltf = null;
+  new GLTFLoader().load("/assets/models/Mech.glb", (gltf) => {
+    game.shared.mechGltf = gltf;
+  });
+
   game.shared.characterHeadGltfs = {};
   const characterHeadDefs = {
     patrick: { file: "/assets/models/PatrickHead.glb" },

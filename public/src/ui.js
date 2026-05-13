@@ -3,7 +3,7 @@ import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
 import { applyCharacterHead, rebuildArena } from "./scene.js";
-import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard } from "./story.js";
+import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard, getUnlockedCharacters } from "./story.js";
 
 export function cacheDom() {
   game.dom = {
@@ -160,6 +160,9 @@ function applyMapScreenRole() {
     const ffaCard = document.querySelector('.mode-card[data-mode="ffa"]');
     if (ffaCard) ffaCard.hidden = solo;
   }
+  // Refresh campaign locks every render so a freshly unlocked character
+  // becomes selectable as soon as the player returns to the lobby.
+  updateLobbyCharacterLocks();
   renderJoinLinkControls();
 }
 
@@ -173,6 +176,34 @@ function applyModeSelection(mode) {
   if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
   if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = !isFFA;
   if (game.dom.ffaTimeWrap) game.dom.ffaTimeWrap.style.display = isFFA ? 'block' : 'none';
+  updateLobbyCharacterLocks(mode);
+}
+
+// Locks Will/Matt cards in the lobby character grid until they've been unlocked
+// (introduced during the campaign after beating the Arena map). Non-campaign
+// modes leave every operator selectable.
+export function updateLobbyCharacterLocks(mode = game.selectedGameMode) {
+  const isCampaign = mode === 'campaign';
+  const unlocked = getUnlockedCharacters();
+  game.dom.characterCards.forEach((card) => {
+    const charId = card.dataset.character;
+    const isLocked = isCampaign && !unlocked.has(charId);
+    card.classList.toggle("locked", isLocked);
+    const nameEl = card.querySelector(".character-name");
+    if (nameEl) {
+      if (isLocked) {
+        if (!nameEl.dataset.origName) nameEl.dataset.origName = nameEl.textContent;
+        nameEl.textContent = "🔒 LOCKED";
+      } else if (nameEl.dataset.origName) {
+        nameEl.textContent = nameEl.dataset.origName;
+      }
+    }
+    // If currently-selected character is now locked, clear the selection
+    if (isLocked && game.myCharacter === charId) {
+      game.myCharacter = null;
+      card.classList.remove("selected");
+    }
+  });
 }
 
 export function bindMenuControls(actions) {
@@ -234,6 +265,8 @@ export function bindMenuControls(actions) {
     game.dom.startMissionBtn.addEventListener("click", () => {
       if (!game.isHost) return;
       audioInit();
+      game.matchStarting = true;
+      renderJoinLinkControls();
       startMatch();
     });
   }
@@ -244,6 +277,7 @@ export function bindMenuControls(actions) {
 
     card.addEventListener("click", () => {
       if (!charId || !CHARACTERS[charId]) return;
+      if (card.classList.contains("locked")) return; // campaign-locked operator
       game.myCharacter = charId;
       game.dom.characterCards.forEach((c) => c.classList.toggle("selected", c === card));
       game.dom.characterSelect.style.borderColor = "";
@@ -259,6 +293,8 @@ export function bindMenuControls(actions) {
     game.dom.pvpMatchBtn.addEventListener("click", () => {
       if (!game.isHost) return;
       audioInit();
+      game.matchStarting = true;
+      renderJoinLinkControls();
       game.socket?.emit("startPvPMatch");
     });
   }
@@ -268,6 +304,8 @@ export function bindMenuControls(actions) {
       if (!game.isHost) return;
       audioInit();
       const duration = parseInt(game.dom.ffaDurationSelect?.value || "300", 10);
+      game.matchStarting = true;
+      renderJoinLinkControls();
       game.socket?.emit("startFFAMatch", { duration });
     });
   }
@@ -540,7 +578,11 @@ export function setCopyJoinLinkStatus(message, isError = false) {
 }
 
 export function renderJoinLinkControls() {
-  const shouldShow = game.state === "MENU" && game.canCopyJoinLink && Boolean(game.joinLink);
+  const shouldShow =
+    game.state === "MENU"
+    && !game.matchStarting
+    && game.canCopyJoinLink
+    && Boolean(game.joinLink);
   game.dom.joinLinkBox.hidden = !shouldShow;
   game.dom.copyJoinLinkStatus.textContent = game.copyJoinLinkMessage || "";
 }
