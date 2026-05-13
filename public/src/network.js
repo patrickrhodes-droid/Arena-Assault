@@ -57,6 +57,48 @@ export function initNetworking(actions) {
     }
   });
 
+  // ── Ping round-trip ──────────────────────────────────────────────────────
+  game.socket.on("serverPong", (sentAt) => {
+    const ms = Math.round(performance.now() - sentAt);
+    game.ping = ms;
+    const el = game.dom?.pingDisplay;
+    if (!el) return;
+    el.textContent = `${ms} ms`;
+    el.className = ms < 60 ? "good" : ms < 150 ? "ok" : "bad";
+  });
+
+  // ── Lobby chat ───────────────────────────────────────────────────────────
+  game.socket.on("chatMessage", (data) => {
+    const log = game.dom?.lobbyChatLog;
+    if (!log) return;
+    const row = document.createElement("div");
+    row.className = "chat-msg";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "chat-name";
+    nameSpan.textContent = (data.playerName || "?").slice(0, 20) + ":";
+    row.appendChild(nameSpan);
+    row.appendChild(document.createTextNode(String(data.text || "").slice(0, 120)));
+    log.appendChild(row);
+    // Keep max 40 messages
+    while (log.children.length > 40) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+  });
+
+  // Bind chat — direct button click + Enter key (more reliable than form submit)
+  const chatInput = game.dom?.lobbyChatInput;
+  const chatSendBtn = document.getElementById("lobby-chat-send");
+  if (chatInput && chatSendBtn && !chatSendBtn._chatBound) {
+    chatSendBtn._chatBound = true;
+    const sendMsg = () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      game.socket?.emit("chatMessage", { text });
+      chatInput.value = "";
+    };
+    chatSendBtn.addEventListener("click", sendMsg);
+    chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendMsg(); } });
+  }
+
   // Room lock status — show password prompt to non-hosts if room is locked.
   game.socket.on("roomInfo", (data) => {
     game.roomLocked = !!data?.locked;
@@ -187,8 +229,10 @@ export function initNetworking(actions) {
       }
       if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
 
-      // Campaign: show story cutscene before the map loads
-      if (payload?.gameMode === "campaign") {
+      // Campaign: show story cutscene before the map loads.
+      // Use game.gameMode (already updated above) because subsequent map-transition
+      // matchStarted events may not include gameMode in the payload.
+      if (game.gameMode === "campaign") {
         const mapId = game.selectedMap || "arena";
         await showCampaignCutscene(mapId);
       }
@@ -727,26 +771,33 @@ export function initNetworking(actions) {
 
   // ── Campaign map transition ──────────────────────────────────────────────
   game.socket.on("campaignNextMap", async (data) => {
+    if (!data?.map) return;
     game.selectedMap = data.map;
-    // Show brief transition message
-    if (game.dom?.waveAnnounce) {
-      const title = game.dom.waveAnnounce.querySelector(".wa-title");
-      const sub = game.dom.waveAnnounce.querySelector(".wa-sub");
-      if (title) title.textContent = "MISSION COMPLETE";
-      if (sub) { sub.textContent = `DEPLOYING TO ${(data.map || "").toUpperCase()}`; sub.style.display = "block"; }
-      game.dom.waveAnnounce.classList.remove("show");
-      void game.dom.waveAnnounce.offsetWidth;
-      game.dom.waveAnnounce.classList.add("show");
-      window.setTimeout(() => game.dom.waveAnnounce.classList.remove("show"), 3000);
+
+    // Show the story cutscene for the new map (includes between-map character select).
+    // The cutscene hides lobby screens, shows story + character picker, then resolves.
+    await showCampaignCutscene(data.map);
+
+    // Rebuild arena for the new map
+    await rebuildArena(data.map);
+
+    // Apply character choice made in the cutscene char select
+    if (game.visuals?.player?.headGroup && game.myCharacter) {
+      const { applyCharacterHead } = await import("./scene.js");
+      applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });
     }
-    // Rebuild arena on new map after a delay matching transition announcement
-    window.setTimeout(async () => {
-      await rebuildArena(data.map);
-      // Reset collected weapons for new campaign map
-      game.collectedWeapons = new Set(['pistol']);
-      actions.setWeapon('pistol');
-      actions.updateHUD();
-    }, 3500);
+    game.socket?.emit("playerCharacterUpdate", { character: game.myCharacter });
+
+    // Reset collected weapons for the new campaign map
+    game.collectedWeapons = new Set(["pistol"]);
+    actions.setWeapon("pistol");
+    actions.updateHUD();
+
+    // Ensure the game stays in PLAYING state (it was mid-game before transition)
+    if (game.state === "MENU") {
+      game.state = "PLAYING";
+      game.dom?.hud && (game.dom.hud.style.display = "block");
+    }
   });
 
   // ── Mode selection from host (non-host clients receive this) ─────────────

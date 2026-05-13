@@ -58,6 +58,15 @@
         </div>
       </div>
 
+      <!-- Lobby chat -->
+      <div id="lobby-chat-wrap">
+        <div id="lobby-chat-log"></div>
+        <form id="lobby-chat-form">
+          <input id="lobby-chat-input" type="text" maxlength="100" placeholder="Say something...">
+          <button id="lobby-chat-send" type="submit">SEND</button>
+        </form>
+      </div>
+
       <!-- Players waiting list -->
       <div id="lobby-status" style="margin-top:12px">
         <div id="player-list" style="font-size:13px;color:var(--muted)">Connecting...</div>
@@ -161,30 +170,6 @@
           </div>
         </div>
 
-        <div id="join-link-box" hidden>
-          <div id="host-controls">
-            <div class="host-controls-title">HOST CONTROLS</div>
-            <div class="host-control-row">
-              <label for="skip-wave-select">START AT WAVE</label>
-              <select id="skip-wave-select"></select>
-            </div>
-            <div class="host-control-row">
-              <label for="invincibility-toggle">INVINCIBILITY</label>
-              <label class="toggle-switch">
-                <input type="checkbox" id="invincibility-toggle">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            <div class="host-control-row">
-              <label for="room-password-input">ROOM PASSWORD</label>
-              <input type="text" id="room-password-input" maxlength="12" placeholder="(optional)" style="width:100px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--text);padding:3px 6px;font-family:inherit;font-size:12px">
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
-            <div id="copy-join-link-status" aria-live="polite"></div>
-          </div>
-        </div>
 
         <!-- Start buttons — hidden until mode selected -->
         <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap">
@@ -225,6 +210,32 @@
   <div id="screen-lobby" class="lobby-screen" style="display:none">
     <div class="lobby-panel">
       <button class="deploy-btn" id="deploy-btn-lobby" style="display:none">READY UP</button>
+    </div>
+  </div>
+
+  <!-- Host controls — lives at body level so position:fixed isn't trapped by overflow-y:auto -->
+  <div id="join-link-box" hidden>
+    <div id="host-controls">
+      <div class="host-controls-title">HOST CONTROLS</div>
+      <div class="host-control-row">
+        <label for="skip-wave-select">START AT WAVE</label>
+        <select id="skip-wave-select"></select>
+      </div>
+      <div class="host-control-row">
+        <label for="invincibility-toggle">INVINCIBILITY</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="invincibility-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="host-control-row">
+        <label for="room-password-input">ROOM PASSWORD</label>
+        <input type="text" id="room-password-input" maxlength="12" placeholder="(optional)" style="width:100px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--text);padding:3px 6px;font-family:inherit;font-size:12px">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button id="copy-join-link-btn" type="button">COPY JOIN LINK</button>
+      <div id="copy-join-link-status" aria-live="polite"></div>
     </div>
   </div>
 
@@ -279,7 +290,7 @@
     </div>
 
     <!-- FFA top-left panel: rank + timer -->
-    <div id="ffa-hud" hidden style="position:absolute;top:14px;left:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none">
+    <div id="ffa-hud" hidden style="position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none">
       <div id="ffa-position" style="font-size:28px;font-weight:700;letter-spacing:3px;color:#00ffaa;text-shadow:0 0 12px #00ffaa88">#1</div>
       <div id="ffa-timer" style="font-size:16px;letter-spacing:3px;color:#ffffff;opacity:0.85">5:00</div>
     </div>
@@ -293,6 +304,8 @@
       <div class="wa-sub"></div>
     </div>
 
+    <div id="barrel-warning">⚠ EXPLOSIVE — MOVE AWAY</div>
+    <div id="ping-display"></div>
     <div id="click-prompt">CLICK TO AIM</div>
 
     <div id="revive-prompt-hud">
@@ -346,10 +359,33 @@
       <button class="pause-btn" id="resume-btn">RESUME</button>
       <button class="pause-btn" id="view-btn">VIEW: THIRD PERSON</button>
       <button class="pause-btn" id="fullscreen-btn">FULLSCREEN</button>
+
+      <div class="settings-section-title">CONTROLS</div>
       <div id="sens-wrap">
         <label for="sens-slider">SENSITIVITY: <span id="sens-val">5</span></label>
         <input type="range" id="sens-slider" min="1" max="10" value="5">
       </div>
+
+      <div class="settings-section-title">AUDIO</div>
+      <div class="settings-row">
+        <label for="vol-master">MASTER: <span id="vol-master-val">80</span>%</label>
+        <input type="range" id="vol-master" min="0" max="100" value="80">
+      </div>
+      <div class="settings-row">
+        <label for="vol-music">MUSIC: <span id="vol-music-val">60</span>%</label>
+        <input type="range" id="vol-music" min="0" max="100" value="60">
+      </div>
+      <div class="settings-row">
+        <label for="vol-sfx">SFX: <span id="vol-sfx-val">80</span>%</label>
+        <input type="range" id="vol-sfx" min="0" max="100" value="80">
+      </div>
+
+      <div class="settings-section-title">GRAPHICS</div>
+      <div class="settings-row-check">
+        <label class="check-row"><input type="checkbox" id="setting-shadows" checked> SHADOWS</label>
+        <label class="check-row"><input type="checkbox" id="setting-particles" checked> PARTICLES</label>
+      </div>
+
       <button class="pause-btn danger" id="pause-give-up-btn">GIVE UP</button>
       <button class="pause-btn" id="exit-btn">EXIT TO MENU</button>
     </div>

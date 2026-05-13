@@ -103,120 +103,202 @@ const CHAR_COLORS = { iestyn: "#ff6655", patrick: "#55aaff", will: "#66dd66", ma
 const CHAR_NAMES  = { iestyn: "IESTYN",  patrick: "PATRICK",  will: "WILL",    matt: "MATT" };
 
 // ── Mini Three.js preview renderer ────────────────────────────────────────────
-let _previewRenderer = null;
-let _previewScene    = null;
-let _previewCamera   = null;
-let _previewHead     = null;
-let _previewAnimId   = null;
-let _previewTarget   = null;
-let _previewMode     = "spin"; // "spin" | "sway"
+let _renderer  = null;
+let _scene     = null;
+let _camera    = null;
+let _animId    = null;
 
-function ensurePreviewRenderer() {
-  if (_previewRenderer) return;
-  const offscreen = document.createElement("canvas");
-  offscreen.width  = 160;
-  offscreen.height = 160;
-  _previewRenderer = new THREE.WebGLRenderer({ canvas: offscreen, antialias: true, alpha: true });
-  _previewRenderer.setSize(160, 160);
-  _previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  _previewRenderer.setClearColor(0x000000, 0);
-  _previewScene  = new THREE.Scene();
-  _previewCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
-  _previewCamera.position.set(0, 0.1, 2.8);
-  _previewScene.add(new THREE.AmbientLight(0xffffff, 0.75));
+// Per-character persistent Groups (built once, swapped in/out for each render)
+const _charGroups = {}; // charId → THREE.Group
+
+// Per-card animation state for the character-select grid
+const _cardAnims  = []; // [{ charId, canvas, rotY, isSelected, phase }]
+
+// Portrait mode for cutscene (single canvas, sway animation)
+let _portraitTarget = null; // 2D canvas
+let _portraitCharId = null;
+let _portraitRotY   = 0;
+let _portraitPosY   = 0;
+
+const HEAD_FALLBACK_COLORS = { iestyn: 0xff5544, patrick: 0x55aaff, will: 0x66dd66, matt: 0xffcc33 };
+
+function ensureRenderer() {
+  if (_renderer) return;
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = 160;
+  _renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  _renderer.setSize(160, 160);
+  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  _renderer.setClearColor(0x000000, 0);
+  _scene  = new THREE.Scene();
+  _camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
+  _camera.position.set(0, 0.1, 2.8);
+  _scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   const kl = new THREE.DirectionalLight(0xffffff, 1.6);
-  kl.position.set(1.5, 2.5, 2.5);
-  _previewScene.add(kl);
+  kl.position.set(1.5, 2.5, 2.5); _scene.add(kl);
   const fl = new THREE.DirectionalLight(0x88aaff, 0.55);
-  fl.position.set(-1.5, 0.5, 1);
-  _previewScene.add(fl);
-  _previewHead = new THREE.Group();
-  _previewScene.add(_previewHead);
+  fl.position.set(-1.5, 0.5, 1);  _scene.add(fl);
 }
 
-function loadHeadIntoPreview(characterId, { spinSpeed = 0.02 } = {}) {
-  ensurePreviewRenderer();
-  while (_previewHead.children.length > 0) _previewHead.remove(_previewHead.children[0]);
+function applyGlbToGroup(group, characterId) {
   const gltf = game.shared?.characterHeadGltfs?.[characterId];
-  if (gltf) {
-    const model = gltf.scene.clone(true);
-    model.rotation.y = 0;
-    const bbox = new THREE.Box3().setFromObject(model);
-    const dims = new THREE.Vector3(); bbox.getSize(dims);
-    const largestAxis = Math.max(dims.x, dims.y, dims.z) || 1;
-    const scale = 1.55 / largestAxis;
-    model.scale.setScalar(scale);
-    const center = new THREE.Vector3(); bbox.getCenter(center);
-    model.position.sub(center.multiplyScalar(scale));
-    _previewHead.add(model);
-  } else {
-    const colors = { iestyn: 0xff5544, patrick: 0x55aaff, will: 0x66dd66, matt: 0xffcc33 };
-    _previewHead.add(new THREE.Mesh(
+  if (!gltf) return false;
+  const model = gltf.scene.clone(true);
+  model.rotation.y = 0;
+  const bbox = new THREE.Box3().setFromObject(model);
+  const dims = new THREE.Vector3(); bbox.getSize(dims);
+  const s = 1.55 / (Math.max(dims.x, dims.y, dims.z) || 1);
+  model.scale.setScalar(s);
+  const center = new THREE.Vector3(); bbox.getCenter(center);
+  model.position.sub(center.multiplyScalar(s));
+  group.add(model);
+  group._hasGlb = true;
+  return true;
+}
+
+function buildCharGroup(characterId) {
+  if (_charGroups[characterId]) return;
+  ensureRenderer();
+  const group = new THREE.Group();
+  group.visible = false;
+  group._hasGlb = false;
+  _scene.add(group);
+  _charGroups[characterId] = group;
+
+  if (!applyGlbToGroup(group, characterId)) {
+    // GLB not loaded yet — use fallback sphere; loop will swap it when ready
+    group.add(new THREE.Mesh(
       new THREE.SphereGeometry(0.65, 16, 12),
-      new THREE.MeshStandardMaterial({ color: colors[characterId] || 0xaaaaaa, roughness: 0.55 }),
+      new THREE.MeshStandardMaterial({ color: HEAD_FALLBACK_COLORS[characterId] ?? 0xaaaaaa, roughness: 0.55 }),
     ));
   }
-  _previewHead.userData.spinSpeed = spinSpeed;
 }
 
-function stopPreviewLoop() {
-  if (_previewAnimId) { cancelAnimationFrame(_previewAnimId); _previewAnimId = null; }
+// Rebuild a char group when its GLB loads later (called externally or by auto-refresh)
+export function refreshCharGroup(characterId) {
+  const grp = _charGroups[characterId];
+  if (!grp || grp._hasGlb) return; // nothing to do
+  while (grp.children.length) grp.remove(grp.children[0]);
+  applyGlbToGroup(grp, characterId);
 }
 
-function startPreviewLoop() {
-  stopPreviewLoop();
-  function loop() {
-    _previewAnimId = requestAnimationFrame(loop);
-    if (!_previewRenderer) return;
-    if (_previewMode === "sway") {
-      const t = performance.now() * 0.001;
-      _previewHead.rotation.y = Math.sin(t * 0.65) * 0.07;
-      _previewHead.rotation.x = Math.sin(t * 0.9)  * 0.022;
-      _previewHead.position.y = Math.sin(t * 1.3)  * 0.035;
-    } else {
-      _previewHead.rotation.y += (_previewHead.userData.spinSpeed ?? 0.02);
-      _previewHead.rotation.x  = 0;
-      _previewHead.position.y  = 0;
+// Auto-refresh any groups still using the fallback sphere now that GLBs are loaded
+function autoRefreshStaleGroups() {
+  for (const [id, grp] of Object.entries(_charGroups)) {
+    if (!grp._hasGlb && game.shared?.characterHeadGltfs?.[id]) {
+      while (grp.children.length) grp.remove(grp.children[0]);
+      applyGlbToGroup(grp, id);
     }
-    _previewRenderer.render(_previewScene, _previewCamera);
-    if (_previewTarget) {
-      const ctx = _previewTarget.getContext("2d");
-      ctx.clearRect(0, 0, _previewTarget.width, _previewTarget.height);
-      ctx.drawImage(_previewRenderer.domElement, 0, 0, _previewTarget.width, _previewTarget.height);
+  }
+}
+
+function renderCharToCanvas(characterId, rotY, posY, canvas) {
+  // Show only this character's group
+  for (const [id, grp] of Object.entries(_charGroups)) grp.visible = id === characterId;
+  const grp = _charGroups[characterId];
+  if (!grp) return;
+  grp.rotation.set(0, rotY, 0);
+  grp.position.y = posY;
+  _renderer.render(_scene, _camera);
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(_renderer.domElement, 0, 0, canvas.width, canvas.height);
+}
+
+function stopLoop() {
+  if (_animId) { cancelAnimationFrame(_animId); _animId = null; }
+}
+
+function startLoop() {
+  stopLoop();
+  function loop() {
+    _animId = requestAnimationFrame(loop);
+    if (!_renderer) return;
+    const t = performance.now() * 0.001;
+
+    // Swap fallback spheres for real GLB heads as soon as they finish loading
+    autoRefreshStaleGroups();
+
+    // ── Character-select card animations ─────────────────────────────────────
+    for (const anim of _cardAnims) {
+      if (!anim.canvas) continue;
+      if (anim.isSelected) {
+        anim.rotY += 0.022; // full spin when selected
+        anim.posY  = 0;
+      } else {
+        // Gentle bob + slight sway when idle
+        anim.rotY = Math.sin(t * 0.55 + anim.phase) * 0.14;
+        anim.posY = Math.sin(t * 1.1  + anim.phase) * 0.04;
+      }
+      renderCharToCanvas(anim.charId, anim.rotY, anim.posY, anim.canvas);
+    }
+
+    // ── Cutscene portrait sway ───────────────────────────────────────────────
+    if (_portraitTarget && _portraitCharId) {
+      for (const [id, grp] of Object.entries(_charGroups)) grp.visible = id === _portraitCharId;
+      const grp = _charGroups[_portraitCharId];
+      if (grp) {
+        grp.rotation.y = Math.sin(t * 0.65) * 0.07;
+        grp.rotation.x = Math.sin(t * 0.9)  * 0.022;
+        grp.position.y = Math.sin(t * 1.3)  * 0.035;
+        _renderer.render(_scene, _camera);
+        const ctx = _portraitTarget.getContext("2d");
+        ctx.clearRect(0, 0, _portraitTarget.width, _portraitTarget.height);
+        ctx.drawImage(_renderer.domElement, 0, 0, _portraitTarget.width, _portraitTarget.height);
+      }
     }
   }
   loop();
 }
 
-// ── Public API for character-select preview ───────────────────────────────────
-export function setCharacterPreview(characterId, targetCanvas) {
-  ensurePreviewRenderer();
-  _previewMode   = "spin";
-  _previewTarget = targetCanvas;
-  loadHeadIntoPreview(characterId);
-  if (!_previewAnimId) startPreviewLoop();
-}
+// ── Public API: character-select card animations ──────────────────────────────
 
-export function stopCharacterPreview() {
-  stopPreviewLoop();
-  _previewTarget = null;
-}
-
-// ── Paint all character-select cards once ─────────────────────────────────────
-export function paintAllCharacterPreviews() {
+export function initCharCardAnimations() {
+  ensureRenderer();
   const cards = document.querySelectorAll(".character-card[data-character]");
-  if (!cards.length) return;
-  ensurePreviewRenderer();
-  cards.forEach((card) => {
-    const id = card.dataset.character;
-    const cv = card.querySelector(".char-card-canvas");
-    if (!cv || !id) return;
-    loadHeadIntoPreview(id, { spinSpeed: 0 });
-    _previewRenderer.render(_previewScene, _previewCamera);
-    const ctx = cv.getContext("2d");
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.drawImage(_previewRenderer.domElement, 0, 0, cv.width, cv.height);
+  _cardAnims.length = 0;
+  const phaseStep = (Math.PI * 2) / Math.max(cards.length, 1);
+  cards.forEach((card, i) => {
+    const charId = card.dataset.character;
+    const canvas = card.querySelector(".char-card-canvas");
+    if (!charId || !canvas) return;
+    buildCharGroup(charId);
+    _cardAnims.push({ charId, canvas, rotY: 0, posY: 0, isSelected: false, phase: i * phaseStep });
   });
+  if (!_animId) startLoop();
+}
+
+export function setSelectedCharCard(charId) {
+  for (const anim of _cardAnims) {
+    anim.isSelected = anim.charId === charId;
+    if (anim.isSelected) anim.rotY = 0; // reset so spin starts facing front
+  }
+}
+
+// Legacy shims kept so existing callers don't break
+export function setCharacterPreview(characterId, targetCanvas) {
+  // Just mark this card as selected so it spins; hover no longer needed
+  setSelectedCharCard(characterId);
+}
+
+export function stopCharacterPreview() { /* no-op — cards animate continuously */ }
+
+export function paintAllCharacterPreviews() {
+  initCharCardAnimations(); // re-init to ensure canvases are up to date
+}
+
+// ── Public API: cutscene portrait ─────────────────────────────────────────────
+function setPortrait(characterId, canvas) {
+  ensureRenderer();
+  buildCharGroup(characterId);
+  _portraitCharId = characterId;
+  _portraitTarget = canvas;
+  if (!_animId) startLoop();
+}
+
+function clearPortrait() {
+  _portraitCharId = null;
+  _portraitTarget = null;
 }
 
 // ── Cutscene engine ────────────────────────────────────────────────────────────
@@ -242,11 +324,7 @@ function displayLine(idx) {
   if (nameEl) { nameEl.textContent = CHAR_NAMES[line.s] || line.s.toUpperCase(); nameEl.style.color = CHAR_COLORS[line.s] || "#fff"; }
   if (textEl) textEl.textContent = "";
   if (canvas) {
-    _previewMode   = "sway";
-    _previewTarget = canvas;
-    if (_previewHead) { _previewHead.rotation.set(0, 0, 0); _previewHead.position.set(0, 0, 0); }
-    loadHeadIntoPreview(line.s);
-    if (!_previewAnimId) startPreviewLoop();
+    setPortrait(line.s, canvas);
   }
   _charIndex = 0;
   const full = line.t;
@@ -276,8 +354,7 @@ function advanceLine() {
 
 function endDialogue() {
   clearInterval(_typeTimer);
-  stopPreviewLoop();
-  _previewTarget = null;
+  clearPortrait();
   // Hide dialogue bar, show character select panel
   const bar = document.getElementById("cutscene-bar");
   if (bar) bar.style.display = "none";
@@ -356,22 +433,16 @@ function showCharSelect() {
     grid.appendChild(card);
 
     if (!isLocked) {
-      // Render preview
-      ensurePreviewRenderer();
-      _previewMode   = "spin";
-      _previewTarget = cv;
-      loadHeadIntoPreview(id, { spinSpeed: 0 });
-      _previewRenderer.render(_previewScene, _previewCamera);
-      const ctx = cv.getContext("2d");
-      ctx.clearRect(0, 0, 88, 88);
-      ctx.drawImage(_previewRenderer.domElement, 0, 0, 88, 88);
+      // Render a static first frame into this card's canvas
+      ensureRenderer();
+      buildCharGroup(id);
+      renderCharToCanvas(id, 0, 0, cv);
 
       card.addEventListener("click", () => {
         selected = id;
         grid.querySelectorAll(".cs-char-card").forEach((c) => {
           c.classList.toggle("selected", c.dataset.char === id);
         });
-        setCharacterPreview(id, cv);
       });
     }
   });
@@ -386,8 +457,7 @@ function showCharSelect() {
 }
 
 function closeFullCutscene() {
-  stopPreviewLoop();
-  _previewTarget = null;
+  clearPortrait();
   const ov = document.getElementById("cutscene-overlay");
   if (!ov) return;
   ov.classList.remove("show");
@@ -425,7 +495,7 @@ export function showCampaignCutscene(mapId) {
     _lines     = storyDef.lines || [];
     _lineIndex = 0;
 
-    ensurePreviewRenderer();
+    ensureRenderer();
 
     const ov = document.getElementById("cutscene-overlay");
     if (!ov) { resolve(); return; }

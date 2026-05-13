@@ -5,7 +5,10 @@ export function createAudioController() {
   let musicResumeTarget = null;
   let musicToken = 0;
 
-  const MUSIC_VOLUME = 0.12;
+  let masterVolume  = 0.8;
+  let musicVolume   = 0.6;
+  let sfxVolume     = 0.8;
+  const BASE_MUSIC  = 0.12;   // base level before user volume scaling
   const MUSIC_DIR = "/assets/Background%20music";
   const MULTIPLAYER_MODE_ALIASES = ["multiplayer", "multiplyer"];
 
@@ -54,13 +57,45 @@ export function createAudioController() {
     musicResumeTarget = null;
   }
 
+  function effectiveVol(base) {
+    return Math.max(0, Math.min(1, base * masterVolume));
+  }
+
   function createMusicElement(src, loop = false) {
     const audio = new window.Audio(src);
     audio.preload = "auto";
     audio.loop = loop;
-    audio.volume = MUSIC_VOLUME;
+    audio.volume = effectiveVol(BASE_MUSIC * musicVolume);
     return audio;
   }
+
+  function setVolumes(master, music, sfx) {
+    masterVolume = master;
+    musicVolume  = music;
+    sfxVolume    = sfx;
+    // Update live music elements
+    const vol = effectiveVol(BASE_MUSIC * musicVolume);
+    if (musicIntro) musicIntro.volume = vol;
+    if (musicLoop)  musicLoop.volume  = vol;
+    // Persist to localStorage
+    try {
+      localStorage.setItem("arena_vol_master", master);
+      localStorage.setItem("arena_vol_music",  music);
+      localStorage.setItem("arena_vol_sfx",    sfx);
+    } catch {}
+  }
+
+  function loadVolumes() {
+    try {
+      const m  = parseFloat(localStorage.getItem("arena_vol_master") ?? "0.8");
+      const mu = parseFloat(localStorage.getItem("arena_vol_music")  ?? "0.6");
+      const s  = parseFloat(localStorage.getItem("arena_vol_sfx")    ?? "0.8");
+      masterVolume = isNaN(m)  ? 0.8 : m;
+      musicVolume  = isNaN(mu) ? 0.6 : mu;
+      sfxVolume    = isNaN(s)  ? 0.8 : s;
+    } catch {}
+  }
+  loadVolumes();
 
   function buildMusicCandidates(mapId, mode, type) {
     const modeAliases = mode === "multiplayer" ? MULTIPLAYER_MODE_ALIASES : [mode];
@@ -121,38 +156,32 @@ export function createAudioController() {
   }
 
   function playNoise(duration, decay, volume) {
-    if (!context) {
-      return;
-    }
-
+    if (!context) return;
+    const v = effectiveVol(volume * sfxVolume);
+    if (v < 0.001) return;
     const time = context.currentTime;
     const source = context.createBufferSource();
     source.buffer = noiseBuffer(duration, decay);
-
     const gain = context.createGain();
-    gain.gain.setValueAtTime(volume, time);
+    gain.gain.setValueAtTime(v, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
     source.connect(gain).connect(context.destination);
     source.start(time);
     source.stop(time + duration);
   }
 
   function playSweep(from, to, duration, volume, type = "sine") {
-    if (!context) {
-      return;
-    }
-
+    if (!context) return;
+    const v = effectiveVol(volume * sfxVolume);
+    if (v < 0.001) return;
     const time = context.currentTime;
     const oscillator = context.createOscillator();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(from, time);
     oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, to), time + duration);
-
     const gain = context.createGain();
-    gain.gain.setValueAtTime(volume, time);
+    gain.gain.setValueAtTime(v, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
     oscillator.connect(gain).connect(context.destination);
     oscillator.start(time);
     oscillator.stop(time + duration);
@@ -250,5 +279,7 @@ export function createAudioController() {
     reviveProgress,
     reviveComplete,
     sword,
+    setVolumes,
+    getVolumes: () => ({ master: masterVolume, music: musicVolume, sfx: sfxVolume }),
   };
 }

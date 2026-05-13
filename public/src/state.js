@@ -77,6 +77,7 @@ export const game = {
   fpRecoilZ: 0,
   fpRecoilRX: 0,
   recoilOffset: 0,  // auto-recovering camera pitch kick (radians, applied on top of camPhi)
+  particlesEnabled: true, // toggled in graphics settings
   coyoteTmr: 0,
   lastDamageAngle: 0,
   lastDamageTmr: 0,

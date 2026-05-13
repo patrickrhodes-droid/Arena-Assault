@@ -434,7 +434,8 @@ export function updatePlayer(actions) {
     if (game.keys.KeyA) moveDirection.sub(right);
   }
 
-  game.isSprinting = game.sprintLocked && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
+  const shiftHeld = !!(game.keys.ShiftLeft || game.keys.ShiftRight);
+  game.isSprinting = (game.sprintLocked || shiftHeld) && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -738,8 +739,8 @@ function handleFiring(actions) {
     game.fpRecoilRX = weapon.recoilRX;
 
     // Camera recoil kick — snaps up, then auto-recovers in updateCamera
-    game.recoilOffset += weapon.recoilRX * 2.4;
-    game.recoilOffset  = Math.min(0.28, game.recoilOffset); // cap so it can't fly off screen
+    game.recoilOffset += weapon.recoilRX * 1.2;
+    game.recoilOffset  = Math.min(0.14, game.recoilOffset); // capped at half the old value
 
     // Bazooka self-knockback — push player away from aim direction
     if (weapon.mode === "bazooka") {

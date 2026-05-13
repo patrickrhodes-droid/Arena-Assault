@@ -6,6 +6,11 @@ import { networkInterfaces } from 'os';
 import { fileURLToPath } from 'url';
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { readFile, writeFile, readdir } from 'fs/promises';
+import {
+  ARENA_SIZE, HALF, P_MAX_HP, WEAPON_ORDER,
+  PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON, PVP_CORNERS,
+  BOSS_ESCAPE_GRAVITY, BOSS_ESCAPE_HEIGHT, BOSS_ESCAPE_JUMP_VELOCITY, BOSS_ESCAPE_FORWARD_SPEED,
+} from './public/src/gameConstants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -72,22 +77,43 @@ function saveLeaderboard(lb) {
 
 let leaderboard = loadLeaderboard();
 
-function recordCoopGame(rankings, wave) {
+function recordCoopGame(rankings, wave, tokenMap) {
     const date = new Date().toISOString().slice(0, 10);
     for (const r of rankings) {
         if (!r.playerName || r.score <= 0) continue;
-        leaderboard.coop.push({ playerName: r.playerName, score: r.score, wave: r.wave || wave, kills: r.kills || 0, date });
+        const token = tokenMap?.[r.playerId] ?? null;
+        // Dedup: if this session token already has an entry, update only if score improved
+        if (token) {
+            const idx = leaderboard.coop.findIndex(e => e.token === token);
+            if (idx !== -1) {
+                if (r.score > leaderboard.coop[idx].score) {
+                    leaderboard.coop[idx] = { playerName: r.playerName, score: r.score, wave: r.wave || wave, kills: r.kills || 0, date, token };
+                }
+                continue;
+            }
+        }
+        leaderboard.coop.push({ playerName: r.playerName, score: r.score, wave: r.wave || wave, kills: r.kills || 0, date, token });
     }
     leaderboard.coop.sort((a, b) => b.score - a.score);
     leaderboard.coop = leaderboard.coop.slice(0, LEADERBOARD_MAX);
     saveLeaderboard(leaderboard);
 }
 
-function recordPvpGame(rankings) {
+function recordPvpGame(rankings, tokenMap) {
     const date = new Date().toISOString().slice(0, 10);
     for (const r of rankings) {
         if (!r.playerName) continue;
-        leaderboard.pvp.push({ playerName: r.playerName, kills: r.kills || 0, date });
+        const token = tokenMap?.[r.playerId] ?? null;
+        if (token) {
+            const idx = leaderboard.pvp.findIndex(e => e.token === token);
+            if (idx !== -1) {
+                if ((r.kills || 0) > leaderboard.pvp[idx].kills) {
+                    leaderboard.pvp[idx] = { playerName: r.playerName, kills: r.kills || 0, date, token };
+                }
+                continue;
+            }
+        }
+        leaderboard.pvp.push({ playerName: r.playerName, kills: r.kills || 0, date, token });
     }
     leaderboard.pvp.sort((a, b) => b.kills - a.kills);
     leaderboard.pvp = leaderboard.pvp.slice(0, LEADERBOARD_MAX);
@@ -170,28 +196,29 @@ app.put('/api/character-config', express.json({ limit: '512kb' }), (req, res) =>
     } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// ── PvP constants ─────────────────────────────────────────────────────────────
-
-const PVP_WIN_KILLS = 7;          // 6 weapons × 1 kill + 1 grapple kill
-const PVP_KILLS_PER_WEAPON = 1;
-const WEAPON_ORDER = ['pistol', 'assault', 'shotgun', 'sniper', 'sword', 'bazooka', 'grapple'];
-const PVP_CORNERS = [[-60, -60], [60, -60], [-60, 60], [60, 60]];
-
-// ── Game simulation constants ─────────────────────────────────────────────────
-
-const HALF = 72;
-const ARENA_SIZE = 144;
-const P_MAX_HP = 1000;
-const B_SPD_E = 28;                                           // enemy bullet speed
-const BOSS_ESCAPE_GRAV = 180;
-const BOSS_ESCAPE_HEIGHT = 50 / 3;
-const BOSS_ESCAPE_JUMP_VEL = Math.sqrt(2 * BOSS_ESCAPE_GRAV * BOSS_ESCAPE_HEIGHT); // ≈54.8
-const BOSS_ESCAPE_FWD_SPD = 14;
+// ── Constants now imported from gameConstants.js (single source of truth) ────
+// Aliases kept so existing server code that uses old names still compiles.
+const B_SPD_E          = 28;   // enemy bullet speed — server-only constant
+const BOSS_ESCAPE_GRAV = BOSS_ESCAPE_GRAVITY;
+const BOSS_ESCAPE_JUMP_VEL = BOSS_ESCAPE_JUMP_VELOCITY;
+const BOSS_ESCAPE_FWD_SPD  = BOSS_ESCAPE_FORWARD_SPEED;
 const BOSS_ATTACK_REACH = 7.8;
-const BOSS_ATTACK_FREQ = 1.1;
-const BOSS_WINDUP = 0.2;
-const BOSS_SWING = 0.22;
-const MAX_LIVE_ENEMIES = 35;
+const BOSS_ATTACK_FREQ  = 1.1;
+const BOSS_WINDUP       = 0.2;
+const BOSS_SWING        = 0.22;
+const MAX_LIVE_ENEMIES  = 35;
+
+// ── Rate limiting (bulletHit, enemyMeleeAttempt, chatMessage) ────────────────
+const _socketRateLimits = new Map(); // socketId → { event: lastTimestamp }
+
+function checkRateLimit(socketId, event, minMs) {
+    const now = Date.now();
+    const limits = _socketRateLimits.get(socketId) ?? {};
+    if (now - (limits[event] ?? 0) < minMs) return false;
+    limits[event] = now;
+    _socketRateLimits.set(socketId, limits);
+    return true;
+}
 
 // ── JSON-driven map data ──────────────────────────────────────────────────────
 // Replaces the old hard-coded MAP_OBSTACLES table.
@@ -1191,6 +1218,7 @@ io.on('connection', (socket) => {
     io.emit('updateLobby', players);
 
     socket.on('disconnect', () => {
+        _socketRateLimits.delete(socket.id);
         console.log('User disconnected:', socket.id);
         // Preserve state briefly so the player can rejoin mid-game.
         const leaving = players[socket.id];
@@ -1418,8 +1446,22 @@ io.on('connection', (socket) => {
         }, 1000);
     });
 
+    // ── Ping / chat ───────────────────────────────────────────────────────────
+    socket.on('clientPing', (sentAt) => {
+        socket.emit('serverPong', sentAt);
+    });
+
+    socket.on('chatMessage', (data) => {
+        if (!checkRateLimit(socket.id, 'chatMessage', 500)) return; // max 2 msgs/s
+        const text = String(data?.text ?? '').slice(0, 120).trim();
+        if (!text) return;
+        const playerName = players[socket.id]?.playerName || 'Anonymous';
+        io.emit('chatMessage', { playerName, text });
+    });
+
     // Client reports their bullet hit an enemy — server is now authoritative
     socket.on('bulletHit', (data) => {
+        if (!checkRateLimit(socket.id, 'bulletHit', 40)) return; // max ~25/s
         if (gameState.mode !== 'COOP') return;
         const { enemyId, weapon } = data;
         let { damage } = data;
@@ -1729,6 +1771,7 @@ io.on('connection', (socket) => {
 
     // Owner client reports a melee attempt; target client validates and applies it locally.
     socket.on('enemyMeleeAttempt', (data) => {
+        if (!checkRateLimit(socket.id, 'enemyMelee', 120)) return; // max ~8/s
         if (!data || !data.enemyId || !data.targetId) return;
         const enemy = gameState.enemies.find(e => e.id === data.enemyId);
         if (!enemy) return;

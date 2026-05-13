@@ -250,6 +250,27 @@ export async function rebuildArena(mapId) {
   }
 }
 
+// ── Gradient sky sphere ───────────────────────────────────────────────────────
+function buildSkybox(topHex, horizHex, bottomHex) {
+  const cv = document.createElement("canvas");
+  cv.width = 1; cv.height = 128;
+  const ctx = cv.getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 128);
+  grad.addColorStop(0,    `#${topHex.toString(16).padStart(6,"0")}`);
+  grad.addColorStop(0.45, `#${horizHex.toString(16).padStart(6,"0")}`);
+  grad.addColorStop(1,    `#${bottomHex.toString(16).padStart(6,"0")}`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1, 128);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(800, 16, 12),
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, depthWrite: false }),
+  );
+  sky.rotation.x = Math.PI; // flip so top is up
+  game.arenaGroup.add(sky);
+}
+
 function addPermanentLighting() {
   // Hemisphere always present — per-map sun and accents are added in rebuildArena.
   game.scene.add(new THREE.HemisphereLight(0x8fb7ff, 0x24303c, 0.55));
@@ -274,6 +295,7 @@ function addSun(color, intensity, px, py, pz) {
 function buildArenaOriginal() {
   game.scene.fog = new THREE.FogExp2(0x10242c, 0.0054);
   game.scene.background = new THREE.Color(0x10242c);
+  buildSkybox(0x080e18, 0x10242c, 0x050c12);
   addSun(0xdff7ff, 1.8, 36, 64, 18);
 
   // Teal reactor accent floor lights.
@@ -518,6 +540,7 @@ function buildArenaOriginal() {
 function buildArenaDesert() {
   game.scene.fog = new THREE.FogExp2(0xdbb07d, 0.004);
   game.scene.background = new THREE.Color(0xe3c4a1);
+  buildSkybox(0x4a90d9, 0xe8c87a, 0xd4a46a);
   addSun(0xfffef0, 2.5, 50, 80, 10);
 
   // Warm amber fill lights — scattered lanterns.
@@ -635,6 +658,7 @@ function buildArenaDesert() {
 function buildArenaCity() {
   game.scene.fog = new THREE.FogExp2(0xc9d8e4, 0.0018);
   game.scene.background = new THREE.Color(0x87b8e8);
+  buildSkybox(0x2a6bcc, 0xff8040, 0xd49060);
   addSun(0xfff4d6, 2.85, 34, 78, -24);
   addSun(0xffd1a8, 0.8, -18, 36, 30);
   const cityHemi = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 1.1);
@@ -875,6 +899,7 @@ function buildArenaCity() {
 function buildArenaBlacksite() {
   game.scene.fog = new THREE.FogExp2(0x071210, 0.005);
   game.scene.background = new THREE.Color(0x071210);
+  buildSkybox(0x030608, 0x071a12, 0x040808);
 
   // Very strong hemisphere — sky tinted bright green for the "reactor glow" feel
   const hemi = new THREE.HemisphereLight(0x44ff88, 0x1a4030, 2.2);

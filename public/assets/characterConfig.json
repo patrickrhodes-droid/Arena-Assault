@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "characters": {
+    "iestyn": {
+      "headScale": 1,
+      "headRotY": 0
+    },
+    "patrick": {
+      "headScale": 1,
+      "headRotY": 0
+    },
+    "will": {
+      "headScale": 1,
+      "headRotY": 0
+    },
+    "matt": {
+      "headScale": 1,
+      "headRotY": 0
+    }
+  },
+  "playerBody": {
+    "torso": {
+      "pos": [
+        0,
+        1.2,
+        0
+      ],
+      "size": [
+        0.7,
+        0.8,
+        0.4
+      ]
+    },
+    "headGroup": {
+      "posY": 1.9
+    },
+    "visor": {
+      "pos": [
+        0,
+        1.92,
+        -0.18
+      ],
+      "size": [
+        0.3,
+        0.12,
+        0.02
+      ]
+    },
+    "leftArm": {
+      "pos": [
+        -0.55,
+        1.3,
+        0
+      ],
+      "size": [
+        0.2,
+        0.65,
+        0.2
+      ]
+    },
+    "rightArm": {
+      "pos": [
+        0.55,
+        1.3,
+        0
+      ],
+      "size": [
+        0.2,
+        0.65,
+        0.2
+      ]
+    },
+    "leftLeg": {
+      "pos": [
+        -0.2,
+        0.4,
+        0
+      ],
+      "size": [
+        0.25,
+        0.7,
+        0.25
+      ]
+    },
+    "rightLeg": {
+      "pos": [
+        0.2,
+        0.4,
+        0
+      ],
+      "size": [
+        0.25,
+        0.7,
+        0.25
+      ]
+    },
+    "leftBoot": {
+      "pos": [
+        -0.2,
+        0.08,
+        0
+      ],
+      "size": [
+        0.28,
+        0.16,
+        0.35
+      ]
+    },
+    "rightBoot": {
+      "pos": [
+        0.2,
+        0.08,
+        0
+      ],
+      "size": [
+        0.28,
+        0.16,
+        0.35
+      ]
+    }
+  },
+  "weapons": {
+    "pistol": {
+      "fpPos": [
+        0.22,
+        -0.24,
+        -0.42
+      ],
+      "fpAdsPos": [
+        0.01,
+        -0.12,
+        -0.34
+      ],
+      "fpScale": [
+        0.8,
+        0.8,
+        0.72
+      ],
+      "tpPos": [
+        0.48,
+        1.3,
+        -0.22
+      ],
+      "tpScale": [
+        0.8,
+        0.8,
+        0.7
+      ],
+      "tpMuzzleZ": -0.38,
+      "fpMuzzleZ": -0.38,
+      "glbScale": 0.125,
+      "glbRotY": 0,
+      "glbPosY": 0,
+      "glbPosZ": 0
+    },
+    "assault": {
+      "fpPos": [
+        0.2325,
+        -0.1537,
+        -0.36
+      ],
+      "fpAdsPos": [
+        0.02,
+        -0.1,
+        -0.36
+      ],
+      "fpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpPos": [
+        0.5,
+        1.35,
+        -0.3
+      ],
+      "tpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpMuzzleZ": -0.6,
+      "fpMuzzleZ": -0.6,
+      "glbScale": 0.125,
+      "glbRotY": 0,
+      "glbPosY": 0,
+      "glbPosZ": 0
+    },
+    "shotgun": {
+      "fpPos": [
+        0.28,
+        -0.18,
+        -0.58
+      ],
+      "fpAdsPos": [
+        0,
+        -0.08,
+        -0.35
+      ],
+      "fpScale": [
+        1.3,
+        1.08,
+        1.02
+      ],
+      "tpPos": [
+        0.54,
+        1.32,
+        -0.28
+      ],
+      "tpScale": [
+        1.28,
+        1.1,
+        0.95
+      ],
+      "tpMuzzleZ": -0.74,
+      "fpMuzzleZ": -0.74,
+      "glbScale": 0.125,
+      "glbRotY": 1.5708,
+      "glbPosY": 0,
+      "glbPosZ": 0.4
+    },
+    "sniper": {
+      "fpPos": [
+        0.2,
+        -0.15,
+        -0.72
+      ],
+      "fpAdsPos": [
+        0,
+        -0.09,
+        -0.28
+      ],
+      "fpScale": [
+        0.92,
+        0.95,
+        1.85
+      ],
+      "tpPos": [
+        0.56,
+        1.38,
+        -0.36
+      ],
+      "tpScale": [
+        0.9,
+        0.95,
+        1.8
+      ],
+      "tpMuzzleZ": -0.88,
+      "fpMuzzleZ": -0.88,
+      "glbScale": 0.125,
+      "glbRotY": 1.5708,
+      "glbPosY": 0,
+      "glbPosZ": 0.4
+    },
+    "sword": {
+      "fpPos": [
+        0.4,
+        -0.4,
+        -0.6
+      ],
+      "fpAdsPos": [
+        0.1,
+        -0.2,
+        -0.5
+      ],
+      "fpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpPos": [
+        0.5,
+        1.2,
+        -0.2
+      ],
+      "tpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpMuzzleZ": -0.2,
+      "fpMuzzleZ": 0,
+      "glbScale": 0.16,
+      "glbRotY": 3.14159,
+      "glbPosY": -0.6,
+      "glbPosZ": 0
+    },
+    "bazooka": {
+      "fpPos": [
+        0.18,
+        -0.16,
+        -0.38
+      ],
+      "fpAdsPos": [
+        0,
+        -0.08,
+        -0.3
+      ],
+      "fpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpPos": [
+        0.55,
+        1.32,
+        -0.32
+      ],
+      "tpScale": [
+        1,
+        1,
+        1
+      ],
+      "tpMuzzleZ": -0.75,
+      "fpMuzzleZ": -0.75,
+      "glbScale": 0.38,
+      "glbRotY": 0,
+      "glbPosY": 0,
+      "glbPosZ": 0
+    },
+    "grapple": {
+      "fpPos": [
+        0.22,
+        -0.24,
+        -0.42
+      ],
+      "fpAdsPos": [
+        0.01,
+        -0.12,
+        -0.34
+      ],
+      "fpScale": [
+        0.8,
+        0.8,
+        0.72
+      ],
+      "tpPos": [
+        0.48,
+        1.3,
+        -0.22
+      ],
+      "tpScale": [
+        0.8,
+        0.8,
+        0.7
+      ],
+      "tpMuzzleZ": -0.38,
+      "fpMuzzleZ": -0.38,
+      "glbScale": 0.375,
+      "glbRotY": 1.5708,
+      "glbPosY": 0,
+      "glbPosZ": 0
+    }
+  },
+  "weaponGlbs": {
+    "pistol": {
+      "scale": 0.125,
+      "rotY": 0,
+      "posY": 0,
+      "posZ": 0
+    },
+    "assault": {
+      "scale": 0.125,
+      "rotY": 0,
+      "posY": 0,
+      "posZ": 0
+    },
+    "shotgun": {
+      "scale": 0.125,
+      "rotY": 1.5708,
+      "posY": 0,
+      "posZ": 0.4
+    },
+    "sniper": {
+      "scale": 0.125,
+      "rotY": 1.5708,
+      "posY": 0,
+      "posZ": 0.4
+    },
+    "sword": {
+      "scale": 0.16,
+      "rotY": 3.14159,
+      "posY": -0.6,
+      "posZ": 0
+    },
+    "bazooka": {
+      "scale": 0.38,
+      "rotY": 0,
+      "posY": 0,
+      "posZ": 0
+    },
+    "grapple": {
+      "scale": 0.375,
+      "rotY": 1.5708,
+      "posY": 0,
+      "posZ": 0
+    }
+  }
+}

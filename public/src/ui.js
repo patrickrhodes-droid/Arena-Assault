@@ -3,7 +3,7 @@ import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
 import { applyCharacterHead, rebuildArena } from "./scene.js";
-import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, getUnlockedCharacters } from "./story.js";
+import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard } from "./story.js";
 
 export function cacheDom() {
   game.dom = {
@@ -125,28 +125,14 @@ export function cacheDom() {
     vignette: document.getElementById("vignette"),
     landingFlash: document.getElementById("landing-flash"),
     lobbyCanvas: document.getElementById("lobby-canvas"),
+    barrelWarning: document.getElementById("barrel-warning"),
+    pingDisplay: document.getElementById("ping-display"),
+    lobbyChatLog: document.getElementById("lobby-chat-log"),
+    lobbyChatInput: document.getElementById("lobby-chat-input"),
+    lobbyChatForm: document.getElementById("lobby-chat-form"),
   };
 
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
-}
-
-function refreshCharacterLockState() {
-  const unlocked = getUnlockedCharacters();
-  game.dom.characterCards?.forEach((card) => {
-    const id = card.dataset.character;
-    const isLocked = id && !unlocked.has(id);
-    card.classList.toggle("locked", !!isLocked);
-    // Update the name label
-    const nameEl = card.querySelector(".character-name");
-    if (nameEl) {
-      if (isLocked) {
-        nameEl.dataset.origName = nameEl.dataset.origName || nameEl.textContent;
-        nameEl.textContent = "🔒";
-      } else if (nameEl.dataset.origName) {
-        nameEl.textContent = nameEl.dataset.origName;
-      }
-    }
-  });
 }
 
 function showScreen(id) {
@@ -256,20 +242,12 @@ export function bindMenuControls(actions) {
     const canvas = card.querySelector(".char-card-canvas");
     const charId = card.dataset.character;
 
-    // Start preview on hover (only if unlocked)
-    card.addEventListener("mouseenter", () => {
-      const unlocked = getUnlockedCharacters();
-      if (!charId || !canvas || !unlocked.has(charId)) return;
-      setCharacterPreview(charId, canvas);
-    });
-
     card.addEventListener("click", () => {
-      const unlocked = getUnlockedCharacters();
-      if (!charId || !CHARACTERS[charId] || !unlocked.has(charId)) return;
+      if (!charId || !CHARACTERS[charId]) return;
       game.myCharacter = charId;
       game.dom.characterCards.forEach((c) => c.classList.toggle("selected", c === card));
       game.dom.characterSelect.style.borderColor = "";
-      if (canvas) setCharacterPreview(charId, canvas);
+      setSelectedCharCard(charId); // make selected card spin, others bob
       if (game.visuals?.player?.headGroup) {
         applyCharacterHead(game.visuals.player.headGroup, charId, { visor: game.visuals.player.visor });
       }
@@ -347,6 +325,72 @@ export function bindMenuControls(actions) {
     });
   }
   game.dom.sensSlider.addEventListener("input", updateSensitivity);
+
+  // ── Audio volume sliders ──────────────────────────────────────────────────
+  const volMaster  = document.getElementById("vol-master");
+  const volMusic   = document.getElementById("vol-music");
+  const volSfx     = document.getElementById("vol-sfx");
+  const volMasterV = document.getElementById("vol-master-val");
+  const volMusicV  = document.getElementById("vol-music-val");
+  const volSfxV    = document.getElementById("vol-sfx-val");
+
+  function syncVolSliders() {
+    const v = game.audio?.getVolumes?.();
+    if (!v) return;
+    if (volMaster) { volMaster.value = Math.round(v.master * 100); if (volMasterV) volMasterV.textContent = volMaster.value; }
+    if (volMusic)  { volMusic.value  = Math.round(v.music  * 100); if (volMusicV)  volMusicV.textContent  = volMusic.value; }
+    if (volSfx)    { volSfx.value    = Math.round(v.sfx    * 100); if (volSfxV)    volSfxV.textContent    = volSfx.value; }
+  }
+  syncVolSliders();
+
+  function applyVolumes() {
+    const m  = (volMaster?.value  ?? 80) / 100;
+    const mu = (volMusic?.value   ?? 60) / 100;
+    const s  = (volSfx?.value     ?? 80) / 100;
+    if (volMasterV) volMasterV.textContent = Math.round(m  * 100);
+    if (volMusicV)  volMusicV.textContent  = Math.round(mu * 100);
+    if (volSfxV)    volSfxV.textContent    = Math.round(s  * 100);
+    game.audio?.setVolumes?.(m, mu, s);
+  }
+
+  [volMaster, volMusic, volSfx].forEach((el) => el?.addEventListener("input", applyVolumes));
+
+  // ── Graphics quality toggles ──────────────────────────────────────────────
+  const settingShadows   = document.getElementById("setting-shadows");
+  const settingParticles = document.getElementById("setting-particles");
+
+  function loadGraphicsSettings() {
+    try {
+      if (localStorage.getItem("arena_shadows") === "0" && settingShadows) settingShadows.checked = false;
+      if (localStorage.getItem("arena_particles") === "0" && settingParticles) settingParticles.checked = false;
+    } catch {}
+  }
+  loadGraphicsSettings();
+
+  settingShadows?.addEventListener("change", () => {
+    const on = settingShadows.checked;
+    if (game.renderer) {
+      game.renderer.shadowMap.enabled = on;
+      game.renderer.shadowMap.needsUpdate = true; // force shadow map refresh on re-enable
+    }
+    try { localStorage.setItem("arena_shadows", on ? "1" : "0"); } catch {}
+  });
+
+  settingParticles?.addEventListener("change", () => {
+    game.particlesEnabled = settingParticles.checked;
+    try { localStorage.setItem("arena_particles", game.particlesEnabled ? "1" : "0"); } catch {}
+  });
+
+  // Also load particles setting on startup
+  try {
+    if (localStorage.getItem("arena_particles") === "0") game.particlesEnabled = false;
+    if (localStorage.getItem("arena_shadows") === "0" && game.renderer) {
+      game.renderer.shadowMap.enabled = false;
+    }
+  } catch {}
+
+  // Sync sliders when pause opens
+  game.dom.resumeBtn.addEventListener("mouseenter", syncVolSliders, { once: false });
   game.dom.playerName.addEventListener("input", updatePlayerName);
   game.dom.copyJoinLinkBtn.addEventListener("click", copyJoinLink);
 
@@ -455,11 +499,8 @@ export function updateLobbyUI(players) {
   const hasName = Boolean(localPlayer.playerName);
   const wasHidden = game.dom.characterSelect.hidden;
   game.dom.characterSelect.hidden = !hasName;
-  if (wasHidden && hasName) {
-    paintAllCharacterPreviews();
-    // Apply locked styling based on current unlock state
-    refreshCharacterLockState();
-  }
+  // Start card animations the first time the panel becomes visible
+  if (wasHidden && hasName) initCharCardAnimations();
 
   // Ready button: only update it if the player hasn't clicked ready yet
   if (!localPlayer.isReady) {

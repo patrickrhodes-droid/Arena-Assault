@@ -2,6 +2,30 @@ import { P_MAX_HP, PVP_CORNERS, WEAPON_ORDER } from "./config.js";
 import { createAudioController } from "./audio.js";
 import { initLobbyCanvas, tickMenuOrbit } from "./lobby-bg.js";
 import { tickBanter } from "./banter.js";
+
+function tickBarrelWarning() {
+  const el = game.dom?.barrelWarning;
+  if (!el) return;
+  const pp = game.visuals?.player?.playerGroup?.position;
+  if (!pp) { el.classList.remove("show"); return; }
+  let near = false;
+  for (const d of game.destructibles) {
+    if (!d.alive) continue;
+    const dx = d.x - pp.x, dz = d.z - pp.z;
+    if (dx * dx + dz * dz < (d.triggerRadius + 2) ** 2) { near = true; break; }
+  }
+  el.classList.toggle("show", near);
+}
+
+let _lastPingTime = 0;
+function tickPingDisplay() {
+  if (!game.dom?.pingDisplay || !game.socket) return;
+  // Send a lightweight probe every 2 seconds
+  if (performance.now() - _lastPingTime > 2000) {
+    _lastPingTime = performance.now();
+    game.socket.volatile.emit("clientPing", performance.now());
+  }
+}
 import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
@@ -770,6 +794,8 @@ function animate(time) {
 
   if (game.state === "PLAYING") {
     tickBanter(game.dt);
+    tickBarrelWarning();
+    tickPingDisplay();
     updatePlayer(actions);
     updateGrapple();
     syncLocalPlayerState();

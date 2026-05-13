@@ -723,12 +723,13 @@ function applyMeleeDamage(enemy, target, damage) {
   const pos = enemy.group.position;
   const dx = target.pos.x - pos.x, dz = target.pos.z - pos.z;
   const len = Math.sqrt(dx * dx + dz * dz) || 1;
-  const isBoss = enemy.type === "boss";
+  // Knockback force — boss retains full push; regular enemies reduced
+  const force = enemy.type === "boss" ? 185 : enemy.type === "dog" ? 30 : 20;
   game.socket?.emit("enemyMeleeAttempt", {
     enemyId: enemy.id, targetId: target.id, damage,
     ex: pos.x, ey: pos.y, ez: pos.z,
-    knockbackX: isBoss ? (dx / len) * 185 : 0,
-    knockbackZ: isBoss ? (dz / len) * 185 : 0,
+    knockbackX: (dx / len) * force,
+    knockbackZ: (dz / len) * force,
   });
 }
 
@@ -744,6 +745,35 @@ function runOwnedEnemyAI(enemy) {
   const pos = enemy.group.position;
   const targets = getTargets();
   if (targets.length === 0) return;
+
+  // ── Awareness: brief look-up pause the FIRST time an enemy spots a player ──
+  // Enemies move normally until within detection range; then pause once, then charge.
+  if (!enemy.noticed) {
+    const detectionR2 = enemy.type === "boss" ? 2500 : 1600; // 50 or 40 units
+    for (const t of targets) {
+      const dx = t.pos.x - pos.x, dz = t.pos.z - pos.z;
+      if (dx * dx + dz * dz < detectionR2) {
+        enemy.noticed   = true;
+        enemy.noticeTmr = enemy.type === "boss" ? 0.55 : 0.28;
+        break;
+      }
+    }
+    // NOT noticed yet — fall through to normal AI (enemies still pathfind toward player)
+  }
+  if (enemy.noticeTmr > 0) {
+    enemy.noticeTmr -= game.dt;
+    // Face the nearest target but hold position during the notice beat
+    const closest = targets.reduce((best, t) => {
+      const dx = t.pos.x - pos.x, dz = t.pos.z - pos.z;
+      const d2 = dx * dx + dz * dz;
+      return d2 < best.d2 ? { t, d2 } : best;
+    }, { d2: Infinity }).t;
+    if (closest) {
+      const dx = closest.pos.x - pos.x, dz = closest.pos.z - pos.z;
+      enemy.group.rotation.y = Math.atan2(dx, dz) + Math.PI;
+    }
+    return;
+  }
   let closest = null, closestDist = Infinity;
   for (const t of targets) {
     const ddx = t.pos.x - pos.x, ddz = t.pos.z - pos.z;
@@ -892,6 +922,22 @@ function activateBossPhase2(enemy) {
       node.material = m;
     }
   });
+  // Phase 2 roar: heavy screen shake + red flash overlay
+  if (game.shakeAmt !== undefined) game.shakeAmt = Math.max(game.shakeAmt, 0.85);
+  const flash = document.createElement("div");
+  flash.style.cssText = "position:fixed;inset:0;background:rgba(200,0,0,0);z-index:59;pointer-events:none;transition:background 0.12s";
+  document.body.appendChild(flash);
+  requestAnimationFrame(() => { flash.style.background = "rgba(200,0,0,0.45)"; });
+  setTimeout(() => { flash.style.background = "rgba(200,0,0,0)"; }, 160);
+  setTimeout(() => { flash.remove(); }, 700);
+  // Show a HUD alert
+  const alert = document.getElementById("boss-impervious-alert");
+  if (alert) {
+    alert.textContent = "⚠ TITAN BRUTE — PHASE 2 — ENRAGED";
+    alert.classList.remove("show");
+    void alert.offsetWidth;
+    alert.classList.add("show");
+  }
 }
 
 function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {

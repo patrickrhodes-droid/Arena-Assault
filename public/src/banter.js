@@ -1,4 +1,5 @@
 import { game } from "./state.js";
+import { getUnlockedCharacters } from "./story.js";
 
 const COLORS = { iestyn: "#ff6655", patrick: "#55aaff", will: "#66dd66", matt: "#ffcc33" };
 const NAMES  = { iestyn: "IESTYN", patrick: "PATRICK", will: "WILL", matt: "MATT" };
@@ -305,7 +306,14 @@ function processQueue() {
   showLine(_queue.shift());
 }
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pickUnlocked(arr) {
+  // Only use lines spoken by characters who have been introduced in the story.
+  const unlocked = getUnlockedCharacters();
+  const available = arr.filter((line) => unlocked.has(line.c));
+  // Fall back to full pool if filtering leaves nothing (shouldn't happen in practice).
+  const pool = available.length > 0 ? available : arr;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 export function fireBanter(eventType, wave) {
   if (game.gameMode !== "campaign") return;
@@ -315,7 +323,7 @@ export function fireBanter(eventType, wave) {
   if (!pool?.length) return;
   const delay = (eventType === "wave_start" || eventType === "wave_clear") ? 1300 : 450;
   setTimeout(() => {
-    _queue.push(pick(pool));
+    _queue.push(pickUnlocked(pool));
     processQueue();
   }, delay);
 }
@@ -353,7 +361,7 @@ export function tickBanter(dt) {
     if (_idleTimer >= _nextIdle && _queue.length === 0 && !_showing) {
       _idleTimer  = 0;
       _nextIdle   = IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
-      _queue.push(pick(LINES.idle));
+      _queue.push(pickUnlocked(LINES.idle));
       processQueue();
     }
   } else {

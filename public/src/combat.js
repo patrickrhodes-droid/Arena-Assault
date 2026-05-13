@@ -11,6 +11,34 @@ export function getWeapon() {
   return WEAPON_DEFS[game.currentWeapon];
 }
 
+// ── Wall-hit decals (Sprite so they're camera-facing and visible on any surface) ──
+const _decals    = [];
+const MAX_DECALS = 80;
+
+function spawnWallDecal(pos) {
+  if (!game.scene) return;
+  // Sprite is always camera-facing — works on walls, boxes, and floor alike
+  const mat = new THREE.SpriteMaterial({
+    color: 0x050505,
+    transparent: true,
+    opacity: 0.70,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const sprite = new THREE.Sprite(mat);
+  const sz = 0.10 + Math.random() * 0.06; // slight size variety
+  sprite.scale.set(sz, sz, 1);
+  sprite.position.set(pos.x, pos.y, pos.z);
+  sprite.renderOrder = 2;
+  game.scene.add(sprite);
+  _decals.push(sprite);
+  if (_decals.length > MAX_DECALS) {
+    const old = _decals.shift();
+    game.scene.remove(old);
+    old.material.dispose();
+  }
+}
+
 export function lowAmmoThreshold(definition) {
   return Math.max(2, Math.ceil(definition.mag * 0.2));
 }
@@ -171,6 +199,8 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
     if (!shouldRemove && bulletHitObstacle(position.x, position.y, position.z)) {
       shouldRemove = true;
       spawnParticles(position, bullet.splashRadius > 0 ? 72 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 30 : 2, bullet.splashRadius > 0);
+      // Wall-hit decal (bullet hole mark) — skip for bazooka/splash since it leaves a big crater
+      if (!bullet.splashRadius && bullet.isPlayer) spawnWallDecal(position);
       if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
         applySplashDamage(bullet, position, processHit);
       }
@@ -182,6 +212,12 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
     }
 
     if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote) {
+      // Find the NEAREST enemy whose hitbox intersects this bullet's path segment.
+      // Using nearest (not first-in-array) ensures different spread pellets (shotgun)
+      // correctly hit different enemies rather than all converging on one.
+      let hitEnemy    = null;
+      let hitDist2    = Infinity;
+
       for (let enemyIndex = game.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
         const enemy = game.enemies[enemyIndex];
         const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
@@ -191,16 +227,20 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
           enemy.group.position.y + enemyHeight,
           enemy.group.position.z,
         );
+        const d2 = distanceSqPointToSegment(_enemyCenterVec, bullet.prevPos, position);
+        if (d2 < hitRadiusSq && d2 < hitDist2) {
+          hitDist2  = d2;
+          hitEnemy  = enemy;
+        }
+      }
 
-        if (distanceSqPointToSegment(_enemyCenterVec, bullet.prevPos, position) < hitRadiusSq) {
-          _hitPosVec.copy(position);
-          processHit?.(enemy, bulletDamageAtDistance(bullet), _hitPosVec);
-          shouldRemove = true;
-          if (bullet.splashRadius > 0) {
-            spawnParticles(position, 72, 0xff6600, 30, true);
-            applySplashDamage(bullet, position, processHit, enemy);
-          }
-          break;
+      if (hitEnemy !== null) {
+        _hitPosVec.copy(position);
+        processHit?.(hitEnemy, bulletDamageAtDistance(bullet), _hitPosVec);
+        shouldRemove = true;
+        if (bullet.splashRadius > 0) {
+          spawnParticles(position, 72, 0xff6600, 30, true);
+          applySplashDamage(bullet, position, processHit, hitEnemy);
         }
       }
     }
@@ -296,6 +336,28 @@ export function processHit(enemy, damage, particlePosition) {
   // Cap by enemy.hp so we record actual damage dealt, not overkill damage.
   game.stats.damageDealt += Math.min(damage, Math.max(0, enemy.hp));
 
+  // Knockback: push enemy away from the player on every hit so melee enemies
+  // can't immediately follow up. Boss doesn't get pushed (too heavy).
+  if (enemy.type !== "boss") {
+    const playerPos = game.visuals?.player?.playerGroup?.position;
+    if (playerPos) {
+      const dx = enemy.group.position.x - playerPos.x;
+      const dz = enemy.group.position.z - playerPos.z;
+      const len = Math.sqrt(dx * dx + dz * dz) || 1;
+      // Sword hits punch harder; bullets just nudge slightly
+      const force = game.currentWeapon === "sword" ? 2.5 : 0.8;
+      enemy.group.position.x += (dx / len) * force;
+      enemy.group.position.z += (dz / len) * force;
+      enemy.serverX = enemy.group.position.x;
+      enemy.serverZ = enemy.group.position.z;
+      game.socket?.emit("grappleEnemy", {
+        enemyId: enemy.id,
+        x: enemy.serverX, y: enemy.group.position.y, z: enemy.serverZ,
+        weapon: game.currentWeapon,
+      });
+    }
+  }
+
   // Server is now authoritative: report the hit. Server validates weapon restriction,
   // applies damage, awards kill credit, and drops health packs.
   game.socket?.emit("bulletHit", {
@@ -308,6 +370,7 @@ export function processHit(enemy, damage, particlePosition) {
 const MAX_PARTICLES = 200;
 
 export function spawnParticles(position, count, color, speed, big = false) {
+  if (!game.particlesEnabled) return; // graphics quality setting
   // Drop oldest particles if we're at the cap to prevent mass-death frame spikes.
   while (game.particles.length + count > MAX_PARTICLES && game.particles.length > 0) {
     const old = game.particles.shift();
@@ -490,6 +553,9 @@ export function resetCombatState() {
   game.currentWeapon = DEFAULT_WEAPON;
   syncCurrentAmmo();
   applyWeaponModel();
+  // Clear wall decals on new round
+  for (const d of _decals) { game.scene?.remove(d); d.material?.dispose(); }
+  _decals.length = 0;
 }
 
 // ── Weapon Drop Pickups ───────────────────────────────────────────────────────

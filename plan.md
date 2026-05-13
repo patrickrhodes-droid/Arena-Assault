@@ -28,8 +28,8 @@ This document captures everything needed to take the project from its current pr
 - **Enemy pathfinding fix** — the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
 - **Dog animation** — dogs currently use the Wolf GLB walk. A proper dog-run animation or faster gallop cycle would look better.
 - **Soldier suppression** — soldiers should strafe laterally when behind cover, not just stand and shoot.
-- **Enemy awareness** — enemies should have a brief "notice" state (they look at you, pause) before charging; removes the "instant aggro" feel.
-- **Boss roar** — at phase 2 transition the boss should play a visual roar (screen shake, red flash) to signal the phase change clearly.
+- ✅ **Enemy awareness** — brief "notice" pause (0.35–0.6 s) before first charge; removes instant aggro.
+- ✅ **Boss roar** — phase 2 transition: red flash + heavy screen shake + HUD alert.
 
 ---
 
@@ -47,13 +47,13 @@ This document captures everything needed to take the project from its current pr
 - **Ladder visuals** — City and Desert ladders are invisible (just collision zones). Add GLB ladder prop models matched to the ladder zones.
 - **Map props at night** — after dark the City street lights should actually cast point light shadows to give the map depth.
 - **Blacksite corner rooms** — the "corner room divider walls" placed inside the solid masses are unreachable. Either open them up (add corridors) or remove the divider walls and let the corner masses be plain.
-- **Skybox** — all maps use a plain background colour. A simple skybox (gradient sphere or cube) would add depth, especially for the outdoor maps.
+- ✅ **Skybox** — gradient sky sphere per map: Arena (night teal), Desert (sunny blue-orange), City (golden sunset), Blacksite (near-black emergency).
 - **Water in Desert** — the oasis compound has no water feature. A blue plane inside the compound walls would read as an oasis immediately.
 
 ### 2.3 Effects
 - ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss (boss also gets 40 big particles vs 18).
-- **Blood decals** — very small impact decals on walls when bullets hit (1–2 frame flash then fade) add significant impact feel.
-- **Explosive barrel pre-warning** — barrels should have a glowing indicator (emissive rim) and a brief "critical hit" flash before detonating, giving nearby players a moment to react.
+- ✅ **Wall hit decals** — small dark bullet-hole circles appear on walls/floor on every non-splash hit (max 80, oldest replaced).
+- ✅ **Explosive barrel pre-warning** — proximity warning banner appears when player enters blast radius.
 - **Post-processing** — Three.js `EffectComposer` with a mild bloom pass (for the green glow in Blacksite, neon in City) and vignette would dramatically improve visual quality. No quality loss for the gameplay.
 - **Muzzle smoke** — a small wisp of semi-transparent particle at the barrel on fire adds realism.
 - **Boss slam shockwave** — when the boss swings its club, spawn a ring of particles at ground level expanding outward.
@@ -88,10 +88,10 @@ All items here require new audio assets (WAV/OGG files).
 ### 4.2 Menus & Flow
 - **Map preview thumbnails** — replace the procedural gradient cards with actual screenshot thumbnails of each map (saved PNG files).
 - **Post-game vote** — after a COOP round ends, show a "Play again?" / "Change map?" vote panel before redeploying.
-- **Settings screen** — audio volume (master/music/SFX), mouse sensitivity (already exists), graphics quality (shadow on/off, particle count), fullscreen toggle.
+- ✅ **Settings screen** — pause menu now includes: Master/Music/SFX sliders, Shadows toggle, Particles toggle. All persist via localStorage.
 - **Tutorial popup** — on first launch, a dismissable overlay showing the 5 most important controls.
-- **Lobby chat** — a simple text input so players can communicate before the match starts without leaving the tab.
-- **Player ping display** — show latency next to each player's name in the lobby list.
+- ✅ **Lobby chat** — text chat in lobby; messages broadcast to all players via socket.io.
+- ✅ **Ping display** — live ms counter in top-right of HUD; colour-coded green/amber/red.
 - **PvP weapon progression display** — in PvP, show all 7 weapons in a horizontal strip with the current weapon highlighted and a kill count to the next unlock.
 
 ---
@@ -99,10 +99,10 @@ All items here require new audio assets (WAV/OGG files).
 ## 5. Technical / Architecture
 
 ### 5.1 Server
-- **Shared constants** — server.js duplicates constants from `gameConstants.js`. Now that the server is ESM it can `import` them directly. Do a cleanup pass.
+- ✅ **Shared constants** — server.js now imports `ARENA_SIZE`, `HALF`, `P_MAX_HP`, `WEAPON_ORDER`, `PVP_WIN_KILLS`, `PVP_CORNERS` from `gameConstants.js`.
 - **Enemy AI fallback** — `tickEnemies` in server.js is never called. If the host disconnects mid-wave, all enemies freeze. Add a fallback: after 5 s with no `ownedEnemiesSync` packets for an enemy, the server runs minimal AI for it.
-- **Rate limiting** — `bulletHit` and `enemyMeleeAttempt` events from clients are not rate-limited. A malicious client could spam them. Add a per-event cooldown on the server.
-- **Leaderboard uniqueness** — the leaderboard allows duplicate player names. Add a session-token-keyed dedup so the same player doesn't appear 5 times.
+- ✅ **Rate limiting** — `bulletHit` (max ~25/s) and `enemyMeleeAttempt` (max ~8/s) and `chatMessage` (max 2/s) are rate-limited per socket.
+- ✅ **Leaderboard uniqueness** — session-token-keyed dedup: same token only updates its existing entry (best score kept).
 - **Reconnection window** — 60 s is generous but the state is held in memory. If the server restarts, it's gone. Write the in-progress game state to a `session.json` that survives restarts.
 
 ### 5.2 Client Performance
@@ -153,6 +153,6 @@ All items here require new audio assets (WAV/OGG files).
 5. Post-processing bloom (2 h)
 6. Map thumbnails for lobby (1 h)
 7. ✅ Wave progress bar (done)
-8. Settings screen (3 h)
+8. ✅ Settings screen (done)
 9. Instanced mesh for props (4 h, performance)
 10. Electron packager (2 h, distribution)

@@ -21,17 +21,32 @@ or double-click **Startserver.bat** on Windows.
 
 To test multiplayer locally, open multiple browser tabs against the same server.
 
-## Map editor
+## Editors
 
-A separate map editor lets you visually edit all four built-in maps and create custom ones.
+### Map editor
 
 ```bash
+npm run editor          # starts on port 3002
+```
+
+Open `http://localhost:3002` (or double-click **starteditor.bat** on Windows). The game server does not need to be running.
+
+See [MAP_EDITOR.md](MAP_EDITOR.md) for the full editing workflow.
+
+### Character & weapon editor
+
+A visual editor for adjusting character body parts, head scale/rotation, and all first-person/third-person weapon positions.
+
+```bash
+# start the editor server if not already running
 npm run editor
 ```
 
-Open `http://localhost:3002`. The game server does not need to be running.
+Open `http://localhost:3002/editor/character.html` (or double-click **startchareditor.bat**).
 
-See [MAP_EDITOR.md](MAP_EDITOR.md) for the full editing workflow.
+- **Character tab** — select any operator and transform individual body parts (torso, arms, legs, boots, head). Walk animation preview available.
+- **Weapon tab** — switch between FPS and 3P views, adjust `fpPos`/`fpAdsPos`/`fpScale`/`tpPos`/`tpScale`, and fine-tune the GLB model's own scale, rotation, and position offset.
+- Click **Save** to write `public/assets/characterConfig.json`; the game loads this file automatically on next launch and applies all overrides.
 
 **Key editor features:**
 - Load and edit `arena`, `desert`, `city`, `blacksite`, and `sandbox` (or any custom map)
@@ -62,8 +77,12 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 
 The lobby uses two screens:
 
-1. **OPERATOR** — Enter a name and pick your character (Iestyn, Patrick, Will, or Matt). Click **READY UP** when you're in. Once every player in the room has readied, the host moves to the next screen automatically.
+1. **OPERATOR** — Enter a name and pick your character. A live chat box lets players communicate before the match. Click **READY UP** when set. Once every player has readied, the host moves to the next screen automatically.
 2. **MODE & MAP** — The host picks a game mode (Campaign / Endless / Gun Game / Free For All) and, for non-campaign modes, selects a map. All players see the selection update in real-time. Host clicks **START MISSION** (co-op), **START GUN GAME**, or **START FREE FOR ALL**. PvP modes require 2+ players.
+
+**Host controls** (bottom-left of the lobby once joined): Start at Wave, Invincibility, Room Password, Copy Join Link.
+
+A **ping indicator** (ms) is shown in the top-right of the HUD during play.
 
 ## Maps
 
@@ -91,8 +110,8 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 |---|---|
 | W A S D | Move |
 | Space | Jump |
-| Shift + W | Sprint |
-| Double-tap W | Sprint (alt) |
+| Shift + W | Sprint (hold) |
+| Double-tap W | Sprint toggle |
 | Ctrl | Crouch (toggle) |
 | W / S on a ladder | Climb up / down |
 | 1 / 2 / 3 / 4 / 5 / 6 / 7 | Select weapon slot (co-op) |
@@ -122,6 +141,19 @@ In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 
 ## Game modes (Co-op)
 
 ### Campaign
+
+**Story** — Campaign features a full narrative told through JRPG-style cutscenes before each map:
+
+| Map | Chapter | Story |
+|---|---|---|
+| Arena | Chapter 1 | Iestyn and Patrick investigate a locked-down training facility |
+| Desert | Chapter 2 | After clearing the Arena they meet Will and Matt; together they push to a research outpost |
+| City | Chapter 3 | A broadcast signal draws the squad to a fallen city |
+| Blacksite | Chapter 4 | The signal leads to the original abandoned compound where it all began |
+
+Between each map a **between-map operator select screen** lets you choose who you deploy as. Will and Matt unlock after clearing Chapter 1.
+
+**In-game squad banter** — during active waves, the squad comments on the action: new enemy types, wave clears, boss warnings, and idle flavour lines. Only unlocked characters speak.
 
 - Fixed 7-wave structure per map, then auto-progression to the next map in order: **Arena → Dust Bowl → Downtown → Blacksite** (loops).
 - Enemy escalation each two waves:
@@ -189,18 +221,22 @@ In multiplayer, non-host clients now snap the boss's visual position to the auth
 
 ## Character system
 
-Four playable characters with distinct heads:
+Four playable operators, each with a unique 3D head model:
 
-| Name | Head colour | Head scale |
+| Name | Colour | Unlocked |
 |---|---|---|
-| Iestyn | Red / coral | 1.5× (GLB face model) |
-| Patrick | Blue | 1.0× (GLB face model) |
-| Will | Green | 1.25× (GLB face model) |
-| Matt | Yellow | 0.8× |
+| Iestyn | Red / coral | Always |
+| Patrick | Blue | Always |
+| Will | Green | After completing the Arena map in Campaign |
+| Matt | Yellow / amber | After completing the Arena map in Campaign |
 
-Characters are rendered on both the local and remote player models. GLB face models load asynchronously and are swapped in automatically when ready. Matt uses a coloured box placeholder.
+### Character select lobby
+Each character card shows a live animated 3D head — idle bob when not selected, full 360° spin when selected. Click any card to pick that operator.
 
-Heads use a layer-isolated point-light fill so they appear bright without emissive glow bleeding onto the rest of the scene.
+Will and Matt are unlocked through the Campaign story: after clearing the Arena boss, the Desert cutscene shows Iestyn and Patrick meeting Will and Matt, and both operators become permanently available for all game modes (stored in `localStorage`).
+
+### Between-map character select (Campaign only)
+After each map transition in Campaign, a brief story cutscene plays and then an **operator select screen** appears so you can switch characters before the next map. This is the right time to try Will or Matt after they unlock.
 
 ## Multiplayer
 
@@ -230,11 +266,15 @@ Heads use a layer-isolated point-light fill so they appear bright without emissi
 - **Weapon pickup prompt** — "Press E to pick up ASSAULT" appears when near a weapon drop.
 - **Weapon unlock popup** pulses on screen whenever your PvP weapon advances.
 
-## Host controls (server PC only)
+## Pause menu / Settings
 
-- **Start at Wave** — begin co-op at any wave 1–30.
-- **Invincibility** — all players take no damage for the session.
-- **Room Password** — optionally set a password; joining players must enter it before entering the lobby.
+Press **Esc** in-game to pause. The pause panel includes:
+
+- **View toggle** — switch between first-person and third-person camera.
+- **Fullscreen** — toggle browser fullscreen.
+- **Sensitivity** — mouse sensitivity slider (1–10).
+- **Audio** — Master, Music, and SFX volume sliders (0–100%). All settings persist in `localStorage`.
+- **Graphics** — Shadows toggle and Particles toggle. Disabling shadows can improve performance on low-end hardware; disabling particles reduces visual effects density.
 
 ## Leaderboard
 
@@ -248,14 +288,9 @@ If a player's browser briefly loses the connection, they automatically rejoin wi
 
 Use this section when you want to rebalance movement, health, weapons, PvP progression, or enemies.
 
-### Important note about shared constants
+### Shared constants
 
-Some values exist in both the client and the server:
-
-- `public/src/gameConstants.js` is the shared client-side source of truth.
-- `server.js` still duplicates some of those same values for the authoritative simulation.
-
-If you change one, update both files.
+`public/src/gameConstants.js` is the single source of truth. `server.js` now imports `ARENA_SIZE`, `HALF`, `P_MAX_HP`, `WEAPON_ORDER`, `PVP_WIN_KILLS`, `PVP_CORNERS`, and the boss-escape physics constants directly from that file. Only constants that are server-exclusive (e.g. `B_SPD_E`, AI timings) live solely in `server.js`.
 
 ### Player stats and movement
 
