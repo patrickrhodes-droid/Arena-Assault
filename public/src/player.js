@@ -265,6 +265,10 @@ export function updateGrapple() {
 
 export function setupInput(actions) {
   document.addEventListener("keydown", (event) => {
+    // Don't intercept keys while the user is typing in a text/password input
+    const tag = event.target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
     game.keys[event.code] = true;
 
     if (event.code === "KeyW" && game.state === "PLAYING" && !event.repeat) {
@@ -317,6 +321,7 @@ export function setupInput(actions) {
   });
 
   document.addEventListener("keyup", (event) => {
+    if (event.target?.tagName === "INPUT" || event.target?.tagName === "TEXTAREA") return;
     game.keys[event.code] = false;
     if (event.code === "KeyW") {
       game.sprintLocked = false;
