@@ -723,8 +723,8 @@ function applyMeleeDamage(enemy, target, damage) {
   const pos = enemy.group.position;
   const dx = target.pos.x - pos.x, dz = target.pos.z - pos.z;
   const len = Math.sqrt(dx * dx + dz * dz) || 1;
-  // Knockback force — boss retains full push; regular enemies reduced
-  const force = enemy.type === "boss" ? 185 : enemy.type === "dog" ? 30 : 20;
+  // Knockback force — boss retains full push; dog and skeleton both 10
+  const force = enemy.type === "boss" ? 185 : 10;
   game.socket?.emit("enemyMeleeAttempt", {
     enemyId: enemy.id, targetId: target.id, damage,
     ex: pos.x, ey: pos.y, ez: pos.z,
