@@ -1244,6 +1244,7 @@ canvas {
 
 .settings-row {
   margin: 4px 0 8px;
+  pointer-events: all;
 }
 
 .settings-row label {
@@ -1267,6 +1268,15 @@ canvas {
   margin: 6px 0;
   font-size: 12px;
   color: var(--muted);
+  pointer-events: all;
+}
+
+/* Ensure ALL pause-panel inputs and labels are clickable */
+#pause-panel input,
+#pause-panel label,
+#pause-panel select {
+  pointer-events: all;
+  cursor: pointer;
 }
 
 #sens-wrap label {

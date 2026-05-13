@@ -356,38 +356,45 @@ export function bindMenuControls(actions) {
   [volMaster, volMusic, volSfx].forEach((el) => el?.addEventListener("input", applyVolumes));
 
   // ── Graphics quality toggles ──────────────────────────────────────────────
+  function applyGraphicsSetting(key, value) {
+    if (key === "shadows") {
+      if (game.renderer) {
+        game.renderer.shadowMap.enabled = value;
+        if (value) game.renderer.shadowMap.needsUpdate = true;
+      }
+    } else if (key === "particles") {
+      game.particlesEnabled = value;
+    }
+    try { localStorage.setItem(`arena_${key}`, value ? "1" : "0"); } catch {}
+  }
+
   const settingShadows   = document.getElementById("setting-shadows");
   const settingParticles = document.getElementById("setting-particles");
 
-  function loadGraphicsSettings() {
-    try {
-      if (localStorage.getItem("arena_shadows") === "0" && settingShadows) settingShadows.checked = false;
-      if (localStorage.getItem("arena_particles") === "0" && settingParticles) settingParticles.checked = false;
-    } catch {}
+  if (settingShadows) {
+    // Load persisted value
+    const saved = (() => { try { return localStorage.getItem("arena_shadows"); } catch { return null; } })();
+    if (saved === "0") settingShadows.checked = false;
+    settingShadows.addEventListener("change", function () {
+      applyGraphicsSetting("shadows", this.checked);
+    });
   }
-  loadGraphicsSettings();
 
-  settingShadows?.addEventListener("change", () => {
-    const on = settingShadows.checked;
-    if (game.renderer) {
-      game.renderer.shadowMap.enabled = on;
-      game.renderer.shadowMap.needsUpdate = true; // force shadow map refresh on re-enable
-    }
-    try { localStorage.setItem("arena_shadows", on ? "1" : "0"); } catch {}
+  if (settingParticles) {
+    const saved = (() => { try { return localStorage.getItem("arena_particles"); } catch { return null; } })();
+    if (saved === "0") settingParticles.checked = false;
+    settingParticles.addEventListener("change", function () {
+      applyGraphicsSetting("particles", this.checked);
+    });
+  }
+
+  // Apply stored values to the game engine (defer one tick so renderer is ready)
+  requestAnimationFrame(() => {
+    try {
+      if (localStorage.getItem("arena_shadows") === "0")   applyGraphicsSetting("shadows",   false);
+      if (localStorage.getItem("arena_particles") === "0") applyGraphicsSetting("particles", false);
+    } catch {}
   });
-
-  settingParticles?.addEventListener("change", () => {
-    game.particlesEnabled = settingParticles.checked;
-    try { localStorage.setItem("arena_particles", game.particlesEnabled ? "1" : "0"); } catch {}
-  });
-
-  // Also load particles setting on startup
-  try {
-    if (localStorage.getItem("arena_particles") === "0") game.particlesEnabled = false;
-    if (localStorage.getItem("arena_shadows") === "0" && game.renderer) {
-      game.renderer.shadowMap.enabled = false;
-    }
-  } catch {}
 
   // Sync sliders when pause opens
   game.dom.resumeBtn.addEventListener("mouseenter", syncVolSliders, { once: false });

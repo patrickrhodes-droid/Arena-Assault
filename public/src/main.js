@@ -789,8 +789,8 @@ function animate(time) {
   const doHUD      = game.frameIndex % 2 === 0;
   const doMinimap  = game.frameIndex % 3 === 0;
 
-  // Slowly orbit the camera around the arena during the lobby
-  if (game.state === "MENU") tickMenuOrbit(game.dt);
+  // Slowly orbit the camera around the arena during the lobby or cutscenes
+  if (game.state === "MENU" || game.state === "CUTSCENE") tickMenuOrbit(game.dt);
 
   if (game.state === "PLAYING") {
     tickBanter(game.dt);
@@ -848,8 +848,33 @@ function animate(time) {
     updateCamera();
     if (doHUD) { updateHUD(); updateStatusIndicators(); }
     if (doMinimap) drawMinimap();
+  } else if (game.state === "CUTSCENE") {
+    // World is frozen — camera orbits, nothing else ticks
+    updateRemotePlayerVisuals();
+    if (doMinimap) drawMinimap();
   }
 
   game.renderer.render(game.scene, game.camera);
   requestAnimationFrame(animate);
+}
+
+// Called by campaignNextMap handler to freeze the world during cutscenes
+export function enterCutsceneMode() {
+  // Release pointer lock so the player can click the cutscene UI
+  if (document.pointerLockElement === game.renderer?.domElement) {
+    document.exitPointerLock();
+  }
+  game.isAiming   = false;
+  game.isReloading = false;
+  game.fireTmr    = 0;
+  game.dom.crosshair.classList.remove("hidden");
+  game.dom.scopeOverlay.classList.remove("show");
+  // Clear enemies and bullets from the scene so nothing is moving
+  cleanupGame();
+  game.state = "CUTSCENE";
+}
+
+export function exitCutsceneMode() {
+  // Restored to PLAYING by startGame() / rebuildArena flow
+  if (game.state === "CUTSCENE") game.state = "PLAYING";
 }

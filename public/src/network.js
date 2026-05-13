@@ -774,8 +774,11 @@ export function initNetworking(actions) {
     if (!data?.map) return;
     game.selectedMap = data.map;
 
-    // Show the story cutscene for the new map (includes between-map character select).
-    // The cutscene hides lobby screens, shows story + character picker, then resolves.
+    // Freeze the world: release pointer lock, clear enemies/bullets, set CUTSCENE state.
+    // Camera will orbit the current map during the cutscene.
+    actions.enterCutsceneMode?.();
+
+    // Show the story cutscene (story + between-map character select).
     await showCampaignCutscene(data.map);
 
     // Rebuild arena for the new map
@@ -793,11 +796,9 @@ export function initNetworking(actions) {
     actions.setWeapon("pistol");
     actions.updateHUD();
 
-    // Ensure the game stays in PLAYING state (it was mid-game before transition)
-    if (game.state === "MENU") {
-      game.state = "PLAYING";
-      game.dom?.hud && (game.dom.hud.style.display = "block");
-    }
+    // Restore PLAYING state (we were in CUTSCENE)
+    game.state = "PLAYING";
+    if (game.dom?.hud) game.dom.hud.style.display = "block";
   });
 
   // ── Mode selection from host (non-host clients receive this) ─────────────
