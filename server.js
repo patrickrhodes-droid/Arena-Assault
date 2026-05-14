@@ -1456,7 +1456,9 @@ io.on('connection', (socket) => {
         const text = String(data?.text ?? '').slice(0, 120).trim();
         if (!text) return;
         const playerName = players[socket.id]?.playerName || 'Anonymous';
-        io.emit('chatMessage', { playerName, text, fromSocketId: socket.id });
+        // Send to everyone EXCEPT the sender — the sender already displays an
+        // optimistic local echo, so server-broadcasting back would duplicate it.
+        socket.broadcast.emit('chatMessage', { playerName, text });
     });
 
     // Client reports their bullet hit an enemy — server is now authoritative

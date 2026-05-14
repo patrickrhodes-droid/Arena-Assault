@@ -84,9 +84,10 @@ export function initNetworking(actions) {
   };
 
   game.socket.on("chatMessage", (data) => {
-    // Skip echo for messages we already added locally
-    if (data.fromSocketId && data.fromSocketId === game.socket?.id) return;
-    appendChatRow(data.playerName, data.text, false);
+    // Server broadcasts to everyone EXCEPT the sender (sender shows an
+    // optimistic local echo), so any chatMessage we receive is from another
+    // player and should always be displayed.
+    appendChatRow(data?.playerName, data?.text, false);
   });
 
   // Bind floating chat panel send button + Enter key
@@ -102,7 +103,10 @@ export function initNetworking(actions) {
       appendChatRow(myName, text, true);
       game.socket?.emit("chatMessage", { text });
       chatInput.value = "";
-      chatInput.focus();
+      // Hand focus back to the game during a match so movement keys aren't
+      // swallowed by the input; stay focused during the lobby for quick replies.
+      if (game.state === "PLAYING") chatInput.blur();
+      else chatInput.focus();
     };
     chatSendBtn.addEventListener("click", sendMsg);
     chatInput.addEventListener("keydown", (e) => {

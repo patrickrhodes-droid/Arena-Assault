@@ -841,6 +841,9 @@ function updateWeaponVisuals() {
   _swayY += (_mouseDeltaY * swayStrength - _swayY) * 0.25;
   _mouseDeltaX *= 0.8;
   _mouseDeltaY *= 0.8;
+  // Zero-clamp so a tiny residual delta doesn't bias sway after the mouse stops.
+  if (Math.abs(_mouseDeltaX) < 0.05) _mouseDeltaX = 0;
+  if (Math.abs(_mouseDeltaY) < 0.05) _mouseDeltaY = 0;
 
   // ── Idle weapon breathe (only when still) ────────────────────────────────
   const t = performance.now() * 0.001;
