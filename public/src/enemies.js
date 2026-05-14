@@ -1304,27 +1304,33 @@ export function announceWave() {
   const isCampaign = game.gameMode === 'campaign';
   const bossWave = isCampaign ? isCampaignBossWave() : (game.wave >= 7 && (game.wave - 7) % 5 === 0);
   const { bossCount, hpMultiplier } = bossWave ? getBossWaveConfig() : { bossCount: 0, hpMultiplier: 1 };
+  const miniBossGuarantee =
+    (!isCampaign && game.wave === 8) ||
+    (isCampaign && game.wave === 1 && game.selectedMap !== 'arena');
+
   title.textContent = `WAVE ${game.wave}`;
   if (bossWave) {
     if (bossCount > 1 && hpMultiplier > 1) {
-      subtitle.textContent = `${bossCount}x ${hpMultiplier}HP BOSSES INCOMING`;
+      subtitle.textContent = `${bossCount}× TITAN BRUTES (${hpMultiplier}× HP)`;
     } else if (bossCount > 1) {
-      subtitle.textContent = `${bossCount} BOSSES INCOMING`;
+      subtitle.textContent = `${bossCount} TITAN BRUTES`;
     } else if (hpMultiplier > 1) {
-      subtitle.textContent = `${hpMultiplier}X HP BOSS INCOMING`;
+      subtitle.textContent = `TITAN BRUTE — ${hpMultiplier}× HP`;
     } else {
-      subtitle.textContent = "BOSS INCOMING";
+      subtitle.textContent = "TITAN BRUTE";
     }
+  } else if (miniBossGuarantee) {
+    subtitle.textContent = "TITAN SCOUT DETECTED";
   } else if (game.wave <= 6) {
     // Rounds 1-6 unified text (same for both modes)
-    if (game.wave >= 5) subtitle.textContent = "SKELETONS, SOLDIERS & DOGS INCOMING";
-    else if (game.wave >= 3) subtitle.textContent = "SKELETONS & SOLDIERS INCOMING";
+    if (game.wave >= 5) subtitle.textContent = "SKELETONS, SOLDIERS & DOGS";
+    else if (game.wave >= 3) subtitle.textContent = "SKELETONS & SOLDIERS";
     else subtitle.textContent = "";
   } else {
     // Endless rounds 8+ (campaign never reaches here — it transitions after round 7)
-    subtitle.textContent = "DOGS & SHOOTERS INCOMING";
+    subtitle.textContent = "DOGS & SHOOTERS";
   }
-  const showSub = bossWave || game.wave >= 3;
+  const showSub = bossWave || miniBossGuarantee || game.wave >= 3;
   subtitle.style.display = showSub ? "block" : "none";
   game.dom.waveAnnounce.classList.remove("show");
   void game.dom.waveAnnounce.offsetWidth;

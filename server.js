@@ -956,6 +956,14 @@ function isBossWave() {
     return gameState.wave >= 7 && (gameState.wave - 7) % 5 === 0;
 }
 
+// Guaranteed mini-boss: endless wave 8; campaign wave 1 on every map after arena
+function shouldGuaranteeMiniBoss() {
+    if (isBossWave()) return false;
+    if (gameState.gameMode === 'endless')  return gameState.wave === 8;
+    if (gameState.gameMode === 'campaign') return gameState.wave === 1 && selectedMap !== 'arena';
+    return false;
+}
+
 function tickWave(dt) {
     if (gameState.mode !== 'COOP') return;
 
@@ -965,6 +973,15 @@ function tickWave(dt) {
 
         gameState.wave += 1;
         reviveAllPlayers();
+
+        // Guaranteed Titan Scout spawn on specific waves
+        if (shouldGuaranteeMiniBoss()) {
+            const [sx, sz] = pickSpawnPos(15);
+            const mb = makeMiniBoss(sx, sz);
+            mb.ownerId = getClosestPlayerId(sx, sz) || Object.keys(players)[0] || null;
+            gameState.enemies.push(mb);
+            emitEnemySpawned(mb);
+        }
 
         if (isBossWave()) {
             spawnBoss();
