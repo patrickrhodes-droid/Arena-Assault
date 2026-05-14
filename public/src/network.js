@@ -6,7 +6,7 @@ import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthP
 import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
-import { showCampaignCutscene } from "./story.js";
+import { showCampaignCutscene, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
 import { fireBanter } from "./banter.js";
 
 function recordDamageAngle(sourceX, sourceZ) {
@@ -845,6 +845,14 @@ export function initNetworking(actions) {
       actions.setWeapon(data.weaponId);
       actions.updateHUD();
     }
+  });
+
+  // ── Campaign cutscene team-ready sync ────────────────────────────────────
+  game.socket.on("campaignReadyUpdate", (data) => {
+    updateCutsceneReadyStatus(data?.ready ?? 0, data?.total ?? 1);
+  });
+  game.socket.on("campaignAllReady", () => {
+    finishCampaignCutscene();
   });
 
   // ── Campaign map transition ──────────────────────────────────────────────

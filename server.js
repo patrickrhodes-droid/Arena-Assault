@@ -482,6 +482,10 @@ const gameState = {
     mode: null,
     gameMode: 'endless',  // 'campaign' | 'endless'
     campaignMapIndex: 0,
+    // Players (by socket.id) who have clicked DEPLOY in the current campaign
+    // cutscene. Reset on every cutscene start; when its size matches the
+    // connected-player count, the server broadcasts campaignAllReady.
+    campaignReady: new Set(),
     invincibility: false,
     wave: 0,
     waveState: 'WAIT',
@@ -504,16 +508,20 @@ const gameState = {
     map: 'arena',
 };
 
-// Wipe all saved player states tied to a finished match. Called whenever the
-// player count drops to zero, a match ends, or a new match begins.
+// Wipe all saved player states tied to a finished match. Called when a
+// match ends normally (COOP wipe, PvP winner, FFA timeout) or when the
+// orphan-cleanup timer fires after a long-empty match.
 function clearMatchState() {
+    cancelOrphanMatchCleanup();
     for (const token of Object.keys(recentlyDisconnected)) delete recentlyDisconnected[token];
     gameState.mode = null;
 }
 
 function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapIndex = 0) {
     stopGameLoop();
-    // A fresh match — invalidate any saved tokens from a previous match.
+    // A fresh match — invalidate any saved tokens from a previous match and
+    // cancel any pending orphan-cleanup timer.
+    cancelOrphanMatchCleanup();
     for (const token of Object.keys(recentlyDisconnected)) delete recentlyDisconnected[token];
     gameState.matchEpoch += 1;
     gameState.mode = mode;
@@ -832,12 +840,38 @@ function tickWave(dt) {
     }
 }
 
+// Resets the cutscene-ready set and tells everyone the cutscene/lobby is
+// fresh (0/N players ready). Called at every cutscene boundary.
+function resetCampaignReady() {
+    gameState.campaignReady.clear();
+    io.emit('campaignReadyUpdate', { ready: 0, total: Object.keys(players).length });
+}
+
+// Notify clients of progress and fire campaignAllReady once everyone is in.
+// Also handles the case where everyone is already ready and a disconnect
+// reduces the required count.
+function checkCampaignAllReady() {
+    const total = Object.keys(players).length;
+    if (total === 0) return; // wait for someone to be here
+    // Drop any ready entries for players that have left
+    for (const id of [...gameState.campaignReady]) {
+        if (!players[id]) gameState.campaignReady.delete(id);
+    }
+    const ready = gameState.campaignReady.size;
+    io.emit('campaignReadyUpdate', { ready, total });
+    if (ready >= total) {
+        gameState.campaignReady.clear();
+        io.emit('campaignAllReady');
+    }
+}
+
 function handleCampaignWaveComplete() {
     // Advance to next map after wave 7 in campaign mode
     gameState.campaignMapIndex = (gameState.campaignMapIndex + 1) % CAMPAIGN_MAP_ORDER.length;
     const nextMap = CAMPAIGN_MAP_ORDER[gameState.campaignMapIndex];
     selectedMap = nextMap;
     gameState.map = nextMap;
+    resetCampaignReady();
     // Reset waves back to 0 so the next map starts at wave 1
     gameState.wave = 0;
     gameState.waveState = 'WAIT';
@@ -1151,6 +1185,46 @@ function stopFFATimer() {
     ffaTimeLeft = 0;
 }
 
+// Like stopFFATimer but preserves ffaTimeLeft so the countdown can resume
+// when a player rejoins after the world was frozen.
+function pauseFFATimer() {
+    if (ffaTimerInterval) {
+        clearInterval(ffaTimerInterval);
+        ffaTimerInterval = null;
+    }
+}
+
+function resumeFFATimerIfNeeded() {
+    if (gameState.mode !== 'FFA' || ffaTimerInterval || ffaTimeLeft <= 0) return;
+    ffaTimerInterval = setInterval(() => {
+        ffaTimeLeft -= 1;
+        io.emit('ffaTimeUpdate', { timeLeft: ffaTimeLeft });
+        if (ffaTimeLeft <= 0) endFFAMatch();
+    }, 1000);
+}
+
+// If the match sits empty for too long, give up and wipe the saved state.
+// Cleared as soon as anyone reconnects or starts a new match.
+let _orphanCleanupTimer = null;
+const ORPHAN_MATCH_TTL_MS = 30 * 60 * 1000; // 30 minutes
+function scheduleOrphanMatchCleanup() {
+    cancelOrphanMatchCleanup();
+    _orphanCleanupTimer = setTimeout(() => {
+        _orphanCleanupTimer = null;
+        if (Object.keys(players).length === 0) {
+            stopGameLoop();
+            stopFFATimer();
+            clearMatchState();
+        }
+    }, ORPHAN_MATCH_TTL_MS);
+}
+function cancelOrphanMatchCleanup() {
+    if (_orphanCleanupTimer) {
+        clearTimeout(_orphanCleanupTimer);
+        _orphanCleanupTimer = null;
+    }
+}
+
 function buildFFARankings() {
     return Object.values(players)
         .sort((a, b) => (b.ffaKills || 0) - (a.ffaKills || 0))
@@ -1256,11 +1330,12 @@ io.on('connection', (socket) => {
         const wasHost = players[socket.id]?.isHost ?? false;
         delete players[socket.id];
         if (Object.keys(players).length === 0) {
-            // No one left in the match — treat as game over and wipe all
-            // saved tokens so the next match starts clean.
+            // No one left in the match — freeze the world so a refreshing
+            // solo player can drop back into it. Game state is preserved;
+            // an orphan-cleanup timer below wipes it if no one returns.
             stopGameLoop();
-            stopFFATimer();
-            clearMatchState();
+            pauseFFATimer();
+            scheduleOrphanMatchCleanup();
         } else {
             // If the leaver was host (or no one else is host), promote the first remaining player.
             const hasHost = Object.values(players).some(p => p.isHost);
@@ -1276,6 +1351,9 @@ io.on('connection', (socket) => {
         io.emit('updateLobby', players);
         io.emit('playerDisconnected', socket.id);
         broadcastPauseState();
+        // If we were waiting on this player for a cutscene deploy, recheck
+        // so the remaining players aren't blocked forever.
+        if (gameState.campaignReady.size > 0) checkCampaignAllReady();
     });
 
     socket.on('playerMovement', (movementData) => {
@@ -1343,6 +1421,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    // A player clicked DEPLOY in the campaign cutscene char-select. They wait
+    // here until every connected player has also clicked DEPLOY.
+    socket.on('campaignReady', (data) => {
+        if (!players[socket.id]) return;
+        if (data && typeof data.character === 'string') {
+            players[socket.id].character = data.character;
+        }
+        gameState.campaignReady.add(socket.id);
+        checkCampaignAllReady();
+    });
+
     socket.on('hostSelectMap', (data) => {
         if (!players[socket.id]?.isHost) return;
         if (typeof data.map === 'string') {
@@ -1386,6 +1475,9 @@ io.on('connection', (socket) => {
         // Pre-load map JSON so obstacle lookups during tickEnemies are synchronous.
         loadMapJson(selectedMap).catch(() => {});
         startGameLoop();
+        // If this is a campaign match, the clients will show a cutscene before
+        // deploying — start the ready count fresh.
+        if (gameMode === 'campaign') resetCampaignReady();
         io.emit('matchStarted', { mode: 'COOP', map: selectedMap, gameMode, startingWave });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
@@ -1741,6 +1833,11 @@ io.on('connection', (socket) => {
             socket.emit('rejoinFailed', { reason: 'expired' });
             return;
         }
+        // Someone's coming back — cancel the orphan-cleanup timer and resume
+        // the game/FFA loops if the world was frozen.
+        cancelOrphanMatchCleanup();
+        if (!gameState.tickInterval) startGameLoop();
+        resumeFFATimerIfNeeded();
         delete recentlyDisconnected[token];
         // Preserve the isHost flag that the connection handler may have already
         // assigned (connection fires before rejoin, so if this socket was made

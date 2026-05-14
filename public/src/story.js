@@ -456,11 +456,44 @@ function showCharSelect() {
 
   panel.style.display = "flex";
 
+  // Reset the waiting status from any previous cutscene
+  const waitStatus = document.getElementById("cs-waiting-status");
+  if (waitStatus) waitStatus.style.display = "none";
+  confirm.disabled = false;
+  confirm.textContent = "DEPLOY";
+
   confirm.onclick = () => {
     game.myCharacter = selected;
     game.socket?.emit("playerCharacterUpdate", { character: selected });
-    closeFullCutscene();
+    // Tell the server we're ready and wait for the rest of the team. The
+    // cutscene will close in response to campaignAllReady (handled in
+    // network.js, which calls finishCampaignCutscene below).
+    game.socket?.emit("campaignReady", { character: selected });
+    confirm.disabled = true;
+    confirm.textContent = "READY ✓";
+    if (waitStatus) {
+      waitStatus.style.display = "block";
+      waitStatus.textContent = "WAITING FOR TEAMMATES…";
+    }
   };
+}
+
+// Allows network.js to update the "waiting for X/Y" status during a cutscene.
+export function updateCutsceneReadyStatus(ready, total) {
+  const waitStatus = document.getElementById("cs-waiting-status");
+  if (!waitStatus) return;
+  if (total <= 1 || ready >= total) {
+    waitStatus.style.display = "none";
+  } else {
+    waitStatus.style.display = "block";
+    waitStatus.textContent = `WAITING FOR TEAMMATES… (${ready}/${total})`;
+  }
+}
+
+// Called by network.js when the server emits campaignAllReady — every player
+// has clicked DEPLOY, so the cutscene can finally close.
+export function finishCampaignCutscene() {
+  closeFullCutscene();
 }
 
 function closeFullCutscene() {
