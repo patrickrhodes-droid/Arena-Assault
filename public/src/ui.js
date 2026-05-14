@@ -10,6 +10,7 @@ export function cacheDom() {
   game.dom = {
     gameContainer: document.getElementById("game-container"),
     menu: document.getElementById("screen-player"), // kept as alias
+    screenConnect: document.getElementById("screen-connect"),
     screenPlayer: document.getElementById("screen-player"),
     screenMap: document.getElementById("screen-map"),
     screenLobby: document.getElementById("screen-lobby"),
@@ -139,7 +140,7 @@ export function cacheDom() {
 }
 
 function showScreen(id) {
-  ["screen-player", "screen-map"].forEach((s) => {
+  ["screen-connect", "screen-player", "screen-map"].forEach((s) => {
     document.getElementById(s)?.classList.toggle("active", s === id);
   });
 }
@@ -266,6 +267,79 @@ export function updateLobbyCharacterLocks(mode = game.selectedGameMode) {
       card.classList.remove("selected");
     }
   });
+}
+
+// ── LAN connection screen ─────────────────────────────────────────────────────
+
+export function bindConnectScreen() {
+  // If accessed via a non-localhost address the user already picked a server —
+  // jump straight to the lobby.
+  const h = window.location.hostname;
+  if (h !== 'localhost' && h !== '127.0.0.1') {
+    showScreen('screen-player');
+    return;
+  }
+
+  const selfDetail = document.getElementById('connect-self-detail');
+  const selfIp     = document.getElementById('connect-self-ip');
+  const listEl     = document.getElementById('lan-server-list');
+  const playBtn    = document.getElementById('btn-play-here');
+  const refreshBtn = document.getElementById('btn-refresh-lan');
+
+  playBtn?.addEventListener('click', () => showScreen('screen-player'));
+
+  function renderServer(s) {
+    const stateLabel = s.state === 'IN GAME' ? `Wave ${s.wave}` : 'LOBBY';
+    const mapLabel   = s.map ? ` · ${s.map.toUpperCase()}` : '';
+    const div = document.createElement('div');
+    div.className = 'lan-server-entry';
+    div.innerHTML = `
+      <div class="lan-server-info">
+        <div class="lan-server-name">${s.name || s.ip}</div>
+        <div class="lan-server-detail">${s.players}/4 players · ${stateLabel}${mapLabel}</div>
+      </div>
+      <button class="lan-join-btn">JOIN</button>`;
+    div.querySelector('.lan-join-btn').addEventListener('click', () => {
+      window.location.href = s.url;
+    });
+    return div;
+  }
+
+  async function refresh() {
+    // Load self info
+    try {
+      const self = await fetch('/api/self').then(r => r.json());
+      const stateLabel = self.state === 'IN GAME' ? `Wave ${self.wave}` : 'LOBBY';
+      if (selfDetail) selfDetail.textContent = `${self.players}/4 players · ${stateLabel}`;
+      if (selfIp && self.ips?.length) {
+        selfIp.textContent = `Share: ${self.ips.map(ip => `${ip}:${self.port}`).join('  ·  ')}`;
+      }
+    } catch { if (selfDetail) selfDetail.textContent = 'Server running'; }
+
+    // Load discovered LAN servers
+    try {
+      const servers = await fetch('/api/lan-servers').then(r => r.json());
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (!servers.length) {
+        listEl.innerHTML = '<div class="lan-status">No games found on this network</div>';
+      } else {
+        servers.forEach(s => listEl.appendChild(renderServer(s)));
+      }
+    } catch {
+      if (listEl) listEl.innerHTML = '<div class="lan-status lan-error">Could not scan network</div>';
+    }
+  }
+
+  refreshBtn?.addEventListener('click', refresh);
+  refresh();
+  const _poll = setInterval(() => {
+    if (!document.getElementById('screen-connect')?.classList.contains('active')) {
+      clearInterval(_poll);
+      return;
+    }
+    refresh();
+  }, 3000);
 }
 
 export function bindMenuControls(actions) {

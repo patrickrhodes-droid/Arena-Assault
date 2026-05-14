@@ -2,10 +2,11 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { join, dirname } from 'path';
-import { networkInterfaces } from 'os';
+import { networkInterfaces, hostname as osHostname } from 'os';
 import { fileURLToPath } from 'url';
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { readFile, writeFile, readdir } from 'fs/promises';
+import { createSocket as createUdpSocket } from 'dgram';
 import {
   ARENA_SIZE, HALF, P_MAX_HP, WEAPON_ORDER,
   PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON, PVP_CORNERS,
@@ -52,6 +53,70 @@ function createConnectionInfo(address) {
     const preferredHost = serverIps[0] || 'localhost';
     return { clientIp: normalizedAddress, isServerPc, joinLink: `http://${preferredHost}:${PORT}`, serverIps };
 }
+
+// ── LAN discovery (UDP broadcast so players find each other without sharing IPs) ──
+
+const DISCOVERY_PORT      = 45678;   // UDP port used for broadcasts
+const DISCOVERY_MAGIC     = 'aa1';   // prevents collisions with other apps
+const BROADCAST_INTERVAL  = 2500;    // ms between heartbeats
+const SERVER_EXPIRY_MS    = 8000;    // remove servers not seen in this window
+
+const _lanServers = new Map(); // 'ip:port' → { ip, port, name, players, state, wave, map, lastSeen }
+
+function _lanPayload() {
+    const activePlayers = Object.values(players).filter(p => p.isAlive !== undefined).length;
+    return JSON.stringify({
+        m: DISCOVERY_MAGIC,
+        port: PORT,
+        name: osHostname(),
+        players: Object.keys(players).length,
+        activePlayers,
+        state: gameState.mode ? (gameState.waveState === 'ACTIVE' || gameState.waveState === 'SPAWNING' ? 'IN GAME' : 'LOBBY') : 'LOBBY',
+        wave: gameState.wave || 0,
+        map: gameState.map || '',
+        gameMode: gameState.gameMode || 'endless',
+    });
+}
+
+function startLanDiscovery() {
+    // Broadcaster — sends heartbeats every 2.5 s on the subnet broadcast address
+    const bcast = createUdpSocket({ type: 'udp4', reuseAddr: true });
+    bcast.on('error', () => {}); // silently swallow firewall/permission errors
+    bcast.bind(0, () => {
+        try { bcast.setBroadcast(true); } catch {}
+        const send = () => {
+            try {
+                const buf = Buffer.from(_lanPayload());
+                bcast.send(buf, DISCOVERY_PORT, '255.255.255.255');
+            } catch {}
+        };
+        send();
+        setInterval(send, BROADCAST_INTERVAL);
+    });
+
+    // Listener — collects heartbeats from other servers on the same LAN
+    const recv = createUdpSocket({ type: 'udp4', reuseAddr: true });
+    recv.on('error', () => {});
+    recv.on('message', (raw, rinfo) => {
+        try {
+            const d = JSON.parse(raw.toString());
+            if (d.m !== DISCOVERY_MAGIC) return;
+            const key = `${rinfo.address}:${d.port}`;
+            _lanServers.set(key, { ...d, ip: rinfo.address, lastSeen: Date.now() });
+        } catch {}
+    });
+    recv.bind(DISCOVERY_PORT, () => {
+        try { recv.setBroadcast(true); } catch {}
+    });
+
+    // Evict stale entries
+    setInterval(() => {
+        const cutoff = Date.now() - SERVER_EXPIRY_MS;
+        for (const [k, v] of _lanServers) if (v.lastSeen < cutoff) _lanServers.delete(k);
+    }, 4000);
+}
+
+startLanDiscovery();
 
 app.use(express.static(publicDir));
 app.get('/', (req, res) => res.sendFile(join(publicDir, 'index.html')));
@@ -122,6 +187,22 @@ function recordPvpGame(rankings, tokenMap) {
 
 app.get('/api/leaderboard', (_req, res) => {
     res.json(leaderboard);
+});
+
+// Returns this server's own info so the connection screen can display it
+app.get('/api/self', (_req, res) => {
+    const self = JSON.parse(_lanPayload());
+    const ips = getServerIpv4Addresses();
+    res.json({ ...self, ip: ips[0] || '127.0.0.1', ips, isSelf: true });
+});
+
+// Returns other Arena Assault servers discovered on the local network
+app.get('/api/lan-servers', (_req, res) => {
+    const localIPs = getServerIpv4Addresses();
+    const others = [..._lanServers.values()].filter(
+        s => !(localIPs.includes(s.ip) && s.port === PORT),
+    ).map(s => ({ ...s, url: `http://${s.ip}:${s.port}` }));
+    res.json(others);
 });
 
 // ── Persistent career stats (keyed by player name) ────────────────────────────

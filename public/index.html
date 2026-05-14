@@ -25,8 +25,34 @@
   <div id="vignette"></div>
   <div id="landing-flash"></div>
 
+  <!-- ── SCREEN 0: LAN CONNECTION ── -->
+  <div id="screen-connect" class="lobby-screen active">
+    <div class="lobby-panel connect-panel">
+      <h1>ARENA ASSAULT</h1>
+      <p class="subtitle">TACTICAL COMBAT SIMULATION</p>
+
+      <div class="connect-self-card" id="connect-self-card">
+        <div class="connect-card-left">
+          <div class="connect-card-label">THIS MACHINE</div>
+          <div class="connect-self-detail" id="connect-self-detail">Loading…</div>
+          <div class="connect-self-ip" id="connect-self-ip"></div>
+        </div>
+        <button class="deploy-btn connect-play-btn" id="btn-play-here">PLAY HERE</button>
+      </div>
+
+      <div class="connect-divider">
+        <span>LAN GAMES</span>
+        <button type="button" id="btn-refresh-lan" class="connect-refresh-btn">↻</button>
+      </div>
+
+      <div id="lan-server-list">
+        <div class="lan-status">Scanning local network…</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── SCREEN 1: OPERATOR SELECT + READY ── -->
-  <div id="screen-player" class="lobby-screen active">
+  <div id="screen-player" class="lobby-screen">
     <div class="lobby-panel">
       <h1>ARENA ASSAULT</h1>
       <p class="subtitle">TACTICAL COMBAT SIMULATION</p>

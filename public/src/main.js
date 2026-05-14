@@ -36,6 +36,7 @@ import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, updateRe
 import { addShake, game, resetSessionState } from "./state.js";
 import {
   cacheDom,
+  bindConnectScreen,
   bindMenuControls,
   drawMinimap,
   hideRankings,
@@ -214,6 +215,7 @@ const actions = {
   },
 };
 
+bindConnectScreen();
 bindMenuControls(actions);
 setupInput(actions);
 initNetworking(actions);

@@ -204,6 +204,142 @@ canvas {
   min-height: 18px;
 }
 
+/* ── Connection / LAN discovery screen ── */
+.connect-panel {
+  max-width: 480px;
+  width: 100%;
+}
+
+.connect-self-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(0,255,204,0.07);
+  border: 1px solid var(--accent);
+  padding: 14px 18px;
+  margin-top: 4px;
+}
+
+.connect-card-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.connect-self-detail {
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.connect-self-ip {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.connect-play-btn {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.connect-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.connect-divider::before,
+.connect-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.connect-refresh-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.connect-refresh-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+#lan-server-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 48px;
+}
+
+.lan-status {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  padding: 14px 0;
+}
+
+.lan-error { color: var(--danger); }
+
+.lan-server-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  transition: border-color 0.15s;
+}
+.lan-server-entry:hover { border-color: var(--accent); }
+
+.lan-server-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.lan-server-detail {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.lan-join-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.lan-join-btn:hover { background: var(--accent); color: var(--bg); }
+
 /* ── Controls collapsible ── */
 .controls-details {
   width: 100%;
