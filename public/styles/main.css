@@ -2262,13 +2262,11 @@ canvas {
   overflow: hidden;
 }
 
-/* ARENA — industrial teal grid */
+/* ARENA — real photo with a slight darken so card text stays readable */
 .map-prev-arena {
   background:
-    radial-gradient(circle at 24% 30%, rgba(45,225,208,0.28) 0%, transparent 38%),
-    radial-gradient(circle at 78% 72%, rgba(45,225,208,0.18) 0%, transparent 32%),
-    repeating-linear-gradient(0deg,   transparent 0, transparent 29px, rgba(45,225,208,0.07) 29px, rgba(45,225,208,0.07) 30px),
-    repeating-linear-gradient(90deg,  transparent 0, transparent 29px, rgba(45,225,208,0.07) 29px, rgba(45,225,208,0.07) 30px),
+    linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.45) 100%),
+    url("/assets/Images/arenabackground.jpg") center/cover no-repeat,
     linear-gradient(155deg, #0c1e2c 0%, #152a3a 50%, #091a24 100%);
 }
 
@@ -2288,13 +2286,11 @@ canvas {
   box-shadow: 0 0 8px 4px rgba(45,225,208,0.4);
 }
 
-/* DESERT — heat haze, dune ripples */
+/* DESERT — real photo with a slight darken so card text stays readable */
 .map-prev-desert {
   background:
-    repeating-linear-gradient( 20deg, rgba(194,122,48,0.14) 0, rgba(194,122,48,0.14) 1px, transparent 1px, transparent 18px),
-    repeating-linear-gradient(-20deg, rgba(210,140,60,0.09) 0, rgba(210,140,60,0.09) 1px, transparent 1px, transparent 24px),
-    radial-gradient(ellipse at 68% 12%, rgba(255,220,100,0.55) 0%, rgba(220,160,60,0.2) 30%, transparent 58%),
-    radial-gradient(ellipse at 25% 88%, rgba(160,90,25,0.5) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.45) 100%),
+    url("/assets/Images/desertbackground.jpg") center/cover no-repeat,
     linear-gradient(160deg, #d49040 0%, #9a6028 45%, #c07830 100%);
 }
 
@@ -2309,15 +2305,11 @@ canvas {
   box-shadow: 0 0 18px 8px rgba(255,200,60,0.35);
 }
 
-/* CITY — urban rooftop grid with sunset glow */
+/* CITY — real photo with a slight darken so card text stays readable */
 .map-prev-city {
   background:
-    repeating-linear-gradient(0deg,  rgba(0,0,0,0.35) 0, rgba(0,0,0,0.35) 9px,  transparent 9px,  transparent 36px),
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0, rgba(0,0,0,0.35) 9px,  transparent 9px,  transparent 36px),
-    repeating-linear-gradient(0deg,  rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 1px,  transparent 1px,  transparent 36px),
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 1px,  transparent 1px,  transparent 36px),
-    radial-gradient(ellipse at 52% 0%, rgba(255,145,55,0.65) 0%, rgba(220,130,40,0.2) 45%, transparent 65%),
-    radial-gradient(ellipse at 18% 90%, rgba(255,110,35,0.35) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.45) 100%),
+    url("/assets/Images/Citybackground.png") center/cover no-repeat,
     linear-gradient(160deg, #9ac4e4 0%, #d8a870 52%, #e8cc98 100%);
 }
 
@@ -2334,12 +2326,11 @@ canvas {
     );
 }
 
-/* BLACKSITE — dark concrete, red emergency grid */
+/* BLACKSITE — real photo with a slight darken so card text stays readable */
 .map-prev-blacksite {
   background:
-    repeating-linear-gradient(0deg,  rgba(255,25,12,0.045) 0, rgba(255,25,12,0.045) 1px, transparent 1px, transparent 42px),
-    repeating-linear-gradient(90deg, rgba(255,25,12,0.045) 0, rgba(255,25,12,0.045) 1px, transparent 1px, transparent 42px),
-    radial-gradient(ellipse at 50% 50%, rgba(20,42,30,0.5) 0%, rgba(4,7,10,0.95) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%),
+    url("/assets/Images/blacksitebackground.png") center/cover no-repeat,
     linear-gradient(135deg, #07090e 0%, #1c0504 52%, #0b0710 100%);
 }
 

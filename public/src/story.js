@@ -525,8 +525,8 @@ function closeFullCutscene() {
 const CUTSCENE_BG_IMAGE = {
   arena:     "/assets/Images/arenabackground.jpg",
   desert:    "/assets/Images/desertbackground.jpg",
-  city:      "/assets/Images/citybackground.jpg",
-  blacksite: "/assets/Images/blacksitebackground.jpg",
+  city:      "/assets/Images/Citybackground.png",
+  blacksite: "/assets/Images/blacksitebackground.png",
 };
 const CUTSCENE_BG_FALLBACK = {
   // Used when the JPG can't be loaded — distinct tints per map so the
