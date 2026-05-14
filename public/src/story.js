@@ -116,6 +116,8 @@ const _charGroups = {}; // charId → THREE.Group
 
 // Per-card animation state for the character-select grid
 const _cardAnims  = []; // [{ charId, canvas, rotY, isSelected, phase }]
+// Separate anims for the campaign between-map char select
+const _csCardAnims = []; // [{ charId, canvas, rotY, posY, isSelected, phase }]
 
 // Portrait mode for cutscene (single canvas, sway animation)
 let _portraitTarget = null; // 2D canvas
@@ -222,8 +224,8 @@ function startLoop() {
     // Swap fallback spheres for real GLB heads as soon as they finish loading
     autoRefreshStaleGroups();
 
-    // ── Character-select card animations ─────────────────────────────────────
-    for (const anim of _cardAnims) {
+    // ── Character-select card animations (lobby + campaign) ──────────────────
+    for (const anim of [..._cardAnims, ..._csCardAnims]) {
       if (!anim.canvas) continue;
       if (anim.isSelected) {
         anim.rotY += 0.022; // full spin when selected
@@ -267,6 +269,28 @@ export function initCharCardAnimations() {
     if (!charId || !canvas) return;
     buildCharGroup(charId);
     _cardAnims.push({ charId, canvas, rotY: 0, posY: 0, isSelected: false, phase: i * phaseStep });
+  });
+  if (!_animId) startLoop();
+}
+
+export function setCsCharSelectedAnim(charId) {
+  for (const anim of _csCardAnims) {
+    anim.isSelected = anim.charId === charId;
+    if (anim.isSelected) anim.rotY = 0;
+  }
+}
+
+function startCsCharAnimations(grid, selectedId) {
+  ensureRenderer();
+  _csCardAnims.length = 0;
+  const cards = grid.querySelectorAll(".cs-char-card[data-char]");
+  const phaseStep = (Math.PI * 2) / Math.max(cards.length, 1);
+  cards.forEach((card, i) => {
+    const charId = card.dataset.char;
+    const canvas = card.querySelector(".char-card-canvas");
+    if (!charId || !canvas) return;
+    buildCharGroup(charId);
+    _csCardAnims.push({ charId, canvas, rotY: 0, posY: 0, isSelected: charId === selectedId, phase: i * phaseStep });
   });
   if (!_animId) startLoop();
 }
@@ -445,21 +469,28 @@ function showCharSelect() {
     grid.appendChild(card);
 
     if (!isLocked) {
-      // Render a static first frame into this card's canvas
+      // Static first frame; the loop will animate it once startCsCharAnimations runs
       ensureRenderer();
       buildCharGroup(id);
       renderCharToCanvas(id, 0, 0, cv);
 
-      card.addEventListener("click", () => {
+      const selectCard = () => {
         selected = id;
         grid.querySelectorAll(".cs-char-card").forEach((c) => {
           c.classList.toggle("selected", c.dataset.char === id);
         });
-      });
+        setCsCharSelectedAnim(id);
+      };
+
+      card.addEventListener("click", selectCard);
+      // Auto-select when focused by keyboard/controller so D-pad navigation
+      // immediately moves the highlight without needing a separate A press.
+      card.addEventListener("focus", selectCard);
     }
   });
 
   panel.style.display = "flex";
+  startCsCharAnimations(grid, selected);
 
   // Reset the waiting status from any previous cutscene
   const waitStatus = document.getElementById("cs-waiting-status");

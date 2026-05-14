@@ -1804,6 +1804,24 @@ io.on('connection', (socket) => {
         if (enemy.hp <= 0) killEnemy(enemy, socket.id);
     });
 
+    // Bazooka splash: all nearby enemies hit in one atomic event to bypass per-bullet rate limit
+    socket.on('splashHit', (data) => {
+        if (!checkRateLimit(socket.id, 'splashHit', 1500)) return; // max 1 blast per 1.5 s
+        if (gameState.mode !== 'COOP') return;
+        const { hits, weapon } = data;
+        if (!Array.isArray(hits) || !WEAPON_ORDER.includes(weapon)) return;
+        for (const hit of hits.slice(0, 20)) {
+            const { enemyId, damage } = hit;
+            if (!enemyId || typeof damage !== 'number' || damage <= 0) continue;
+            const dmg = Math.min(Math.round(damage), 10000);
+            const enemy = gameState.enemies.find(e => e.id === enemyId);
+            if (!enemy || enemy.hp <= 0) continue;
+            enemy.hp = Math.max(0, enemy.hp - dmg);
+            io.emit('enemyDamaged', { id: enemyId, damage: dmg });
+            if (enemy.hp <= 0) killEnemy(enemy, socket.id);
+        }
+    });
+
     socket.on('grappleEnemy', (data) => {
         if (gameState.mode !== 'COOP') return;
         const { enemyId, x, y, z, weapon } = data || {};

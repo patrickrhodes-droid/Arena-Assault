@@ -223,7 +223,7 @@ export const WEAPON_DEFS = {
     pellets: 1,
     damage: 500,        // direct-hit damage (same as sniper)
     splashRadius: 6.0,  // world units of splash damage reach
-    splashDamage: 180,  // damage at splash edge (falls off with distance)
+    splashDamage: 400,  // damage at blast centre (falls off with distance; was 180)
     spreadHip: 0.008,
     spreadAim: 0.004,
     bulletSpeed: 55,

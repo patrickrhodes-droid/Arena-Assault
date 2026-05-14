@@ -548,15 +548,30 @@ export function triggerDestructible(propId, origin, processHit) {
 function applySplashDamage(bullet, origin, processHit, directHitEnemy = null) {
   const r = bullet.splashRadius;
   const rSq = r * r;
+  const hits = [];
+
   for (const enemy of game.enemies) {
-    if (enemy === directHitEnemy) continue; // direct hit already processed
+    if (enemy === directHitEnemy) continue;
     const dx = enemy.group.position.x - origin.x;
     const dz = enemy.group.position.z - origin.z;
     const distSq = dx * dx + dz * dz;
     if (distSq >= rSq) continue;
-    const frac = 1 - Math.sqrt(distSq) / r; // 1 at centre, 0 at edge
+    const frac = 1 - Math.sqrt(distSq) / r;
     const dmg = Math.round(bullet.splashDamage * frac);
-    if (dmg > 0) processHit?.(enemy, dmg, origin.clone());
+    if (dmg <= 0) continue;
+
+    // Local feedback per splash enemy (lighter than processHit — no hit-marker spam)
+    spawnParticles(origin, 3, 0xff6622, 4);
+    spawnDamageNumber(enemy.group.position, Math.min(dmg, Math.max(0, enemy.hp)));
+    game.stats.shotsHit += 1;
+    game.stats.damageDealt += Math.min(dmg, Math.max(0, enemy.hp));
+
+    hits.push({ enemyId: enemy.id, damage: dmg });
+  }
+
+  // Send all splash hits in one event so the per-bullet rate limit doesn't drop them
+  if (hits.length > 0) {
+    game.socket?.emit('splashHit', { hits, weapon: game.currentWeapon });
   }
 }
 
