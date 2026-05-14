@@ -519,9 +519,11 @@ function clearMatchState() {
 
 function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapIndex = 0) {
     stopGameLoop();
-    // A fresh match — invalidate any saved tokens from a previous match and
-    // cancel any pending orphan-cleanup timer.
+    // A fresh match — invalidate any saved tokens from a previous match,
+    // cancel any pending orphan-cleanup timer, and clear leftover cutscene
+    // ready state from a previous campaign run.
     cancelOrphanMatchCleanup();
+    gameState.campaignReady.clear();
     for (const token of Object.keys(recentlyDisconnected)) delete recentlyDisconnected[token];
     gameState.matchEpoch += 1;
     gameState.mode = mode;
@@ -1325,6 +1327,7 @@ io.on('connection', (socket) => {
                 ...leaving,
                 savedAt: Date.now(),
                 matchEpoch: gameState.matchEpoch,
+                mapAtDisconnect: gameState.map,
             };
         }
         const wasHost = players[socket.id]?.isHost ?? false;
@@ -1449,14 +1452,20 @@ io.on('connection', (socket) => {
     socket.on('startMatch', (data) => {
         if (!players[socket.id]?.isHost) return;
         const startingWave = (typeof data?.startingWave === 'number' && data.startingWave > 1)
-            ? data.startingWave : 1;
+            ? Math.min(data.startingWave, CAMPAIGN_MAX_WAVE)
+            : 1;
         const gameMode = (data?.gameMode === 'campaign') ? 'campaign' : 'endless';
         gameState.invincibility = !!data?.invincibility;
         currentMode = 'COOP';
-        // Campaign always starts on the first map in order
+        // Campaign: the host can pick any map+wave combo. Clamp the map index
+        // into the valid range, then pin selectedMap to it.
         if (gameMode === 'campaign') {
-            gameState.campaignMapIndex = 0;
-            selectedMap = CAMPAIGN_MAP_ORDER[0];
+            const rawIdx = Number(data?.startingMapIndex);
+            const mapIdx = Number.isInteger(rawIdx) && rawIdx >= 0 && rawIdx < CAMPAIGN_MAP_ORDER.length
+                ? rawIdx
+                : 0;
+            gameState.campaignMapIndex = mapIdx;
+            selectedMap = CAMPAIGN_MAP_ORDER[mapIdx];
         }
         const playerCount = Object.keys(players).length;
         const effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
@@ -1478,7 +1487,13 @@ io.on('connection', (socket) => {
         // If this is a campaign match, the clients will show a cutscene before
         // deploying — start the ready count fresh.
         if (gameMode === 'campaign') resetCampaignReady();
-        io.emit('matchStarted', { mode: 'COOP', map: selectedMap, gameMode, startingWave });
+        io.emit('matchStarted', {
+            mode: 'COOP',
+            map: selectedMap,
+            gameMode,
+            startingWave,
+            campaignMapIndex: gameState.campaignMapIndex,
+        });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
         io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode });
@@ -1839,6 +1854,12 @@ io.on('connection', (socket) => {
         if (!gameState.tickInterval) startGameLoop();
         resumeFFATimerIfNeeded();
         delete recentlyDisconnected[token];
+        // If the campaign advanced to a new map while this player was
+        // disconnected, their saved (x,y,z) is invalid for the current map.
+        // Snap to the origin so they don't spawn inside a wall.
+        if (saved.mapAtDisconnect && saved.mapAtDisconnect !== gameState.map) {
+            saved.x = 0; saved.y = 0; saved.z = 0; saved.rotation = 0;
+        }
         // Preserve the isHost flag that the connection handler may have already
         // assigned (connection fires before rejoin, so if this socket was made
         // host it stays host).
@@ -1891,6 +1912,14 @@ io.on('connection', (socket) => {
         // remote avatar reappears in the world.
         socket.broadcast.emit('newPlayer', restored);
         io.emit('updateLobby', players);
+
+        // If teammates are blocked on a campaign cutscene deploy and this
+        // player has already past it (they're rejoining straight into the
+        // map), count them as ready so the others aren't stuck waiting.
+        if (gameState.gameMode === 'campaign' && gameState.campaignReady.size > 0) {
+            gameState.campaignReady.add(socket.id);
+            checkCampaignAllReady();
+        }
     });
 
     // Client registers their session token immediately after connecting.

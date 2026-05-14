@@ -113,11 +113,13 @@ const actions = {
   pvpMatchOver,
   ffaMatchOver,
   enterCutsceneMode,
+  syncChatVisibility,
   startMatch: () => {
     if (game.isHost) {
       game.audio.init();
       game.socket?.emit("startMatch", {
         startingWave: game.startingWave || 1,
+        startingMapIndex: game.startingMapIndex || 0,
         invincibility: Boolean(game.invincibilityMode),
         gameMode: game.selectedGameMode || 'endless',
       });

@@ -312,7 +312,24 @@ export function initNetworking(actions) {
       // matchStarted events may not include gameMode in the payload.
       if (game.gameMode === "campaign") {
         const mapId = game.selectedMap || "arena";
-        await showCampaignCutscene(mapId);
+        const campaignMapIndex = payload?.campaignMapIndex ?? 0;
+        // When the host has skipped past arena (e.g. starting at Desert W1),
+        // unlock all operators that the player would have met along the way.
+        if (campaignMapIndex >= 1) {
+          // Desert intro is where Matt and Will are introduced — unlock them.
+          try {
+            const stored = JSON.parse(localStorage.getItem("arena_unlocked_chars") || "null");
+            const set = new Set(Array.isArray(stored) ? stored : ["iestyn", "patrick"]);
+            set.add("iestyn"); set.add("patrick"); set.add("matt"); set.add("will");
+            localStorage.setItem("arena_unlocked_chars", JSON.stringify([...set]));
+          } catch {}
+        }
+        // Skip the cutscene for the chosen map if the host is starting mid-map
+        // (W > 1). The first wave of a map is treated as a fresh entrance so
+        // the intro still plays.
+        if (sw === 1) {
+          await showCampaignCutscene(mapId);
+        }
       }
       actions.startGame();
     }
@@ -882,9 +899,10 @@ export function initNetworking(actions) {
     actions.setWeapon("pistol");
     actions.updateHUD();
 
-    // Restore PLAYING state (we were in CUTSCENE)
+    // Restore PLAYING state (we were in CUTSCENE) and re-hide the chat panel
     game.state = "PLAYING";
     if (game.dom?.hud) game.dom.hud.style.display = "block";
+    actions.syncChatVisibility?.();
   });
 
   // ── Mode selection from host (non-host clients receive this) ─────────────

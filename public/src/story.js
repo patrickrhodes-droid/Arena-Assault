@@ -387,16 +387,15 @@ function showCharSelect() {
   const banner   = document.getElementById("cs-unlock-banner");
   const confirm  = document.getElementById("cs-deploy-btn");
 
-  // Arena is always the first map — force only Iestyn and Patrick, regardless
-  // of any previously stored unlock data (Will/Matt haven't been met yet).
-  // All other maps use the persisted unlock state from localStorage.
+  // Arena is the very first map. On a fresh campaign run we hard-reset the
+  // persisted unlock set so previously unlocked Will/Matt are properly locked
+  // again — the player has to play through the desert intro to "meet" them.
   const isFirstMap = (_currentMapId === "arena");
-  const unlocked = isFirstMap
-    ? new Set(["iestyn", "patrick"])
-    : getUnlockedCharacters();
+  if (isFirstMap) {
+    saveUnlocked(new Set(["iestyn", "patrick"]));
+  }
 
   // Announce newly unlocked characters if any
-  const newUnlocks = (_pendingUnlocks || []).filter((id) => !Array.from(unlocked).includes(id) || true);
   if (_pendingUnlocks?.length) {
     const names = _pendingUnlocks.map((id) => CHAR_NAMES[id] || id).join(" & ");
     banner.textContent  = `🔓 NEW OPERATOR${_pendingUnlocks.length > 1 ? "S" : ""} UNLOCKED: ${names}`;
@@ -520,6 +519,37 @@ function closeFullCutscene() {
   }
 }
 
+// Cutscene backgrounds per campaign map. Real JPGs exist for arena and
+// desert; city and blacksite use a tinted gradient placeholder until art
+// is added to /assets/Images.
+const CUTSCENE_BG_IMAGE = {
+  arena:     "/assets/Images/arenabackground.jpg",
+  desert:    "/assets/Images/desertbackground.jpg",
+  city:      "/assets/Images/citybackground.jpg",
+  blacksite: "/assets/Images/blacksitebackground.jpg",
+};
+const CUTSCENE_BG_FALLBACK = {
+  // Used when the JPG can't be loaded — distinct tints per map so the
+  // scene still reads as the right location.
+  arena:     "radial-gradient(ellipse at 50% 40%, #2a3340 0%, #0b1118 65%, #050709 100%)",
+  desert:    "radial-gradient(ellipse at 50% 40%, #6b4a26 0%, #2b1c0e 60%, #110903 100%)",
+  city:      "radial-gradient(ellipse at 50% 35%, #3a2030 0%, #1a0d18 55%, #060306 100%)",
+  blacksite: "radial-gradient(ellipse at 50% 50%, #401418 0%, #18060a 50%, #050102 100%)",
+};
+function applyCutsceneBackground(ov, mapId) {
+  const url = CUTSCENE_BG_IMAGE[mapId];
+  const fallback = CUTSCENE_BG_FALLBACK[mapId] || CUTSCENE_BG_FALLBACK.arena;
+  // Layer the existing letter-box darkening gradient on top of the image so
+  // text stays readable. If the image 404s the gradient alone still looks fine.
+  const overlay =
+    "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%)";
+  if (url) {
+    ov.style.background = `${overlay}, url("${url}") center/cover no-repeat, ${fallback}`;
+  } else {
+    ov.style.background = `${overlay}, ${fallback}`;
+  }
+}
+
 // ── Public: show cutscene ─────────────────────────────────────────────────────
 let _pendingUnlocks = [];
 let _currentMapId   = "";
@@ -547,6 +577,11 @@ export function showCampaignCutscene(mapId) {
     });
     const lobbyBg = document.getElementById("lobby-bg");
     if (lobbyBg) lobbyBg.style.display = "none";
+
+    // Apply the map-specific cutscene background. Arena and desert have real
+    // JPGs; city and blacksite fall back to a styled CSS gradient until art
+    // is dropped into /assets/Images.
+    applyCutsceneBackground(ov, mapId);
 
     ov.style.display = "flex";
     void ov.offsetWidth;

@@ -3,7 +3,7 @@ import { game } from "./state.js";
 import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
 import { applyCharacterHead, rebuildArena } from "./scene.js";
-import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard, getUnlockedCharacters } from "./story.js";
+import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard } from "./story.js";
 
 export function cacheDom() {
   game.dom = {
@@ -177,17 +177,76 @@ function applyModeSelection(mode) {
   if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = !isFFA;
   if (game.dom.ffaTimeWrap) game.dom.ffaTimeWrap.style.display = isFFA ? 'block' : 'none';
   updateLobbyCharacterLocks(mode);
+  // Refresh the host's "Start At Wave" dropdown to match the chosen mode.
+  populateWaveSelect(mode);
+}
+
+// Rebuilds the #skip-wave-select dropdown contents for the current game mode.
+// Campaign mode lists "Arena W1..W7, Desert W1..W7, City W1..W7, Blacksite W1..W7";
+// other modes list plain wave numbers 1-30.
+function populateWaveSelect(mode) {
+  const sel = game.dom?.skipWaveSelect;
+  if (!sel) return;
+  sel.innerHTML = "";
+  if (mode === "campaign") {
+    const MAPS = [
+      { idx: 0, label: "Arena" },
+      { idx: 1, label: "Desert" },
+      { idx: 2, label: "City" },
+      { idx: 3, label: "Blacksite" },
+    ];
+    for (const { idx, label } of MAPS) {
+      for (let w = 1; w <= 7; w += 1) {
+        const opt = document.createElement("option");
+        opt.value = `${idx}:${w}`;
+        opt.textContent = `${label} W${w}`;
+        sel.appendChild(opt);
+      }
+    }
+    // Default selection — first wave of the first map
+    sel.value = "0:1";
+    game.startingMapIndex = 0;
+    game.startingWave = 1;
+  } else {
+    for (let w = 1; w <= 30; w += 1) {
+      const opt = document.createElement("option");
+      opt.value = String(w);
+      opt.textContent = String(w);
+      sel.appendChild(opt);
+    }
+    sel.value = "1";
+    game.startingMapIndex = 0;
+    game.startingWave = 1;
+  }
 }
 
 // Locks Will/Matt cards in the lobby character grid until they've been unlocked
 // (introduced during the campaign after beating the Arena map). Non-campaign
 // modes leave every operator selectable.
+//
+// In campaign mode the lock state is forced to the baseline (iestyn + patrick)
+// when starting from Arena, regardless of localStorage — so a player who has
+// unlocked Will/Matt in a previous run still has to "meet" them again on a
+// fresh campaign start. If the host has used the wave dropdown to jump past
+// Arena (startingMapIndex >= 1), the persisted unlock state is honoured.
 export function updateLobbyCharacterLocks(mode = game.selectedGameMode) {
   const isCampaign = mode === 'campaign';
-  const unlocked = getUnlockedCharacters();
+  const startingPastArena = (game.startingMapIndex || 0) >= 1;
+  let effectiveUnlocked;
+  if (!isCampaign) {
+    effectiveUnlocked = new Set(["iestyn", "patrick", "will", "matt"]);
+  } else if (startingPastArena) {
+    // Host has chosen to skip past the arena intro — the player would have
+    // met Matt and Will by then, so they're playable.
+    effectiveUnlocked = new Set(["iestyn", "patrick", "will", "matt"]);
+  } else {
+    // Fresh campaign run — only the starter pair, regardless of any unlock
+    // state persisted from a previous playthrough.
+    effectiveUnlocked = new Set(["iestyn", "patrick"]);
+  }
   game.dom.characterCards.forEach((card) => {
     const charId = card.dataset.character;
-    const isLocked = isCampaign && !unlocked.has(charId);
+    const isLocked = isCampaign && !effectiveUnlocked.has(charId);
     card.classList.toggle("locked", isLocked);
     const nameEl = card.querySelector(".character-name");
     if (nameEl) {
@@ -439,15 +498,25 @@ export function bindMenuControls(actions) {
   game.dom.playerName.addEventListener("input", updatePlayerName);
   game.dom.copyJoinLinkBtn.addEventListener("click", copyJoinLink);
 
-  for (let w = 1; w <= 30; w += 1) {
-    const opt = document.createElement("option");
-    opt.value = w;
-    opt.textContent = w;
-    game.dom.skipWaveSelect.appendChild(opt);
-  }
+  // Populate the wave selector based on the current game mode. Endless lists
+  // 1-30; campaign lists each map's 7 waves prefixed by the map name so the
+  // host can jump straight to e.g. "Desert W3".
+  populateWaveSelect(game.selectedGameMode || "endless");
 
   game.dom.skipWaveSelect.addEventListener("change", () => {
-    game.startingWave = Number(game.dom.skipWaveSelect.value);
+    const raw = game.dom.skipWaveSelect.value;
+    if (raw.includes(":")) {
+      // Campaign option format "mapIdx:wave"
+      const [mapIdx, wave] = raw.split(":").map(Number);
+      game.startingMapIndex = mapIdx;
+      game.startingWave = wave;
+    } else {
+      game.startingMapIndex = 0;
+      game.startingWave = Number(raw) || 1;
+    }
+    // The lobby char-select lock state depends on startingMapIndex (jumping
+    // past arena unlocks Will/Matt), so refresh the cards.
+    updateLobbyCharacterLocks();
   });
 
   game.dom.invincibilityToggle.addEventListener("change", () => {
