@@ -4,6 +4,7 @@ import { getWeapon, lowAmmoThreshold } from "./combat.js";
 import { getBossEnemies } from "./enemies.js";
 import { applyCharacterHead, rebuildArena } from "./scene.js";
 import { setCharacterPreview, stopCharacterPreview, paintAllCharacterPreviews, initCharCardAnimations, setSelectedCharCard } from "./story.js";
+import { renderCareerStatsInto } from "./features.js";
 
 export function cacheDom() {
   game.dom = {
@@ -385,6 +386,27 @@ export function bindMenuControls(actions) {
     });
   }
 
+  // ── Career stats modal (lifetime totals from localStorage) ────────────────
+  const careerModal     = document.getElementById("career-stats-modal");
+  const careerBody      = document.getElementById("career-stats-body");
+  const careerCloseBtn  = document.getElementById("career-stats-close");
+  const careerLobbyBtn  = document.getElementById("career-stats-btn");
+  const pauseCareerBtn  = document.getElementById("pause-career-btn");
+  function openCareerModal() {
+    renderCareerStatsInto(careerBody);
+    if (careerModal) careerModal.classList.add("open");
+  }
+  function closeCareerModal() {
+    if (careerModal) careerModal.classList.remove("open");
+  }
+  careerLobbyBtn?.addEventListener("click", openCareerModal);
+  pauseCareerBtn?.addEventListener("click", openCareerModal);
+  careerCloseBtn?.addEventListener("click", closeCareerModal);
+  careerModal?.addEventListener("click", (e) => {
+    // Backdrop click closes; clicks inside the panel don't.
+    if (e.target === careerModal) closeCareerModal();
+  });
+
   // Room password: host input — debounce emit to server
   if (game.dom.roomPasswordInput) {
     let pwDebounce = null;
@@ -492,6 +514,37 @@ export function bindMenuControls(actions) {
       if (localStorage.getItem("arena_particles") === "0") applyGraphicsSetting("particles", false);
     } catch {}
   });
+
+  // ── Crosshair style ───────────────────────────────────────────────────────
+  const settingCrosshair = document.getElementById("setting-crosshair");
+  function applyCrosshairStyle(style) {
+    const ch = document.getElementById("crosshair");
+    if (!ch) return;
+    // Strip any previously-applied xh-style-* class
+    [...ch.classList].forEach((c) => { if (c.startsWith("xh-style-")) ch.classList.remove(c); });
+    if (style && style !== "default") ch.classList.add(`xh-style-${style}`);
+    try { localStorage.setItem("arena_crosshair_style", style || "default"); } catch {}
+  }
+  if (settingCrosshair) {
+    const saved = (() => { try { return localStorage.getItem("arena_crosshair_style"); } catch { return null; } })();
+    if (saved) settingCrosshair.value = saved;
+    applyCrosshairStyle(settingCrosshair.value);
+    settingCrosshair.addEventListener("change", function () {
+      applyCrosshairStyle(this.value);
+    });
+  }
+
+  // ── Damage numbers toggle ─────────────────────────────────────────────────
+  const settingDmgNumbers = document.getElementById("setting-damage-numbers");
+  if (settingDmgNumbers) {
+    const saved = (() => { try { return localStorage.getItem("arena_damage_numbers"); } catch { return null; } })();
+    if (saved === "0") settingDmgNumbers.checked = false;
+    game.damageNumbersEnabled = settingDmgNumbers.checked;
+    settingDmgNumbers.addEventListener("change", function () {
+      game.damageNumbersEnabled = this.checked;
+      try { localStorage.setItem("arena_damage_numbers", this.checked ? "1" : "0"); } catch {}
+    });
+  }
 
   // Sync sliders when pause opens
   game.dom.resumeBtn.addEventListener("mouseenter", syncVolSliders, { once: false });

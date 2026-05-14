@@ -72,6 +72,7 @@
       </div>
 
       <button class="deploy-btn" id="deploy-btn" disabled>READY UP</button>
+      <button type="button" id="career-stats-btn" class="career-btn">CAREER STATS</button>
 
       <!-- Unused but kept for DOM refs -->
       <button id="btn-to-map" style="display:none"></button>
@@ -204,9 +205,24 @@
     </div>
   </div>
 
+  <!-- Career stats modal (lifetime totals from localStorage) -->
+  <div id="career-stats-modal" style="display:none">
+    <div class="career-stats-panel">
+      <h2>CAREER STATS</h2>
+      <div id="career-stats-body"></div>
+      <button type="button" id="career-stats-close" class="deploy-btn">CLOSE</button>
+    </div>
+  </div>
+
   <!-- Floating lobby chat — body level so it's always visible on any lobby screen -->
   <div id="lobby-chat-panel">
     <div id="lobby-chat-log"></div>
+    <div id="lobby-chat-quick">
+      <button class="qc-btn" type="button" data-msg="GG!">GG</button>
+      <button class="qc-btn" type="button" data-msg="Need backup!">HELP</button>
+      <button class="qc-btn" type="button" data-msg="Enemy spotted!">SPOT</button>
+      <button class="qc-btn" type="button" data-msg="Nice!">NICE</button>
+    </div>
     <div id="lobby-chat-input-row">
       <input id="lobby-chat-input" type="text" maxlength="100" placeholder="Say something...">
       <button id="lobby-chat-send" type="button">→</button>
@@ -271,6 +287,9 @@
       <div id="wave-enemy-bar-wrap"><div id="wave-enemy-bar"></div></div>
       <div id="wave-enemy-count"></div>
     </div>
+
+    <!-- Multikill announcer — fades in/out via .show class -->
+    <div id="multikill-announce" aria-live="polite"></div>
 
     <div id="boss-health-wrap">
       <div id="boss-health-name">TITAN BRUTE</div>
@@ -386,6 +405,22 @@
         <label class="check-row"><input type="checkbox" id="setting-particles" checked> PARTICLES</label>
       </div>
 
+      <div class="settings-section-title">HUD</div>
+      <div class="settings-row">
+        <label for="setting-crosshair">CROSSHAIR</label>
+        <select id="setting-crosshair" style="pointer-events:all">
+          <option value="default">DEFAULT</option>
+          <option value="dot">DOT</option>
+          <option value="cross">CROSS</option>
+          <option value="plus">PLUS</option>
+          <option value="circle">CIRCLE</option>
+        </select>
+      </div>
+      <div class="settings-row-check">
+        <label class="check-row"><input type="checkbox" id="setting-damage-numbers" checked> DAMAGE NUMBERS</label>
+      </div>
+
+      <button class="pause-btn" id="pause-career-btn">CAREER STATS</button>
       <button class="pause-btn danger" id="pause-give-up-btn">GIVE UP</button>
       <button class="pause-btn" id="exit-btn">EXIT TO MENU</button>
     </div>

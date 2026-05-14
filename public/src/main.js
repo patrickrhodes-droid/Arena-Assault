@@ -26,7 +26,8 @@ function tickPingDisplay() {
     game.socket.volatile.emit("clientPing", performance.now());
   }
 }
-import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
+import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, tickDamageNumbers, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
+import { resetComboState } from "./features.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
 import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
@@ -279,6 +280,7 @@ async function startGame() {
     savedAt: Date.now(),
   });
   game.audio.stopBackgroundMusic();
+  resetComboState();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
   if (game.dom.lobbyCanvas)  game.dom.lobbyCanvas.style.display   = "none";
@@ -331,6 +333,7 @@ async function startPvPGame() {
     savedAt: Date.now(),
   });
   game.audio.stopBackgroundMusic();
+  resetComboState();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
@@ -391,6 +394,7 @@ async function startFFAGame() {
     savedAt: Date.now(),
   });
   game.audio.stopBackgroundMusic();
+  resetComboState();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
@@ -858,6 +862,7 @@ function animate(time) {
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });
     updateParticles();
+    tickDamageNumbers(game.dt);
     updateHealthPacks(doHUD ? updateHUD : undefined);
     updateWeaponPickups(doHUD ? updateHUD : undefined);
     updateWaves();

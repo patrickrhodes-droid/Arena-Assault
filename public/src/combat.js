@@ -11,6 +11,72 @@ export function getWeapon() {
   return WEAPON_DEFS[game.currentWeapon];
 }
 
+// ── Floating damage numbers ────────────────────────────────────────────────
+// Spawned when the local player damages an enemy. Sprite drawn from a 2D
+// canvas so it always faces the camera; floats up and fades out over ~0.85s.
+const _damageNumbers = [];
+const MAX_DAMAGE_NUMBERS = 24;
+
+function makeDamageNumberSprite(damage, isBig) {
+  const canvas = document.createElement("canvas");
+  canvas.width  = 96;
+  canvas.height = 48;
+  const ctx = canvas.getContext("2d");
+  ctx.font = `bold ${isBig ? 32 : 26}px Rajdhani, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.fillStyle   = isBig ? "#ffd33d" : "#ffffff";
+  const text = String(Math.round(damage));
+  ctx.strokeText(text, 48, 24);
+  ctx.fillText(text, 48, 24);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(1.4, 0.7, 1);
+  return sprite;
+}
+
+export function spawnDamageNumber(position, damage) {
+  if (!game.scene || damage <= 0) return;
+  if (!game.damageNumbersEnabled) return; // disabled in settings
+  // Trim oldest to keep frame-time bounded
+  while (_damageNumbers.length >= MAX_DAMAGE_NUMBERS) {
+    const old = _damageNumbers.shift();
+    game.scene.remove(old.sprite);
+    old.sprite.material.map?.dispose();
+    old.sprite.material.dispose();
+  }
+  const isBig = damage >= 80; // crit-feeling threshold
+  const sprite = makeDamageNumberSprite(damage, isBig);
+  sprite.position.set(
+    position.x + (Math.random() - 0.5) * 0.4,
+    position.y + 1.7,
+    position.z + (Math.random() - 0.5) * 0.4,
+  );
+  game.scene.add(sprite);
+  _damageNumbers.push({ sprite, age: 0, life: 0.85, vy: 1.6 });
+}
+
+export function tickDamageNumbers(dt) {
+  for (let i = _damageNumbers.length - 1; i >= 0; i -= 1) {
+    const dn = _damageNumbers[i];
+    dn.age += dt;
+    if (dn.age >= dn.life) {
+      game.scene.remove(dn.sprite);
+      dn.sprite.material.map?.dispose();
+      dn.sprite.material.dispose();
+      _damageNumbers.splice(i, 1);
+      continue;
+    }
+    dn.sprite.position.y += dn.vy * dt;
+    dn.vy *= 0.94; // ease out
+    dn.sprite.material.opacity = 1 - dn.age / dn.life;
+  }
+}
+
 // ── Wall-hit decals (Sprite so they're camera-facing and visible on any surface) ──
 const _decals    = [];
 const MAX_DECALS = 80;
@@ -332,6 +398,7 @@ export function processHit(enemy, damage, particlePosition) {
   // Local audio + particles for instant feedback.
   game.audio.hit();
   spawnParticles(particlePosition, 5, 0xff6622, 4);
+  spawnDamageNumber(enemy.group.position, Math.min(damage, Math.max(0, enemy.hp || damage)));
   game.stats.shotsHit += 1;
   // Cap by enemy.hp so we record actual damage dealt, not overkill damage.
   game.stats.damageDealt += Math.min(damage, Math.max(0, enemy.hp));
@@ -556,6 +623,13 @@ export function resetCombatState() {
   // Clear wall decals on new round
   for (const d of _decals) { game.scene?.remove(d); d.material?.dispose(); }
   _decals.length = 0;
+  // Clear any leftover floating damage numbers from the previous match
+  for (const dn of _damageNumbers) {
+    game.scene?.remove(dn.sprite);
+    dn.sprite.material.map?.dispose();
+    dn.sprite.material.dispose();
+  }
+  _damageNumbers.length = 0;
 }
 
 // ── Weapon Drop Pickups ───────────────────────────────────────────────────────

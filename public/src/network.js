@@ -8,6 +8,7 @@ import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlaye
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 import { showCampaignCutscene, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
 import { fireBanter } from "./banter.js";
+import { registerKillForCombo, resetComboState, bumpCareerStat, recordMatchResult } from "./features.js";
 
 function recordDamageAngle(sourceX, sourceZ) {
   const playerPos = game.visuals?.player?.playerGroup?.position;
@@ -116,6 +117,19 @@ export function initNetworking(actions) {
     chatInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); sendMsg(); }
       e.stopPropagation();
+    });
+
+    // Quick-chat preset buttons — click to instantly broadcast a canned line.
+    // Each is throttled by the same server-side rate limit (500ms) as typed
+    // messages so spamming is naturally bounded.
+    document.querySelectorAll("#lobby-chat-quick .qc-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const text = btn.dataset.msg;
+        if (!text) return;
+        const myName = game.dom?.playerName?.value?.trim() || "You";
+        appendChatRow(myName, text, true);
+        game.socket?.emit("chatMessage", { text });
+      });
     });
   }
 
@@ -678,6 +692,12 @@ export function initNetworking(actions) {
 
   game.socket.on("pvpMatchOver", (data) => {
     actions.pvpMatchOver(data);
+    resetComboState();
+    recordMatchResult({
+      mode: "PVP",
+      won: data?.winnerId === game.socket?.id,
+      score: game.score,
+    });
   });
 
   game.socket.on("ffaKill", (data) => {
@@ -709,6 +729,12 @@ export function initNetworking(actions) {
 
   game.socket.on("ffaMatchOver", (data) => {
     actions.ffaMatchOver(data);
+    resetComboState();
+    recordMatchResult({
+      mode: "FFA",
+      won: data?.winnerId === game.socket?.id,
+      score: game.ffaKills || 0,
+    });
   });
 
   game.socket.on("playerSpectating", (data) => {
@@ -810,6 +836,15 @@ export function initNetworking(actions) {
 
   game.socket.on("globalGameOver", (rankings) => {
     actions.gameOver(rankings);
+    resetComboState();
+    bumpCareerStat("deaths");
+    recordMatchResult({
+      mode: "COOP",
+      // Any survivor counts as a "win"; everyone-dead is a loss.
+      won: !!(game.localPlayerIsAlive && !game.localPlayerIsDowned),
+      wave: game.wave,
+      score: game.score,
+    });
   });
 
   // Server awards kill credit to the shooter
@@ -830,6 +865,8 @@ export function initNetworking(actions) {
     game.shakeAmt = Math.max(game.shakeAmt, 0.1);
     game.audio.death();
     actions.updateHUD();
+    registerKillForCombo();
+    bumpCareerStat(data.type === "boss" ? "bossKills" : "kills");
   });
 
   // Server broadcasts enemy death for visual effects (particles etc.)

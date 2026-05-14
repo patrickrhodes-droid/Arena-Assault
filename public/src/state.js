@@ -78,6 +78,7 @@ export const game = {
   fpRecoilRX: 0,
   recoilOffset: 0,  // auto-recovering camera pitch kick (radians, applied on top of camPhi)
   particlesEnabled: true, // toggled in graphics settings
+  damageNumbersEnabled: true, // toggled in HUD settings — floating combat text
   coyoteTmr: 0,
   lastDamageAngle: 0,
   lastDamageTmr: 0,
