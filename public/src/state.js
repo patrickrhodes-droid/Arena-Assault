@@ -79,6 +79,12 @@ export const game = {
   recoilOffset: 0,  // auto-recovering camera pitch kick (radians, applied on top of camPhi)
   particlesEnabled: true, // toggled in graphics settings
   damageNumbersEnabled: true, // toggled in HUD settings — floating combat text
+  // Server-pushed career data for the local player. Null until the server
+  // sends us a 'careerStats' event after we've registered a name.
+  career: null,
+  // socketId → level map for everyone currently connected. Populated by the
+  // 'playerLevels' broadcast; consumed by the lobby list and nameplate.
+  playerLevels: {},
   coyoteTmr: 0,
   lastDamageAngle: 0,
   lastDamageTmr: 0,

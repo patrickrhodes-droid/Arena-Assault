@@ -1774,27 +1774,49 @@ function buildSharedRuntimeAssets() {
   }
 }
 
-function createNametag(name) { // Made this function internal to scene.js
+function createNametag(name, level) {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
+  canvas.width = 320;
   canvas.height = 56;
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "rgba(0,0,0,0.52)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "bold 30px Rajdhani, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#00ffcc";
-  ctx.fillText((name || "?").toUpperCase(), canvas.width / 2, canvas.height / 2);
+  const safeName = (name || "?").toUpperCase();
+  const lvText = (typeof level === "number" && level > 0) ? `LV ${level}` : "";
+  if (lvText) {
+    // Draw level prefix in gold, then name in teal next to it
+    ctx.font = "bold 24px Rajdhani, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    const lvWidth = ctx.measureText(lvText).width;
+    ctx.font = "bold 30px Rajdhani, sans-serif";
+    const nameWidth = ctx.measureText(safeName).width;
+    const gap = 10;
+    const total = lvWidth + gap + nameWidth;
+    const x = (canvas.width - total) / 2;
+    ctx.font = "bold 24px Rajdhani, sans-serif";
+    ctx.fillStyle = "#ffd66b";
+    ctx.fillText(lvText, x, canvas.height / 2);
+    ctx.font = "bold 30px Rajdhani, sans-serif";
+    ctx.fillStyle = "#00ffcc";
+    ctx.fillText(safeName, x + lvWidth + gap, canvas.height / 2);
+  } else {
+    ctx.font = "bold 30px Rajdhani, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#00ffcc";
+    ctx.fillText(safeName, canvas.width / 2, canvas.height / 2);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(1.7, 0.37, 1);
+  sprite.scale.set(2.1, 0.37, 1);
   sprite.position.set(0, 2.4, 0);
   return sprite;
 }
 
 export function updateRemotePlayerNametag(remotePlayer, newName) {
+  if (newName !== undefined) remotePlayer.playerName = newName;
   if (remotePlayer.nametag) {
     remotePlayer.group.remove(remotePlayer.nametag);
     // Dispose of the old nametag's texture and material to prevent memory leaks
@@ -1805,7 +1827,7 @@ export function updateRemotePlayerNametag(remotePlayer, newName) {
     // Sprites don't typically have geometry, but dispose if it exists for robustness
     remotePlayer.nametag.geometry?.dispose();
   }
-  remotePlayer.nametag = createNametag(newName);
+  remotePlayer.nametag = createNametag(remotePlayer.playerName, remotePlayer.level);
   remotePlayer.group.add(remotePlayer.nametag);
 }
 
@@ -1858,7 +1880,9 @@ export function createRemotePlayer(id, initialData = {}) {
   group.add(remoteGun);
 
   const playerName = initialData.playerName || `Player ${id.slice(0, 8)}`;
-  const nametag = createNametag(playerName);
+  // Pull level from the latest server broadcast if it has one already.
+  const initialLevel = game.playerLevels?.[id];
+  const nametag = createNametag(playerName, initialLevel);
   group.add(nametag);
 
   group.position.set(initialData.x ?? 0, initialData.y ?? 0, initialData.z ?? 0);
@@ -1893,7 +1917,14 @@ export function createRemotePlayer(id, initialData = {}) {
     wave: initialData.wave ?? 0,
     playerName,
     playerId: id,
+    level: initialLevel,
     stats: initialData.stats || {},
+  };
+
+  // Allow network.js to trigger a nametag rebuild when this player's level
+  // changes. updateRemotePlayerNametag reads remote.level + remote.playerName.
+  game.remotePlayers[id].refreshNametag = function refreshNametag() {
+    updateRemotePlayerNametag(this);
   };
 
   return game.remotePlayers[id];

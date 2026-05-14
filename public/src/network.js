@@ -167,6 +167,28 @@ export function initNetworking(actions) {
     if (data?.level === "error") console.warn("[Server]", data.text);
   });
 
+  // Persistent career stats (per username, stored server-side). Pushed when
+  // we set our name, after every kill, and at every match end.
+  game.socket.on("careerStats", (data) => {
+    if (!data) return;
+    game.career = data;
+    actions.updateHUD?.();
+  });
+
+  // Compact { socketId: level } map covering every connected player.
+  // Used by the lobby list and remote nameplates to render "[Lv N]".
+  game.socket.on("playerLevels", (data) => {
+    game.playerLevels = data || {};
+    // Re-render nameplates for any remote players whose level changed.
+    for (const [id, remote] of Object.entries(game.remotePlayers || {})) {
+      const newLevel = game.playerLevels[id];
+      if (newLevel !== remote.level) {
+        remote.level = newLevel;
+        if (typeof remote.refreshNametag === "function") remote.refreshNametag();
+      }
+    }
+  });
+
   // Full mid-match rejoin: server confirmed our token belongs to the current
   // match and is replaying the player's saved state. Drop into the same
   // start-match flow as a fresh start so the scene gets rebuilt correctly,

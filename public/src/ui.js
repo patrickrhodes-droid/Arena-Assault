@@ -393,7 +393,9 @@ export function bindMenuControls(actions) {
   const careerLobbyBtn  = document.getElementById("career-stats-btn");
   const pauseCareerBtn  = document.getElementById("pause-career-btn");
   function openCareerModal() {
-    renderCareerStatsInto(careerBody);
+    // Prefer the server-pushed career data (game.career) over localStorage
+    // when the player has a registered name; falls back inside the helper.
+    renderCareerStatsInto(careerBody, game.career);
     if (careerModal) careerModal.classList.add("open");
   }
   function closeCareerModal() {
@@ -643,9 +645,16 @@ export function updateLobbyUI(players) {
       ? `<span class="lobby-character" style="color:#${characterInfo.headColor.toString(16).padStart(6, "0")}">${characterInfo.name.toUpperCase()}</span>`
       : '<span class="lobby-character" style="color:var(--muted)">PICKING...</span>';
 
+    // Server pushes a { socketId: level } map after every level change.
+    // Level is gated behind a non-empty playerName so it's safe to show here.
+    const level = game.playerLevels?.[player.playerId];
+    const levelBadge = (typeof level === "number" && level > 0)
+      ? `<span class="lobby-level">Lv ${level}</span> `
+      : "";
+
     const row = document.createElement("div");
     row.className = "player-row";
-    row.innerHTML = `<span>${displayName} ${player.isHost ? '<span style="color:var(--muted);font-size:11px">(HOST)</span>' : ""} ${characterLabel}</span>
+    row.innerHTML = `<span>${levelBadge}${displayName} ${player.isHost ? '<span style="color:var(--muted);font-size:11px">(HOST)</span>' : ""} ${characterLabel}</span>
       <span class="${player.isReady ? "player-ready" : "player-waiting"}">${player.isReady ? "READY" : "WAITING"}</span>`;
     list.appendChild(row);
 

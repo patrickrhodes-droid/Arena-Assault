@@ -119,21 +119,37 @@ export function getCareerStats() {
 }
 
 // ── Career stats panel ──────────────────────────────────────────────────────
-// Builds a small panel into a host element. Re-rendered on every open so
-// it always shows current numbers.
-export function renderCareerStatsInto(containerEl) {
+// Builds a small panel into a host element. Prefers the server-pushed payload
+// (game.career) when available so the numbers survive page refresh / browser
+// changes; falls back to the legacy localStorage record if the server hasn't
+// sent anything yet (e.g. the player hasn't set a name).
+export function renderCareerStatsInto(containerEl, serverCareer) {
   if (!containerEl) return;
-  const c = loadCareer();
+  const c = serverCareer?.stats || loadCareer();
+  const level = serverCareer?.level ?? null;
+  const xpInto = serverCareer?.xpIntoLevel ?? 0;
+  const xpForNext = serverCareer?.xpForNextLevel ?? 0;
+  const xpPercent = xpForNext > 0
+    ? Math.min(100, Math.max(0, Math.round((xpInto / xpForNext) * 100)))
+    : 0;
+  const header = level
+    ? `<div class="career-level-header">
+         <div class="career-level-num">LEVEL ${level}</div>
+         <div class="career-xp-bar"><div class="career-xp-fill" style="width:${xpPercent}%"></div></div>
+         <div class="career-xp-text">${xpInto} / ${xpForNext} XP</div>
+       </div>`
+    : `<div class="career-level-header"><div class="career-xp-text" style="text-align:center">Set a player name to track lifetime stats on the server.</div></div>`;
   containerEl.innerHTML = `
+    ${header}
     <div class="career-stats-grid">
-      <div class="cs-row"><span>TOTAL KILLS</span><b>${c.kills}</b></div>
-      <div class="cs-row"><span>BOSSES DEFEATED</span><b>${c.bossKills}</b></div>
-      <div class="cs-row"><span>MATCHES PLAYED</span><b>${c.matchesPlayed}</b></div>
-      <div class="cs-row"><span>WINS</span><b>${c.wins}</b></div>
-      <div class="cs-row"><span>PVP WINS</span><b>${c.pvpWins}</b></div>
-      <div class="cs-row"><span>FFA WINS</span><b>${c.ffaWins}</b></div>
-      <div class="cs-row"><span>BEST WAVE</span><b>${c.bestWave}</b></div>
-      <div class="cs-row"><span>BEST SCORE</span><b>${c.bestScore}</b></div>
+      <div class="cs-row"><span>TOTAL KILLS</span><b>${c.kills || 0}</b></div>
+      <div class="cs-row"><span>BOSSES DEFEATED</span><b>${c.bossKills || 0}</b></div>
+      <div class="cs-row"><span>MATCHES PLAYED</span><b>${c.matchesPlayed || 0}</b></div>
+      <div class="cs-row"><span>WINS</span><b>${c.wins || 0}</b></div>
+      <div class="cs-row"><span>PVP WINS</span><b>${c.pvpWins || 0}</b></div>
+      <div class="cs-row"><span>FFA WINS</span><b>${c.ffaWins || 0}</b></div>
+      <div class="cs-row"><span>BEST WAVE</span><b>${c.bestWave || 0}</b></div>
+      <div class="cs-row"><span>BEST SCORE</span><b>${c.bestScore || 0}</b></div>
     </div>
   `;
 }

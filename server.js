@@ -124,6 +124,144 @@ app.get('/api/leaderboard', (_req, res) => {
     res.json(leaderboard);
 });
 
+// ── Persistent career stats (keyed by player name) ────────────────────────────
+//
+// Stored on disk so they survive restarts. The key is the trimmed playerName
+// (case-sensitive). Anonymous / empty names are never persisted.
+
+const CAREER_FILE = join(__dirname, 'careerStats.json');
+
+function loadCareerStats() {
+    try {
+        if (existsSync(CAREER_FILE)) return JSON.parse(readFileSync(CAREER_FILE, 'utf8'));
+    } catch { /* corrupt — start fresh */ }
+    return {};
+}
+
+function saveCareerStats() {
+    try { writeFileSync(CAREER_FILE, JSON.stringify(careerStats, null, 2)); } catch { /* disk full etc. */ }
+}
+
+const careerStats = loadCareerStats();
+let _careerDirty = false;
+function markCareerDirty() { _careerDirty = true; }
+
+// Debounced periodic save so each kill doesn't hammer the disk.
+setInterval(() => { if (_careerDirty) { saveCareerStats(); _careerDirty = false; } }, 5000);
+process.on('SIGINT',  () => { if (_careerDirty) saveCareerStats(); process.exit(0); });
+process.on('SIGTERM', () => { if (_careerDirty) saveCareerStats(); process.exit(0); });
+
+// Level curve: Lv N reached at xpThreshold(N).
+//   Lv 1: 0, Lv 2: 50, Lv 3: 200, Lv 4: 450, Lv 5: 800, Lv 10: 4050, Lv 20: 18050
+function xpThreshold(level) { return Math.floor(50 * (level - 1) * (level - 1)); }
+function levelFromXp(xp) { return 1 + Math.floor(Math.sqrt(Math.max(0, xp) / 50)); }
+
+const KILL_XP = { skeleton: 5, soldier: 10, dog: 25, boss: 200 };
+const MATCH_BONUS_XP = 25;
+const WIN_BONUS_XP   = 75;
+
+function defaultCareerEntry() {
+    return {
+        kills: 0,
+        bossKills: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        pvpWins: 0,
+        ffaWins: 0,
+        bestWave: 0,
+        bestScore: 0,
+        deaths: 0,
+        xp: 0,
+    };
+}
+
+function getCareer(name) {
+    if (!name) return null;
+    if (!careerStats[name]) careerStats[name] = defaultCareerEntry();
+    // Backfill any new fields on existing records
+    careerStats[name] = { ...defaultCareerEntry(), ...careerStats[name] };
+    return careerStats[name];
+}
+
+// Bundle the player's career payload with derived level info for emission.
+function careerPayloadFor(name) {
+    const c = getCareer(name);
+    if (!c) return null;
+    const level = levelFromXp(c.xp);
+    return {
+        playerName: name,
+        stats: c,
+        level,
+        xpIntoLevel: c.xp - xpThreshold(level),
+        xpForNextLevel: xpThreshold(level + 1) - xpThreshold(level),
+    };
+}
+
+function emitCareerToSocket(socketId, name) {
+    const payload = careerPayloadFor(name);
+    if (!payload) return;
+    const s = io.sockets.sockets.get(socketId);
+    s?.emit('careerStats', payload);
+}
+
+function awardKillXp(name, type) {
+    if (!name) return;
+    const c = getCareer(name);
+    if (!c) return;
+    const xp = KILL_XP[type] ?? 5;
+    const prevLevel = levelFromXp(c.xp);
+    if (type === 'boss') c.bossKills += 1; else c.kills += 1;
+    c.xp += xp;
+    const newLevel = levelFromXp(c.xp);
+    markCareerDirty();
+    // If the kill earned them a level, broadcast the new level so other
+    // clients update their nameplates immediately.
+    if (newLevel !== prevLevel) broadcastPlayerLevels();
+    return { leveledUp: newLevel > prevLevel, newLevel };
+}
+
+function recordCareerMatch(name, payload) {
+    if (!name) return;
+    const c = getCareer(name);
+    if (!c) return;
+    const prevLevel = levelFromXp(c.xp);
+    c.matchesPlayed += 1;
+    if (typeof payload?.wave === 'number' && payload.wave > c.bestWave) c.bestWave = payload.wave;
+    if (typeof payload?.score === 'number' && payload.score > c.bestScore) c.bestScore = payload.score;
+    if (payload?.won) {
+        c.wins += 1;
+        if (payload.mode === 'PVP') c.pvpWins += 1;
+        if (payload.mode === 'FFA') c.ffaWins += 1;
+        c.xp += WIN_BONUS_XP;
+    } else {
+        c.xp += MATCH_BONUS_XP;
+    }
+    if (payload?.died) c.deaths += 1;
+    markCareerDirty();
+    const newLevel = levelFromXp(c.xp);
+    if (newLevel !== prevLevel) broadcastPlayerLevels();
+}
+
+// Broadcast a snapshot of every connected player's current level so all
+// clients can show "[Lv X]" next to remote nameplates. Cheap — ~10 ints.
+function broadcastPlayerLevels() {
+    const map = {};
+    for (const [id, p] of Object.entries(players)) {
+        const name = p?.playerName?.trim();
+        if (!name) continue;
+        const c = careerStats[name];
+        if (!c) continue;
+        map[id] = levelFromXp(c.xp);
+    }
+    io.emit('playerLevels', map);
+}
+
+app.get('/api/career/:name', (req, res) => {
+    const name = String(req.params.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'name required' });
+    res.json(careerPayloadFor(name));
+});
+
 // ── Editor API: maps ───────────────────────────────────────────────────────────
 const _editorMapsDir = join(__dirname, 'public', 'maps');
 const _assetsDir     = join(__dirname, 'public', 'assets', 'models');
@@ -930,6 +1068,12 @@ function killEnemy(enemy, killerId) {
         else if (enemy.type === 'skeleton') { score = 25; type = 'skeleton'; }
         const s = io.sockets.sockets.get(killerId);
         if (s) s.emit('killCredit', { type, score, enemyId: enemy.id });
+        // Persistent career XP — survives match end & server restart.
+        const killerName = players[killerId]?.playerName?.trim();
+        if (killerName) {
+            awardKillXp(killerName, type);
+            emitCareerToSocket(killerId, killerName);
+        }
     }
 
     // 10% health pack drop
@@ -1244,7 +1388,19 @@ function endFFAMatch() {
     currentMode = 'COOP';
     const rankings = buildFFARankings();
     recordPvpGame(rankings);
-    io.emit('ffaMatchOver', { winnerId: rankings[0]?.playerId || null, rankings });
+    const winnerId = rankings[0]?.playerId || null;
+    io.emit('ffaMatchOver', { winnerId, rankings });
+    // Career stats for FFA
+    for (const [id, p] of Object.entries(players)) {
+        const name = p?.playerName?.trim();
+        if (!name) continue;
+        recordCareerMatch(name, {
+            mode: 'FFA',
+            won: id === winnerId,
+            score: p.ffaKills || 0,
+        });
+        emitCareerToSocket(id, name);
+    }
     clearMatchState();
 }
 
@@ -1314,6 +1470,9 @@ io.on('connection', (socket) => {
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('newPlayer', players[socket.id]);
     io.emit('updateLobby', players);
+    // Send the new socket the current levels of everyone already in the lobby
+    // so their nameplates can include "[Lv N]" immediately.
+    broadcastPlayerLevels();
 
     socket.on('disconnect', () => {
         _socketRateLimits.delete(socket.id);
@@ -1411,9 +1570,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('playerNameUpdate', (data) => {
-        if (players[socket.id]) {
-            players[socket.id].playerName = (data.playerName || '').trim();
-            io.emit('updateLobby', players);
+        if (!players[socket.id]) return;
+        const newName = (data.playerName || '').trim();
+        players[socket.id].playerName = newName;
+        io.emit('updateLobby', players);
+        // Push the named player their career stats so the client can show
+        // their level/XP and unlock the career modal data.
+        if (newName) {
+            emitCareerToSocket(socket.id, newName);
+            broadcastPlayerLevels();
         }
     });
 
@@ -1734,6 +1899,18 @@ io.on('connection', (socket) => {
             const pvpRankings = buildPvPRankings();
             recordPvpGame(pvpRankings);
             io.emit('pvpMatchOver', { winnerId: shooterId, rankings: pvpRankings });
+            // Career stats: winner gets a win + bonus XP, everyone else just
+            // logs the match.
+            for (const [id, p] of Object.entries(players)) {
+                const name = p?.playerName?.trim();
+                if (!name) continue;
+                recordCareerMatch(name, {
+                    mode: 'PVP',
+                    won: id === shooterId,
+                    score: p.pvpKills || 0,
+                });
+                emitCareerToSocket(id, name);
+            }
             clearMatchState();
         }
     }
@@ -1805,6 +1982,21 @@ io.on('connection', (socket) => {
                 }));
             recordCoopGame(rankings, gameState.wave);
             io.emit('globalGameOver', rankings);
+            // Career stats: every connected player who was in the match
+            // counts the match. Survivors get a "win"; everyone else loses.
+            for (const [id, p] of Object.entries(players)) {
+                const name = p?.playerName?.trim();
+                if (!name) continue;
+                const won = !!p.isAlive && !p.isDowned;
+                recordCareerMatch(name, {
+                    mode: 'COOP',
+                    won,
+                    wave: gameState.wave,
+                    score: p.score || 0,
+                    died: !won,
+                });
+                emitCareerToSocket(id, name);
+            }
             clearMatchState();
         }
     });
