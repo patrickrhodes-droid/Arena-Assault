@@ -256,9 +256,26 @@ export function syncChatVisibility() {
   panel.classList.toggle("hidden-chat", hideStates.has(game.state));
 }
 
+// Marker that survives page refresh so the client knows it was mid-match.
+// Set when a match starts, cleared on game-over or rejoin-failed.
+const ACTIVE_MATCH_KEY = "arena_active_match";
+export function setActiveMatchFlag(payload) {
+  try {
+    if (payload) localStorage.setItem(ACTIVE_MATCH_KEY, JSON.stringify(payload));
+    else localStorage.removeItem(ACTIVE_MATCH_KEY);
+  } catch { /* localStorage unavailable — refresh-rejoin simply won't work */ }
+}
+
 async function startGame() {
   game.mode = "COOP";
   game.state = "PLAYING";
+  setActiveMatchFlag({
+    mode: "COOP",
+    map: game.selectedMap,
+    gameMode: game.gameMode || "endless",
+    character: game.myCharacter,
+    savedAt: Date.now(),
+  });
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
@@ -304,6 +321,13 @@ async function startGame() {
 async function startPvPGame() {
   game.mode = "PVP";
   game.state = "PLAYING";
+  setActiveMatchFlag({
+    mode: "PVP",
+    map: game.selectedMap,
+    gameMode: "endless",
+    character: game.myCharacter,
+    savedAt: Date.now(),
+  });
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
@@ -357,6 +381,13 @@ async function startPvPGame() {
 async function startFFAGame() {
   game.mode = "FFA";
   game.state = "PLAYING";
+  setActiveMatchFlag({
+    mode: "FFA",
+    map: game.selectedMap,
+    gameMode: "endless",
+    character: game.myCharacter,
+    savedAt: Date.now(),
+  });
   game.audio.stopBackgroundMusic();
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
@@ -435,6 +466,7 @@ function pickFurthestCorner() {
 function endCompetitiveMatch() {
   game.mode = "COOP";
   game.state = "GAMEOVER";
+  setActiveMatchFlag(null);
   syncChatVisibility();
   game.audio.stopBackgroundMusic();
   game.isAiming = false;
@@ -762,6 +794,7 @@ function respawnPlayerLocal(emitToServer = true) {
 
 function gameOver(rankings = null) {
   game.state = "GAMEOVER";
+  setActiveMatchFlag(null);
   syncChatVisibility();
   game.audio.stopBackgroundMusic();
   game.isAiming = false;

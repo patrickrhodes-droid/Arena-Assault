@@ -49,10 +49,14 @@ export function initNetworking(actions) {
   } catch { /* localStorage unavailable (private browsing etc.) — use in-memory only */ }
   game.sessionToken = sessionToken;
 
-  // On connect/reconnect: register the token and attempt state restore if mid-game.
+  // On connect/reconnect: register the token and — if we left a match marker
+  // behind from before a refresh — attempt to rejoin straight back into it.
   game.socket.on("connect", () => {
     if (sessionToken) game.socket.emit("registerToken", { token: sessionToken });
-    if (game.state === "PLAYING" && sessionToken) {
+    let activeMatch = null;
+    try { activeMatch = JSON.parse(localStorage.getItem("arena_active_match") || "null"); } catch {}
+    const haveActiveMatch = game.state === "PLAYING" || !!activeMatch;
+    if (sessionToken && haveActiveMatch) {
       game.socket.emit("rejoin", { token: sessionToken });
     }
   });
@@ -149,13 +153,69 @@ export function initNetworking(actions) {
     if (data?.level === "error") console.warn("[Server]", data.text);
   });
 
-  game.socket.on("stateRestored", (data) => {
+  // Full mid-match rejoin: server confirmed our token belongs to the current
+  // match and is replaying the player's saved state. Drop into the same
+  // start-match flow as a fresh start so the scene gets rebuilt correctly,
+  // then overwrite the fields the start function reset to their saved values.
+  game.socket.on("stateRestored", async (data) => {
+    if (data.map) game.selectedMap = data.map;
+    if (data.gameMode) game.gameMode = data.gameMode;
+    if (data.character) game.myCharacter = data.character;
+    if (data.playerName && game.dom?.playerName) game.dom.playerName.value = data.playerName;
+    if (typeof data.isHost === "boolean") game.isHost = data.isHost;
+
+    // Seed collectedWeapons before startGame so the HUD picks them up.
+    if (Array.isArray(data.collectedWeapons)) {
+      game.collectedWeapons = new Set(data.collectedWeapons);
+    }
+
+    // Dispatch to the same start function the normal lobby flow would use.
+    const mode = data.mode || "COOP";
+    if (mode === "PVP") {
+      game.pvpKills = data.pvpKills || 0;
+      game.pvpSwordKills = data.pvpSwordKills || 0;
+      game.pvpWeaponIdx = data.pvpWeaponIdx || 0;
+      await actions.startPvPGame();
+    } else if (mode === "FFA") {
+      game.ffaKills = data.ffaKills || 0;
+      game.ffaTimeLeft = data.ffaTimeLeft || 0;
+      await actions.startFFAGame();
+    } else {
+      // COOP — make sure the wave the server is on isn't overwritten by the
+      // start function (it pulls game.wave from server syncWave afterwards).
+      game.startingWave = (data.wave || 0) + 1;
+      await actions.startGame();
+    }
+
+    // After the start function has rebuilt the scene and reset session state,
+    // re-apply the saved fields the server actually authoritative for.
     if (typeof data.wave === "number") game.wave = data.wave;
     if (typeof data.hp === "number") game.hp = data.hp;
+    if (typeof data.score === "number") game.score = data.score;
+    if (typeof data.kills === "number") game.kills = data.kills;
+    if (typeof data.dogKills === "number") game.dogKills = data.dogKills;
+    if (typeof data.bossKills === "number") game.bossKills = data.bossKills;
+    if (typeof data.totalKills === "number") game.totalKills = data.totalKills;
     if (typeof data.isAlive === "boolean") game.localPlayerIsAlive = data.isAlive;
     if (typeof data.isDowned === "boolean") game.localPlayerIsDowned = data.isDowned;
+    if (typeof data.isSpectating === "boolean") game.localPlayerIsSpectating = data.isSpectating;
     if (data.currentWeapon) setWeapon(data.currentWeapon);
+
+    // Snap back to the saved position/facing.
+    const pg = game.visuals?.player?.playerGroup;
+    if (pg && (typeof data.x === "number" || typeof data.z === "number")) {
+      pg.position.set(data.x || 0, data.y || 0, data.z || 0);
+      pg.rotation.y = data.rotation || 0;
+      game.camTheta = data.rotation || 0;
+    }
+
     actions.updateHUD();
+  });
+
+  // Server told us the rejoin can't happen (match ended, stale epoch, etc.).
+  // Clear the marker so we don't keep trying on the next reload.
+  game.socket.on("rejoinFailed", () => {
+    try { localStorage.removeItem("arena_active_match"); } catch {}
   });
 
   game.socket.on("serverInfo", (info) => {

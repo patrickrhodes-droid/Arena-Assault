@@ -496,13 +496,30 @@ const gameState = {
     nextDropId: 1,
     weaponDrops: [],
     tickInterval: null,
+    // Monotonic counter bumped each time a match starts. Used by the rejoin
+    // handler to reject stale tokens from a previous match.
+    matchEpoch: 0,
+    // Map currently being played — needed by the rejoin handler so the
+    // returning client can rebuild the correct arena.
+    map: 'arena',
 };
+
+// Wipe all saved player states tied to a finished match. Called whenever the
+// player count drops to zero, a match ends, or a new match begins.
+function clearMatchState() {
+    for (const token of Object.keys(recentlyDisconnected)) delete recentlyDisconnected[token];
+    gameState.mode = null;
+}
 
 function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapIndex = 0) {
     stopGameLoop();
+    // A fresh match — invalidate any saved tokens from a previous match.
+    for (const token of Object.keys(recentlyDisconnected)) delete recentlyDisconnected[token];
+    gameState.matchEpoch += 1;
     gameState.mode = mode;
     gameState.gameMode = gameMode;
     gameState.campaignMapIndex = campaignMapIndex;
+    gameState.map = selectedMap;
     gameState.wave = startingWave > 1 ? startingWave - 1 : 0;
     gameState.waveState = 'WAIT';
     gameState.waveTmr = startingWave > 1 ? 0.1 : 3;
@@ -515,6 +532,9 @@ function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapInd
     gameState.nextEnemyId = 1;
     gameState.nextPackId = 1;
     gameState.nextDropId = 1;
+    // Reset every player's collected-weapons list so a previous match's
+    // loadout doesn't leak into the new match.
+    Object.values(players).forEach((p) => { p.collectedWeapons = ['pistol']; });
 }
 
 // ── Enemy factories ───────────────────────────────────────────────────────────
@@ -817,6 +837,7 @@ function handleCampaignWaveComplete() {
     gameState.campaignMapIndex = (gameState.campaignMapIndex + 1) % CAMPAIGN_MAP_ORDER.length;
     const nextMap = CAMPAIGN_MAP_ORDER[gameState.campaignMapIndex];
     selectedMap = nextMap;
+    gameState.map = nextMap;
     // Reset waves back to 0 so the next map starts at wave 1
     gameState.wave = 0;
     gameState.waveState = 'WAIT';
@@ -1148,6 +1169,7 @@ function endFFAMatch() {
     const rankings = buildFFARankings();
     recordPvpGame(rankings);
     io.emit('ffaMatchOver', { winnerId: rankings[0]?.playerId || null, rankings });
+    clearMatchState();
 }
 
 // ── PvP helpers ───────────────────────────────────────────────────────────────
@@ -1220,18 +1242,25 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         _socketRateLimits.delete(socket.id);
         console.log('User disconnected:', socket.id);
-        // Preserve state briefly so the player can rejoin mid-game.
+        // Preserve state for the entire remaining match duration so the player
+        // can refresh / reconnect at any point without losing progress.
         const leaving = players[socket.id];
         const token = leaving?.sessionToken;
         if (token && gameState.mode) {
-            recentlyDisconnected[token] = { ...leaving, savedAt: Date.now() };
-            setTimeout(() => { delete recentlyDisconnected[token]; }, 60000);
+            recentlyDisconnected[token] = {
+                ...leaving,
+                savedAt: Date.now(),
+                matchEpoch: gameState.matchEpoch,
+            };
         }
         const wasHost = players[socket.id]?.isHost ?? false;
         delete players[socket.id];
         if (Object.keys(players).length === 0) {
+            // No one left in the match — treat as game over and wipe all
+            // saved tokens so the next match starts clean.
             stopGameLoop();
             stopFFATimer();
+            clearMatchState();
         } else {
             // If the leaver was host (or no one else is host), promote the first remaining player.
             const hasHost = Object.values(players).some(p => p.isHost);
@@ -1499,6 +1528,13 @@ io.on('connection', (socket) => {
         if (idx === -1) return;
         const drop = gameState.weaponDrops[idx];
         gameState.weaponDrops.splice(idx, 1);
+        // Record the pickup against the player so a mid-match rejoin can
+        // restore their full weapon loadout.
+        const player = players[socket.id];
+        if (player) {
+            if (!Array.isArray(player.collectedWeapons)) player.collectedWeapons = ['pistol'];
+            if (!player.collectedWeapons.includes(drop.weaponId)) player.collectedWeapons.push(drop.weaponId);
+        }
         io.emit('weaponDropRemoved', { dropId: drop.id, playerId: socket.id, weaponId: drop.weaponId });
     });
 
@@ -1591,6 +1627,7 @@ io.on('connection', (socket) => {
             const pvpRankings = buildPvPRankings();
             recordPvpGame(pvpRankings);
             io.emit('pvpMatchOver', { winnerId: shooterId, rankings: pvpRankings });
+            clearMatchState();
         }
     }
 
@@ -1661,6 +1698,7 @@ io.on('connection', (socket) => {
                 }));
             recordCoopGame(rankings, gameState.wave);
             io.emit('globalGameOver', rankings);
+            clearMatchState();
         }
     });
 
@@ -1695,23 +1733,66 @@ io.on('connection', (socket) => {
     // This replaces the old name-based lookup and is unique per browser session.
     socket.on('rejoin', (data) => {
         const token = (data?.token || '').trim();
-        if (!token) return;
+        if (!token) { socket.emit('rejoinFailed', { reason: 'no-token' }); return; }
         const saved = recentlyDisconnected[token];
-        if (!saved || Date.now() - saved.savedAt > 60000) return;
+        // Reject if no save exists, the match has ended, or the save belongs
+        // to a previous match (matchEpoch mismatch).
+        if (!saved || !gameState.mode || saved.matchEpoch !== gameState.matchEpoch) {
+            socket.emit('rejoinFailed', { reason: 'expired' });
+            return;
+        }
         delete recentlyDisconnected[token];
-        // Preserve the isHost flag that the connection handler may have already assigned
-        // (connection fires before rejoin, so if this socket was made host it stays host).
+        // Preserve the isHost flag that the connection handler may have already
+        // assigned (connection fires before rejoin, so if this socket was made
+        // host it stays host).
         const alreadyHost = players[socket.id]?.isHost ?? false;
-        players[socket.id] = { ...saved, playerId: socket.id, isHost: alreadyHost, isReady: false, sessionToken: token };
+        players[socket.id] = {
+            ...saved,
+            playerId: socket.id,
+            isHost: alreadyHost,
+            isReady: false,
+            sessionToken: token,
+        };
         ensureHost();
+
+        const restored = players[socket.id];
         socket.emit('stateRestored', {
-            wave: saved.wave || 0,
-            hp: saved.hp || P_MAX_HP,
-            isAlive: saved.isAlive ?? true,
-            isDowned: saved.isDowned ?? false,
-            currentWeapon: saved.currentWeapon || 'pistol',
-            character: saved.character || null,
+            // Match context — needed to reconstruct the correct scene
+            mode: gameState.mode,
+            gameMode: gameState.gameMode,
+            map: gameState.map,
+            wave: gameState.wave || 0,
+            ffaTimeLeft: ffaTimeLeft || 0,
+            // Player state
+            hp: restored.hp || P_MAX_HP,
+            isAlive: restored.isAlive ?? true,
+            isDowned: restored.isDowned ?? false,
+            isSpectating: restored.isSpectating ?? false,
+            isHost: restored.isHost ?? false,
+            currentWeapon: restored.currentWeapon || saved.weapon || 'pistol',
+            character: restored.character || null,
+            playerName: restored.playerName || '',
+            collectedWeapons: Array.isArray(restored.collectedWeapons) ? restored.collectedWeapons : ['pistol'],
+            // Scores & kill counters
+            score: restored.score || 0,
+            kills: restored.kills || 0,
+            dogKills: restored.dogKills || 0,
+            bossKills: restored.bossKills || 0,
+            totalKills: restored.totalKills || 0,
+            pvpKills: restored.pvpKills || 0,
+            pvpSwordKills: restored.pvpSwordKills || 0,
+            pvpWeaponIdx: restored.pvpWeaponIdx || 0,
+            ffaKills: restored.ffaKills || 0,
+            // Position & facing
+            x: restored.x || 0,
+            y: restored.y || 0,
+            z: restored.z || 0,
+            rotation: restored.rotation || 0,
         });
+
+        // Let other players see the rejoiner as a normal newPlayer so their
+        // remote avatar reappears in the world.
+        socket.broadcast.emit('newPlayer', restored);
         io.emit('updateLobby', players);
     });
 
