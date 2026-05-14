@@ -433,14 +433,14 @@ export function updatePlayer(actions) {
   const moveDirection = new THREE.Vector3();
 
   if (!ladderBeforeMove) {
-    if (game.keys.KeyW) moveDirection.add(forward);
-    if (game.keys.KeyS) moveDirection.sub(forward);
-    if (game.keys.KeyD) moveDirection.add(right);
-    if (game.keys.KeyA) moveDirection.sub(right);
+    if (game.keys.KeyW || game.gpForward) moveDirection.add(forward);
+    if (game.keys.KeyS || game.gpBack)    moveDirection.sub(forward);
+    if (game.keys.KeyD || game.gpRight)   moveDirection.add(right);
+    if (game.keys.KeyA || game.gpLeft)    moveDirection.sub(right);
   }
 
   const shiftHeld = !!(game.keys.ShiftLeft || game.keys.ShiftRight);
-  game.isSprinting = (game.sprintLocked || shiftHeld) && !!game.keys.KeyW && game.localPlayerIsAlive && !game.isCrouching;
+  game.isSprinting = (game.sprintLocked || shiftHeld) && (!!game.keys.KeyW || game.gpForward) && game.localPlayerIsAlive && !game.isCrouching;
   game.isMoving = moveDirection.lengthSq() > 0 && game.localPlayerIsAlive;
 
   if (!inFirstPerson) {
@@ -493,9 +493,9 @@ export function updatePlayer(actions) {
     } else {
       game.playerVelY = 0;
       game.isGrounded = false;
-      const climbSpeed = game.keys.KeyW
+      const climbSpeed = (game.keys.KeyW || game.gpForward)
         ? PLAYER_MOVEMENT.ladderClimbSpeed
-        : game.keys.KeyS ? -PLAYER_MOVEMENT.ladderClimbSpeed : 0;
+        : (game.keys.KeyS || game.gpBack) ? -PLAYER_MOVEMENT.ladderClimbSpeed : 0;
       pp.y = Math.max(0, Math.min(activeLadder.yMax, pp.y + climbSpeed * game.dt));
     }
   }
@@ -740,11 +740,12 @@ function handleFiring(actions) {
     if (bossAlertCooldown > 0) bossAlertCooldown -= game.dt;
     game.audio.playWeapon(weapon);
     addShake(weapon.shake);
-    game.fpRecoilZ  = weapon.recoilZ;
-    game.fpRecoilRX = weapon.recoilRX;
+    const adsRecoilMult = (game.isAiming && weapon.mode !== "bazooka") ? 0.25 : 1;
+    game.fpRecoilZ  = weapon.recoilZ  * adsRecoilMult;
+    game.fpRecoilRX = weapon.recoilRX * adsRecoilMult;
 
     // Camera recoil kick — snaps up, then auto-recovers in updateCamera
-    game.recoilOffset += weapon.recoilRX * 1.2;
+    game.recoilOffset += weapon.recoilRX * 1.2 * adsRecoilMult;
     game.recoilOffset  = Math.min(0.14, game.recoilOffset); // capped at half the old value
 
     // Bazooka self-knockback — push player away from aim direction

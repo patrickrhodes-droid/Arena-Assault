@@ -1255,6 +1255,100 @@ canvas {
   padding-bottom: 3px;
 }
 
+/* ── Collapsible settings dropdowns (pause menu) ── */
+#pause-panel {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.settings-dropdown {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  margin: 2px 0;
+}
+
+.settings-dropdown > summary {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 7px 0;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: all;
+}
+
+.settings-dropdown > summary::-webkit-details-marker { display: none; }
+.settings-dropdown > summary::after { content: "▸"; font-size: 13px; opacity: 0.7; }
+.settings-dropdown[open] > summary::after { content: "▾"; }
+.settings-dropdown > summary:hover { color: var(--accent2, var(--accent)); }
+
+.settings-dropdown .dropdown-content {
+  padding: 4px 0 10px 0;
+}
+
+/* compact controls-box used inside the pause panel dropdowns */
+.controls-box-compact {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.controls-columns {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.controls-col {
+  flex: 1;
+  min-width: 140px;
+}
+
+.controls-col .controls-box {
+  margin-top: 4px;
+}
+
+.controls-sub-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--accent2, #3ce6cb);
+  padding: 4px 0 2px;
+  font-weight: 700;
+}
+
+.controls-section-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--accent2, #3ce6cb);
+  padding: 4px 0 2px;
+  font-weight: 700;
+}
+
+#gp-sens-wrap {
+  margin: 4px 0 8px;
+}
+
+#gp-sens-wrap label {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+#gp-sens-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  pointer-events: all;
+}
+
 .settings-row {
   margin: 4px 0 8px;
   pointer-events: all;

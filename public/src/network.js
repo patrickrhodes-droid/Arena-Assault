@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
 import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, spawnWeaponPickupVisual, triggerDestructible } from "./combat.js";
-import { announceWave, createBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
+import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 import { showCampaignCutscene, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
@@ -443,8 +443,8 @@ export function initNetworking(actions) {
 
     const enemy = game.enemies.find((entry) => entry.id === data.enemyId);
     const enemyType = enemy?.type || data.enemyType || "skeleton";
-    const enemyReach = enemyType === "boss" ? 7.8 : enemyType === "dog" ? 2.5 : 2.0;
-    const enemyHeight = enemyType === "boss" ? 4.8 : enemyType === "dog" ? 1.0 : 1.35;
+    const enemyReach  = enemyType === "boss" ? 7.8 : enemyType === "miniboss" ? 4.5 : enemyType === "dog" ? 2.5 : 2.0;
+    const enemyHeight = enemyType === "boss" ? 4.8 : enemyType === "miniboss" ? 2.8 : enemyType === "dog" ? 1.0 : 1.35;
     const enemyX = typeof data.ex === "number" ? data.ex : enemy?.group.position.x;
     const enemyY = typeof data.ey === "number" ? data.ey : enemy?.group.position.y;
     const enemyZ = typeof data.ez === "number" ? data.ez : enemy?.group.position.z;
@@ -545,6 +545,7 @@ export function initNetworking(actions) {
         else if (entry.type === "dog") createDog(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "skeleton") createSkeleton(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "boss") createBoss(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
+        else if (entry.type === "miniboss") createMiniBoss(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         enemy = game.enemies[game.enemies.length - 1];
       }
 
@@ -577,6 +578,7 @@ export function initNetworking(actions) {
     else if (data.type === "dog") createDog(pos, data.id);
     else if (data.type === "skeleton") createSkeleton(pos, data.id);
     else if (data.type === "boss") createBoss(pos, data.id);
+    else if (data.type === "miniboss") createMiniBoss(pos, data.id);
     const enemy = game.enemies[game.enemies.length - 1];
     if (!enemy) return;
     // Stamp AI fields with server values so owned-client AI is accurate.
@@ -871,11 +873,14 @@ export function initNetworking(actions) {
 
   // Server awards kill credit to the shooter
   game.socket.on("killCredit", (data) => {
-    const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
+    const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "miniboss" ? "TITAN SCOUT" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
     pushKillFeed(`${game.playerName || "YOU"} → ${typeLabel} +${data.score}`, data.type === "boss" ? "boss-kill" : "");
     showScorePopup(data.score, data.type);
     if (data.type === "boss") {
       game.stats.bossKills += 1;
+      game.score += data.score;
+    } else if (data.type === "miniboss") {
+      game.stats.kills += 1;
       game.score += data.score;
     } else if (data.type === "dog") {
       game.stats.dogKills += 1;
@@ -894,11 +899,12 @@ export function initNetworking(actions) {
   // Server broadcasts enemy death for visual effects (particles etc.)
   game.socket.on("enemyKilled", (data) => {
     const color = data.type === "boss" ? 0xffd700
+      : data.type === "miniboss" ? 0xff4400
       : data.type === "dog" ? 0xff6600
       : data.type === "soldier" ? 0x880011
       : 0xeeeeee;
-    const count = data.type === "boss" ? 40 : 18;
-    spawnParticles(new THREE.Vector3(data.x, 1, data.z), count, color, data.type === "boss" ? 12 : 8, data.type === "boss");
+    const count = data.type === "boss" ? 40 : data.type === "miniboss" ? 26 : 18;
+    spawnParticles(new THREE.Vector3(data.x, 1, data.z), count, color, data.type === "boss" ? 12 : data.type === "miniboss" ? 9 : 8, data.type === "boss");
     // The enemy object is removed from game.enemies by the next enemiesSynced cleanup.
   });
 
@@ -953,9 +959,11 @@ export function initNetworking(actions) {
     }
     game.socket?.emit("playerCharacterUpdate", { character: game.myCharacter });
 
-    // Reset collected weapons for the new campaign map
-    game.collectedWeapons = new Set(["pistol"]);
-    actions.setWeapon("pistol");
+    // Keep all weapons collected so far — players carry their loadout into the next map.
+    // Ensure the current weapon is still valid (it always should be, but guard anyway).
+    if (!game.collectedWeapons?.has(game.currentWeapon)) {
+      actions.setWeapon("pistol");
+    }
     actions.updateHUD();
 
     // Restore PLAYING state (we were in CUTSCENE) and re-hide the chat panel

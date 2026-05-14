@@ -180,19 +180,41 @@
 
       <details class="controls-details" style="margin-top:12px">
         <summary>CONTROLS</summary>
-        <div class="controls-box">
-          <span class="key">W A S D</span><span>Move</span>
-          <span class="key">SPACE</span><span>Jump</span>
-          <span class="key">SHIFT+W / double-tap W</span><span>Sprint</span>
-          <span class="key">CTRL</span><span>Crouch (toggle)</span>
-          <span class="key">W / S on ladder</span><span>Climb up / down</span>
-          <span class="key">1–7 / Q</span><span>Switch Weapon</span>
-          <span class="key">G</span><span>Fire / release grapple</span>
-          <span class="key">E</span><span>Pick up weapon / Revive (hold)</span>
-          <span class="key">LMB</span><span>Fire / use weapon</span>
-          <span class="key">RMB</span><span>Aim Down Sights</span>
-          <span class="key">R</span><span>Reload</span>
-          <span class="key">ESC</span><span>Pause</span>
+        <div class="controls-columns">
+          <div class="controls-col">
+            <div class="controls-section-label">KEYBOARD &amp; MOUSE</div>
+            <div class="controls-box">
+              <span class="key">W A S D</span><span>Move</span>
+              <span class="key">SPACE</span><span>Jump</span>
+              <span class="key">SHIFT+W / double-tap W</span><span>Sprint</span>
+              <span class="key">CTRL</span><span>Crouch (toggle)</span>
+              <span class="key">W / S on ladder</span><span>Climb up / down</span>
+              <span class="key">1–7 / Q</span><span>Switch Weapon</span>
+              <span class="key">G</span><span>Grapple</span>
+              <span class="key">E (hold)</span><span>Pick Up / Revive</span>
+              <span class="key">LMB</span><span>Fire</span>
+              <span class="key">RMB</span><span>Aim Down Sights</span>
+              <span class="key">R</span><span>Reload</span>
+              <span class="key">ESC</span><span>Pause</span>
+            </div>
+          </div>
+          <div class="controls-col">
+            <div class="controls-section-label">CONTROLLER (XBOX / XINPUT)</div>
+            <div class="controls-box">
+              <span class="key">Left Stick</span><span>Move</span>
+              <span class="key">L3 (click / double-tap fwd)</span><span>Sprint (toggle)</span>
+            <span class="key">R3 (click)</span><span>Grapple</span>
+              <span class="key">Right Stick</span><span>Look / Aim Camera</span>
+              <span class="key">RT</span><span>Fire</span>
+              <span class="key">LT</span><span>Aim Down Sights</span>
+              <span class="key">A</span><span>Jump</span>
+              <span class="key">B (hold)</span><span>Pick Up / Revive</span>
+              <span class="key">X</span><span>Reload</span>
+              <span class="key">Y</span><span>Crouch</span>
+              <span class="key">LB</span><span>Cycle Weapon Back</span>
+              <span class="key">RB</span><span>Cycle Weapon Forward</span>
+            </div>
+          </div>
         </div>
       </details>
     </div>
@@ -328,7 +350,7 @@
     <div id="click-prompt">CLICK TO AIM</div>
 
     <div id="revive-prompt-hud">
-      <div class="revive-text-box">HOLD <span>E</span> TO REVIVE</div>
+      <div class="revive-text-box">HOLD <span>E</span> / <span>B</span> TO REVIVE</div>
       <div id="revive-progress-bar-bg">
         <div id="revive-progress-bar-fill"></div>
       </div>
@@ -379,46 +401,100 @@
       <button class="pause-btn" id="view-btn">VIEW: THIRD PERSON</button>
       <button class="pause-btn" id="fullscreen-btn">FULLSCREEN</button>
 
-      <div class="settings-section-title">CONTROLS</div>
-      <div id="sens-wrap">
-        <label for="sens-slider">SENSITIVITY: <span id="sens-val">5</span></label>
-        <input type="range" id="sens-slider" min="1" max="10" value="5">
-      </div>
+      <details class="settings-dropdown">
+        <summary>CONTROLS</summary>
+        <div class="dropdown-content">
+          <div id="sens-wrap">
+            <label for="sens-slider">MOUSE SENSITIVITY: <span id="sens-val">5</span></label>
+            <input type="range" id="sens-slider" min="1" max="10" value="5">
+          </div>
+          <div id="gp-sens-wrap">
+            <label for="gp-sens-slider">CONTROLLER SENSITIVITY: <span id="gp-sens-val">6</span></label>
+            <input type="range" id="gp-sens-slider" min="1" max="10" value="6">
+          </div>
+          <div class="controls-columns">
+            <div class="controls-col">
+              <div class="controls-sub-title">KEYBOARD &amp; MOUSE</div>
+              <div class="controls-box controls-box-compact">
+                <span class="key">W A S D</span><span>Move</span>
+                <span class="key">SHIFT+W / double-tap W</span><span>Sprint</span>
+                <span class="key">CTRL</span><span>Crouch</span>
+                <span class="key">SPACE</span><span>Jump</span>
+                <span class="key">E (hold)</span><span>Pick Up / Revive</span>
+                <span class="key">1–7 / Q</span><span>Switch Weapon</span>
+                <span class="key">G</span><span>Grapple</span>
+                <span class="key">R</span><span>Reload</span>
+                <span class="key">LMB</span><span>Fire</span>
+                <span class="key">RMB</span><span>Aim Down Sights</span>
+              </div>
+            </div>
+            <div class="controls-col">
+              <div class="controls-sub-title">CONTROLLER (XBOX)</div>
+              <div class="controls-box controls-box-compact">
+                <span class="key">Left Stick</span><span>Move</span>
+                <span class="key">L3 (click / double-tap fwd)</span><span>Sprint (toggle)</span>
+            <span class="key">R3 (click)</span><span>Grapple</span>
+                <span class="key">Right Stick</span><span>Look / Aim Camera</span>
+                <span class="key">RT</span><span>Fire</span>
+                <span class="key">LT</span><span>Aim Down Sights</span>
+                <span class="key">A</span><span>Jump</span>
+                <span class="key">B (hold)</span><span>Pick Up / Revive</span>
+                <span class="key">X</span><span>Reload</span>
+                <span class="key">Y</span><span>Crouch</span>
+                <span class="key">LB</span><span>Cycle Weapon Back</span>
+                <span class="key">RB</span><span>Cycle Weapon Forward</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
 
-      <div class="settings-section-title">AUDIO</div>
-      <div class="settings-row">
-        <label for="vol-master">MASTER: <span id="vol-master-val">80</span>%</label>
-        <input type="range" id="vol-master" min="0" max="100" value="80">
-      </div>
-      <div class="settings-row">
-        <label for="vol-music">MUSIC: <span id="vol-music-val">60</span>%</label>
-        <input type="range" id="vol-music" min="0" max="100" value="60">
-      </div>
-      <div class="settings-row">
-        <label for="vol-sfx">SFX: <span id="vol-sfx-val">80</span>%</label>
-        <input type="range" id="vol-sfx" min="0" max="100" value="80">
-      </div>
+      <details class="settings-dropdown">
+        <summary>AUDIO</summary>
+        <div class="dropdown-content">
+          <div class="settings-row">
+            <label for="vol-master">MASTER: <span id="vol-master-val">80</span>%</label>
+            <input type="range" id="vol-master" min="0" max="100" value="80">
+          </div>
+          <div class="settings-row">
+            <label for="vol-music">MUSIC: <span id="vol-music-val">60</span>%</label>
+            <input type="range" id="vol-music" min="0" max="100" value="60">
+          </div>
+          <div class="settings-row">
+            <label for="vol-sfx">SFX: <span id="vol-sfx-val">80</span>%</label>
+            <input type="range" id="vol-sfx" min="0" max="100" value="80">
+          </div>
+        </div>
+      </details>
 
-      <div class="settings-section-title">GRAPHICS</div>
-      <div class="settings-row-check">
-        <label class="check-row"><input type="checkbox" id="setting-shadows" checked> SHADOWS</label>
-        <label class="check-row"><input type="checkbox" id="setting-particles" checked> PARTICLES</label>
-      </div>
+      <details class="settings-dropdown">
+        <summary>GRAPHICS</summary>
+        <div class="dropdown-content">
+          <div class="settings-row-check">
+            <label class="check-row"><input type="checkbox" id="setting-shadows" checked> SHADOWS</label>
+            <label class="check-row"><input type="checkbox" id="setting-particles" checked> PARTICLES</label>
+          </div>
+        </div>
+      </details>
 
-      <div class="settings-section-title">HUD</div>
-      <div class="settings-row">
-        <label for="setting-crosshair">CROSSHAIR</label>
-        <select id="setting-crosshair" style="pointer-events:all">
-          <option value="default">DEFAULT</option>
-          <option value="dot">DOT</option>
-          <option value="cross">CROSS</option>
-          <option value="plus">PLUS</option>
-          <option value="circle">CIRCLE</option>
-        </select>
-      </div>
-      <div class="settings-row-check">
-        <label class="check-row"><input type="checkbox" id="setting-damage-numbers" checked> DAMAGE NUMBERS</label>
-      </div>
+      <details class="settings-dropdown">
+        <summary>HUD</summary>
+        <div class="dropdown-content">
+          <div class="settings-row">
+            <label for="setting-crosshair">CROSSHAIR</label>
+            <select id="setting-crosshair" style="pointer-events:all">
+              <option value="default">DEFAULT</option>
+              <option value="dot">DOT</option>
+              <option value="cross">CROSS</option>
+              <option value="plus">PLUS</option>
+              <option value="circle">CIRCLE</option>
+            </select>
+          </div>
+          <div class="settings-row-check">
+            <label class="check-row"><input type="checkbox" id="setting-damage-numbers" checked> DAMAGE NUMBERS</label>
+          </div>
+        </div>
+      </details>
 
       <button class="pause-btn" id="pause-career-btn">CAREER STATS</button>
       <button class="pause-btn danger" id="pause-give-up-btn">GIVE UP</button>

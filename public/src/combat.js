@@ -148,6 +148,14 @@ export function cycleWeapon() {
   return setWeapon(available[(index + 1) % available.length]);
 }
 
+export function cycleWeaponBack() {
+  const available = game.mode === 'COOP'
+    ? WEAPON_ORDER.filter(id => game.collectedWeapons?.has(id))
+    : WEAPON_ORDER;
+  const index = available.indexOf(game.currentWeapon);
+  return setWeapon(available[(index - 1 + available.length) % available.length]);
+}
+
 export function collectWeapon(weaponId) {
   if (!WEAPON_DEFS[weaponId]) return;
   game.collectedWeapons.add(weaponId);
@@ -748,7 +756,7 @@ function showWeaponPickupPrompt(weaponId, show) {
     _pickupPromptEl = document.getElementById('weapon-pickup-prompt');
   }
   if (!_pickupPromptEl) return;
-  _pickupPromptEl.textContent = show ? `Press E to pick up ${weaponId.toUpperCase()}` : '';
+  _pickupPromptEl.textContent = show ? `Press E / B to pick up ${weaponId.toUpperCase()}` : '';
   _pickupPromptEl.style.display = show ? 'block' : 'none';
 }
 

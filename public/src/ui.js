@@ -40,6 +40,8 @@ export function cacheDom() {
     viewBtn: document.getElementById("view-btn"),
     sensSlider: document.getElementById("sens-slider"),
     sensVal: document.getElementById("sens-val"),
+    gpSensSlider: document.getElementById("gp-sens-slider"),
+    gpSensVal: document.getElementById("gp-sens-val"),
     minimap: document.getElementById("minimap"),
     crosshair: document.getElementById("crosshair"),
     scopeOverlay: document.getElementById("scope-overlay"),
@@ -446,6 +448,24 @@ export function bindMenuControls(actions) {
     });
   }
   game.dom.sensSlider.addEventListener("input", updateSensitivity);
+
+  // ── Controller sensitivity slider ─────────────────────────────────────────
+  if (game.dom.gpSensSlider) {
+    try {
+      const saved = localStorage.getItem("arena_gp_sens");
+      if (saved !== null) {
+        game.dom.gpSensSlider.value = saved;
+        game.gpSens = Number(saved) * 0.5;
+        if (game.dom.gpSensVal) game.dom.gpSensVal.textContent = saved;
+      }
+    } catch {}
+    game.dom.gpSensSlider.addEventListener("input", () => {
+      const v = Number(game.dom.gpSensSlider.value);
+      game.gpSens = v * 0.5;
+      if (game.dom.gpSensVal) game.dom.gpSensVal.textContent = v;
+      try { localStorage.setItem("arena_gp_sens", v); } catch {}
+    });
+  }
 
   // ── Audio volume sliders ──────────────────────────────────────────────────
   const volMaster  = document.getElementById("vol-master");

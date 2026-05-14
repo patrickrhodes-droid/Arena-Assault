@@ -106,6 +106,8 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 
 ## Controls
 
+### Keyboard & Mouse
+
 | Key | Action |
 |---|---|
 | W A S D | Move |
@@ -122,7 +124,30 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 | R | Reload |
 | G | Fire / release grappling hook |
 | E | Pick up weapon drop / Hold to revive downed teammate |
-| Esc | Pause / fullscreen toggle |
+| Esc | Pause |
+
+### Xbox / XInput controller
+
+Full controller support — no mouse or keyboard required once the game is launched. Plugging in a controller auto-fills the player name with "Operator" if the name field is empty.
+
+| Button | Action |
+|---|---|
+| Left Stick | Move |
+| L3 (click in) / double-tap forward | Sprint toggle |
+| Right Stick | Look / aim camera |
+| R3 (click in) | Grapple |
+| RT | Fire |
+| LT | Aim Down Sights (camera sensitivity halved while held) |
+| A | Jump |
+| B (hold) | Pick up weapon / Hold to revive |
+| X | Reload |
+| Y | Crouch toggle |
+| LB | Cycle weapon backwards |
+| RB | Cycle weapon forwards |
+| Start | Pause / Resume settings menu |
+| D-pad / Left Stick | Navigate menus (up+left = back, down+right = forward) |
+| A | Confirm / activate focused element |
+| B | Back / resume when paused |
 
 ## Weapons
 
@@ -136,7 +161,7 @@ Selecting a map in the lobby rebuilds the 3D background in real time so you can 
 | 6 | Bazooka | 500 direct / 180 splash | 4-round mag, 6-unit splash radius, slow projectile |
 | 7 | Grapple Hook | 300 | Pulls you to walls or cover; drags non-boss enemies to you; in PvP pulls target players toward you |
 
-In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 7 waves drops a weapon pickup over the last enemy's corpse — walk over it and press **E** to add it to your arsenal.
+In **Campaign mode** you start with only the Pistol (slot 1). Each of the first 7 waves drops a weapon pickup over the last enemy's corpse — walk over it and press **E** (or hold **B** on controller) to add it to your arsenal. **Weapon drops remain on the map** until all players have collected them — every player can pick up the same drop. **Collected weapons carry over** between maps, so your full loadout persists into Dust Bowl, Downtown, and the Blacksite.
 
 ## Game modes (Co-op)
 
@@ -206,11 +231,12 @@ In both PvP modes, firing the Grapple Hook at another player will:
 | Skeleton | Wave 1+ | 1 HP, fast melee rusher. Animated GLB model. |
 | Dog | Wave 3+ (Endless) / Wave 5+ (Campaign) | Fast melee rush. Chance increases each wave up to 55% in Endless. |
 | Soldier | Wave 6+ (Endless) / Wave 3+ (Campaign) | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
-| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. **Sword deals 1.5× (150%) damage to the boss.** |
+| **Titan Scout** (mini-boss) | **Wave 8+ (Endless) / Dust Bowl onwards (Campaign)** | Half-size version of the Titan Brute. Same attack patterns but 15% faster (13.8 u/s). 40% of boss damage. HP ≈ 3× a wave-scaled soldier. **All weapons deal full damage** — no immunity like the full boss. Rare: 8% chance per enemy slot, max 1–2 per wave. Drops 750 score and 75 XP. |
+| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck or when player is elevated. **Body-slam during jump**: deals 75% melee damage if the boss passes through a player while airborne. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. **Sword deals 1.5× (150%) damage to the boss.** |
 
-The boss attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2).
+The Titan Brute attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2). **Aiming down sights reduces all weapon recoil to 25%** (does not affect the Bazooka).
 
-In multiplayer, non-host clients now snap the boss's visual position to the authoritative attack origin when a hit arrives, preventing the "invisible attack" desync.
+In multiplayer, non-host clients snap the boss's visual position to the authoritative attack origin when a hit arrives, preventing the "invisible attack" desync.
 
 ## Wave system
 
@@ -268,13 +294,14 @@ After each map transition in Campaign, a brief story cutscene plays and then an 
 
 ## Pause menu / Settings
 
-Press **Esc** in-game to pause. The pause panel includes:
+Press **Esc** (or **Start** on controller) in-game to pause. The pause panel has four collapsible sections:
 
-- **View toggle** — switch between first-person and third-person camera.
-- **Fullscreen** — toggle browser fullscreen.
-- **Sensitivity** — mouse sensitivity slider (1–10).
+- **Controls** — Mouse sensitivity slider (1–10) and Controller sensitivity slider (1–10, persists in `localStorage`). Full keyboard and Xbox controller button reference.
 - **Audio** — Master, Music, and SFX volume sliders (0–100%). All settings persist in `localStorage`.
 - **Graphics** — Shadows toggle and Particles toggle. Disabling shadows can improve performance on low-end hardware; disabling particles reduces visual effects density.
+- **HUD** — Crosshair style selector (Default / Dot / Cross / Plus / Circle) and Damage Numbers toggle.
+
+Controller players can navigate the pause menu with D-pad / left stick, open sections with **A**, adjust sliders with D-pad left/right, and resume with **Start** or **B**.
 
 ## Leaderboard
 
@@ -376,6 +403,18 @@ Client mirror: `public/src/config.js` -> `DOG_TUNING`
 
 Client mirror: `public/src/config.js` -> `SOLDIER_TUNING`
 
+#### Titan Scout (mini-boss)
+
+| Stat | Current value |
+|---|---:|
+| HP | `round(3 * (58 + wave * 12) * 1.1^wave)` |
+| Move speed | 13.8 |
+| Melee damage | `round((100 + wave * 10) * 0.4)` |
+| Attack reach | 4.5 |
+| Spawn chance | 8% per enemy slot (wave 8+, max 2) |
+
+Mini-boss tuning: `public/src/config.js` -> `MINIBOSS_TUNING`.
+
 #### Titan Brute (boss)
 
 | Stat | Current value |
@@ -405,6 +444,7 @@ Boss tuning: `server.js` top-level constants and `public/src/config.js` -> `BOSS
 | Skeleton score | 25 | `server.js` in `killEnemy()` |
 | Dog score | 150 | `server.js` in `killEnemy()` |
 | Soldier score | 100 | `server.js` in `killEnemy()` |
+| Titan Scout score | 750 | `server.js` in `killEnemy()` |
 | Boss score | 2500 | `server.js` in `killEnemy()` |
 
 ## Project structure

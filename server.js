@@ -156,7 +156,7 @@ process.on('SIGTERM', () => { if (_careerDirty) saveCareerStats(); process.exit(
 function xpThreshold(level) { return Math.floor(50 * (level - 1) * (level - 1)); }
 function levelFromXp(xp) { return 1 + Math.floor(Math.sqrt(Math.max(0, xp) / 50)); }
 
-const KILL_XP = { skeleton: 5, soldier: 10, dog: 25, boss: 200 };
+const KILL_XP = { skeleton: 5, soldier: 10, dog: 25, miniboss: 75, boss: 200 };
 const MATCH_BONUS_XP = 25;
 const WIN_BONUS_XP   = 75;
 
@@ -768,6 +768,16 @@ function makeBoss(x, z, hpMult) {
     });
 }
 
+function makeMiniBoss(x, z) {
+    const w = gameState.wave;
+    // HP = 3× a wave-scaled soldier (58 + wave*12) × 1.1^wave
+    const hp = Math.round(3 * (58 + w * 12) * Math.pow(1.1, w));
+    return Object.assign(baseEnemy('miniboss', x, z), {
+        hp, maxHp: hp, spd: 13.8,
+        atkDmg: Math.round((100 + w * 10) * 0.4),
+    });
+}
+
 // ── Spawn helpers ─────────────────────────────────────────────────────────────
 
 // Returns false if the spawn position lands inside a known solid/blocked area
@@ -841,6 +851,19 @@ function spawnEnemy() {
     if (gameState.enemies.length >= MAX_LIVE_ENEMIES) return;
     const [cx, cz] = pickSpawnPos(15);
     const w = gameState.wave;
+
+    // Mini-boss: rare spawn at wave 8+ (endless) or any map after arena (campaign)
+    const miniBossEligible = w >= 8 || (gameState.gameMode === 'campaign' && selectedMap !== 'arena');
+    if (miniBossEligible) {
+        const aliveMinis = gameState.enemies.filter(e => e.type === 'miniboss').length;
+        if (aliveMinis < 2 && Math.random() < 0.08) {
+            const mb = makeMiniBoss(cx, cz);
+            mb.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
+            gameState.enemies.push(mb);
+            emitEnemySpawned(mb);
+            return;
+        }
+    }
 
     if (w <= 6) {
         // Rounds 1-6: unified progression in both campaign and endless
@@ -1063,9 +1086,10 @@ function killEnemy(enemy, killerId) {
     // Award kill credit to the shooter
     if (killerId) {
         let score = 100, type = 'soldier';
-        if (enemy.type === 'boss')     { score = 2500; type = 'boss'; }
-        else if (enemy.type === 'dog') { score = 150;  type = 'dog'; }
-        else if (enemy.type === 'skeleton') { score = 25; type = 'skeleton'; }
+        if (enemy.type === 'boss')         { score = 2500; type = 'boss'; }
+        else if (enemy.type === 'miniboss') { score = 750;  type = 'miniboss'; }
+        else if (enemy.type === 'dog')      { score = 150;  type = 'dog'; }
+        else if (enemy.type === 'skeleton') { score = 25;   type = 'skeleton'; }
         const s = io.sockets.sockets.get(killerId);
         if (s) s.emit('killCredit', { type, score, enemyId: enemy.id });
         // Persistent career XP — survives match end & server restart.
@@ -1796,10 +1820,8 @@ io.on('connection', (socket) => {
 
     // Weapon drop pickup
     socket.on('pickupWeaponDrop', (data) => {
-        const idx = gameState.weaponDrops.findIndex(d => d.id === data.dropId);
-        if (idx === -1) return;
-        const drop = gameState.weaponDrops[idx];
-        gameState.weaponDrops.splice(idx, 1);
+        const drop = gameState.weaponDrops.find(d => d.id === data.dropId);
+        if (!drop) return;
         // Record the pickup against the player so a mid-match rejoin can
         // restore their full weapon loadout.
         const player = players[socket.id];
@@ -1807,7 +1829,8 @@ io.on('connection', (socket) => {
             if (!Array.isArray(player.collectedWeapons)) player.collectedWeapons = ['pistol'];
             if (!player.collectedWeapons.includes(drop.weaponId)) player.collectedWeapons.push(drop.weaponId);
         }
-        io.emit('weaponDropRemoved', { dropId: drop.id, playerId: socket.id, weaponId: drop.weaponId });
+        // Tell only the picker to remove the visual — the drop stays for other players.
+        socket.emit('weaponDropRemoved', { dropId: drop.id, playerId: socket.id, weaponId: drop.weaponId });
     });
 
     // Health pack pickup — server validates directly (no host relay)

@@ -235,6 +235,7 @@ function addBox(obj, mats, arenaGroup) {
       min: { x: obj.position[0] - obj.size[0] / 2, z: obj.position[2] - obj.size[2] / 2 },
       max: { x: obj.position[0] + obj.size[0] / 2, z: obj.position[2] + obj.size[2] / 2 },
       h: obj.position[1] + obj.size[1] / 2,
+      yMin: obj.position[1] - obj.size[1] / 2,
     });
   }
 }
@@ -276,6 +277,7 @@ function loadPropJson(obj, arenaGroup) {
           min: { x: cx - cw / 2, z: cz - cd / 2 },
           max: { x: cx + cw / 2, z: cz + cd / 2 },
           h: cy + ch / 2,
+          yMin: cy - ch / 2,
         });
       } else {
         model.updateWorldMatrix(true, true);
@@ -285,6 +287,7 @@ function loadPropJson(obj, arenaGroup) {
             min: { x: bbox.min.x, z: bbox.min.z },
             max: { x: bbox.max.x, z: bbox.max.z },
             h: bbox.max.y,
+            yMin: bbox.min.y,
           });
         }
       }
@@ -316,7 +319,7 @@ function loadDestructibleJson(obj, arenaGroup) {
     const bbox = new THREE.Box3().setFromObject(model);
     let obsEntry = null;
     if (bbox.min.x < bbox.max.x && bbox.min.z < bbox.max.z) {
-      obsEntry = { min: { x: bbox.min.x, z: bbox.min.z }, max: { x: bbox.max.x, z: bbox.max.z }, h: bbox.max.y };
+      obsEntry = { min: { x: bbox.min.x, z: bbox.min.z }, max: { x: bbox.max.x, z: bbox.max.z }, h: bbox.max.y, yMin: bbox.min.y };
       game.oBs.push(obsEntry);
     }
     game.destructibles.push({

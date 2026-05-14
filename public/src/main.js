@@ -30,7 +30,8 @@ import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWea
 import { resetComboState } from "./features.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
-import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
+import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryJump, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
+import { pollGamepad } from "./gamepad.js";
 import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, updateRemotePlayerVisuals } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
 import {
@@ -135,6 +136,7 @@ const actions = {
       // Ignore local storage failures.
     }
   },
+  tryJump: () => tryJump(),
   tryPointerLock,
   fireGrapple: () => fireGrapple(),
   updateHUD,
@@ -148,6 +150,18 @@ const actions = {
     const value = Number(game.dom.sensSlider.value);
     game.sens = 0.001 * value;
     game.dom.sensVal.textContent = value;
+  },
+  pauseGame: () => {
+    if (game.state !== "PLAYING") return;
+    document.body.classList.remove("locked");
+    game.isAiming = false;
+    game.dom.crosshair.classList.remove("hidden");
+    game.dom.scopeOverlay.classList.remove("show");
+    game.state = "PAUSED";
+    game.dom.pause.style.display = "flex";
+    game.socket?.emit("playerPaused", { paused: true });
+    syncChatVisibility();
+    if (document.pointerLockElement) document.exitPointerLock();
   },
   onPointerLockChange: () => {
     if (document.pointerLockElement === game.renderer.domElement) {
@@ -169,6 +183,14 @@ const actions = {
     game.isAiming = false;
     game.dom.crosshair.classList.remove("hidden");
     game.dom.scopeOverlay.classList.remove("show");
+
+    // Controller players play without pointer lock — don't pause on lock loss
+    const gpActive = navigator.getGamepads && Array.from(navigator.getGamepads()).some((p) => p?.connected);
+    if (gpActive && game.state === "PLAYING") {
+      game.dom.clickPrompt.style.display = "none";
+      return;
+    }
+
     if (game.state === "PLAYING") {
       game.state = "PAUSED";
       game.dom.pause.style.display = "flex";
@@ -184,6 +206,8 @@ const actions = {
     game.isAiming = false;
     game.dom.crosshair.classList.remove("hidden");
     game.dom.scopeOverlay.classList.remove("show");
+    const gpActive = navigator.getGamepads && Array.from(navigator.getGamepads()).some((p) => p?.connected);
+    if (gpActive) return; // controller play — ignore lock errors
     if (game.state === "PLAYING" || game.state === "PAUSED") {
       game.dom.clickPrompt.style.display = "block";
     }
@@ -848,6 +872,8 @@ function animate(time) {
   // Stagger slow updates: HUD every 2 frames, minimap every 3 frames.
   const doHUD      = game.frameIndex % 2 === 0;
   const doMinimap  = game.frameIndex % 3 === 0;
+
+  pollGamepad(actions);
 
   // Slowly orbit the camera around the arena during the lobby or cutscenes
   if (game.state === "MENU" || game.state === "CUTSCENE") tickMenuOrbit(game.dt);

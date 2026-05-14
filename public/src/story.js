@@ -41,6 +41,7 @@ const CAMPAIGN_STORY = {
       { s: "patrick", t: "Last ping from inside suggested a containment breach. Something in the lower labs." },
       { s: "iestyn",  t: "Whatever it is, we neutralise it. Two operators, no support. Move fast and stay sharp." },
       { s: "patrick", t: "Iestyn — whatever broke out in there, the data suggests it doesn't stop. It just keeps coming." },
+      { s: "patrick", t: "Thermal signatures suggest multiple mech-class units. Full-size and... smaller variants. Scout class, maybe. Same machine, half the size." },
       { s: "iestyn",  t: "Then so do we." },
     ],
   },
@@ -61,6 +62,8 @@ const CAMPAIGN_STORY = {
       { s: "will",    t: "I was handling it." },
       { s: "patrick", t: "The research post east of here — that's where the infection spread from. We need to shut it down." },
       { s: "matt",    t: "Four's better than two. Marginally." },
+      { s: "will",    t: "We saw some of those smaller mechs out here — half the size of the big ones. Faster too." },
+      { s: "patrick", t: "Scout units. All weapons effective on them, unlike the full-size Brute. Still — don't get cocky, they hit hard enough." },
       { s: "iestyn",  t: "Welcome to the team. Try to keep up." },
     ],
   },
@@ -331,6 +334,8 @@ function displayLine(idx) {
   _typeTimer = setInterval(() => {
     _charIndex++;
     if (textEl) textEl.textContent = full.slice(0, _charIndex);
+    const ch = full[_charIndex - 1];
+    if (ch && ch !== " " && game.audio?.dialogueTick) game.audio.dialogueTick();
     if (_charIndex >= full.length) clearInterval(_typeTimer);
   }, 26);
 }
@@ -424,6 +429,7 @@ function showCharSelect() {
     const card = document.createElement("div");
     card.className = `cs-char-card${id === selected ? " selected" : ""}${isLocked ? " locked" : ""}`;
     card.dataset.char = id;
+    if (!isLocked) card.tabIndex = 0;
     card.style.setProperty("--char-color", color);
 
     const cv = document.createElement("canvas");

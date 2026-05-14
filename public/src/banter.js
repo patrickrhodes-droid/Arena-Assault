@@ -215,6 +215,13 @@ const LINES = {
     { c: "patrick", t: "Boss unit confirmed. Standard weapons deflect off its hide — pistol and sword only." },
   ],
 
+  miniboss_spotted: [
+    { c: "iestyn",  t: "TITAN SCOUT! Compact version of the Brute — hit it with anything, but move fast!" },
+    { c: "matt",    t: "Oh brilliant. They've made a pocket-sized version. Still going to hurt." },
+    { c: "will",    t: "Smaller target, faster moves. I like it. Let's see what it's got." },
+    { c: "patrick", t: "Scout-class mech confirmed. All weapons effective — unlike the Brute. Eliminate it quickly." },
+  ],
+
   first_dog: [
     { c: "will",    t: "DOGS! Stay on your feet or you're getting bitten!" },
     { c: "iestyn",  t: "Canine hostiles! Fast and aggressive — don't let them flank you!" },
@@ -352,6 +359,10 @@ export function tickBanter(dt) {
     if (e.type === "boss" && !_seenTypes.has("boss")) {
       _seenTypes.add("boss");
       fireBanter("boss_spotted");
+    }
+    if (e.type === "miniboss" && !_seenTypes.has("miniboss")) {
+      _seenTypes.add("miniboss");
+      fireBanter("miniboss_spotted");
     }
   }
 

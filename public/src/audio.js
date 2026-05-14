@@ -264,6 +264,22 @@ export function createAudioController() {
     gunshot();
   }
 
+  function dialogueTick() {
+    if (!context) return;
+    const v = effectiveVol(0.028 * sfxVolume);
+    if (v < 0.001) return;
+    const time = context.currentTime;
+    const osc = context.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(760, time);
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(v, time);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.02);
+    osc.connect(gain).connect(context.destination);
+    osc.start(time);
+    osc.stop(time + 0.02);
+  }
+
   return {
     init,
     startBackgroundMusic,
@@ -271,6 +287,7 @@ export function createAudioController() {
     pauseBackgroundMusic,
     resumeBackgroundMusic,
     playWeapon,
+    dialogueTick,
     hit,
     death,
     damage,

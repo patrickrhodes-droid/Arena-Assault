@@ -1,4 +1,4 @@
-import { HALF, LEDGE_GRACE, P_RAD, EPS } from "./config.js";
+import { HALF, LEDGE_GRACE, P_RAD, EPS, EYE_H } from "./config.js";
 import { game } from "./state.js";
 
 export function closestOnBox(cx, cz, obstacle) {
@@ -9,9 +9,8 @@ export function closestOnBox(cx, cz, obstacle) {
 }
 
 export function resolveCircleBox(position, radius, obstacle, baseY = 0) {
-  if (baseY >= obstacle.h - LEDGE_GRACE) {
-    return;
-  }
+  if (baseY >= obstacle.h - LEDGE_GRACE) return;
+  if (obstacle.yMin > 0 && baseY + EYE_H <= obstacle.yMin) return;
 
   const closest = closestOnBox(position.x, position.z, obstacle);
   const dx = position.x - closest.x;
@@ -81,7 +80,7 @@ export function bulletHitObstacle(x, y, z) {
   }
 
   for (const obstacle of game.oBs) {
-    if (x >= obstacle.min.x && x <= obstacle.max.x && y >= 0 && y < obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
+    if (x >= obstacle.min.x && x <= obstacle.max.x && y >= (obstacle.yMin ?? 0) && y < obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
       return true;
     }
   }

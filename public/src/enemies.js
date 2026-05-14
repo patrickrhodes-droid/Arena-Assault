@@ -431,6 +431,121 @@ export function createBoss(position, id = Math.random(), options = {}) {
   });
 }
 
+// Mini-boss: same model as boss at 0.5 scale, all weapons effective, no Phase 2
+export function createMiniBoss(position, id = Math.random(), options = {}) {
+  const group = new THREE.Group();
+
+  let mixer = null;
+  let walkAction = null;
+  let jumpAction = null;
+  let landingAction = null;
+  let kickAction = null;
+  let hitAction = null;
+  let deathAction = null;
+  let currentAction = null;
+  let flashPart = null;
+
+  const mechGltf = game.shared.mechGltf;
+  let mechBoundsRadius = 0;
+  let mechBoundsHeight = 0;
+  if (mechGltf) {
+    const model = cloneSkinnedScene(mechGltf.scene);
+    model.scale.setScalar(0.5);
+    model.rotation.y = Math.PI;
+    model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+    group.add(model);
+
+    const bbox = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    mechBoundsHeight = size.y;
+    mechBoundsRadius = Math.max(size.x, size.z) * 0.5;
+
+    mixer = new THREE.AnimationMixer(model);
+    const anims = mechGltf.animations ?? [];
+    const findClip = (...names) => {
+      for (const n of names) { const exact = anims.find((a) => a.name === n); if (exact) return exact; }
+      for (const n of names) { const fuzzy = anims.find((a) => new RegExp(n, "i").test(a.name)); if (fuzzy) return fuzzy; }
+      return null;
+    };
+    const walkClip    = findClip("Walk", "walk");
+    const jumpClip    = findClip("Jump", "jump");
+    const landingClip = findClip("Jump_Landing", "Landing", "land");
+    const kickClip    = findClip("Kick", "kick");
+    const hitClip     = findClip("HitRecieve_2", "HitReceive_2", "HitRecieve", "HitReceive", "Hit");
+    const deathClip   = findClip("Death", "Die");
+
+    if (walkClip)    { walkAction    = mixer.clipAction(walkClip);    walkAction.setLoop(THREE.LoopRepeat, Infinity); walkAction.play(); currentAction = walkAction; }
+    if (jumpClip)    { jumpAction    = mixer.clipAction(jumpClip);    jumpAction.setLoop(THREE.LoopOnce);    jumpAction.clampWhenFinished = false; }
+    if (landingClip) { landingAction = mixer.clipAction(landingClip); landingAction.setLoop(THREE.LoopOnce); landingAction.clampWhenFinished = false; }
+    if (kickClip)    { kickAction    = mixer.clipAction(kickClip);    kickAction.setLoop(THREE.LoopOnce);    kickAction.clampWhenFinished = false; }
+    if (hitClip)     { hitAction     = mixer.clipAction(hitClip);     hitAction.setLoop(THREE.LoopOnce);     hitAction.clampWhenFinished = false; }
+    if (deathClip)   { deathAction   = mixer.clipAction(deathClip);   deathAction.setLoop(THREE.LoopOnce);   deathAction.clampWhenFinished = true; }
+  } else {
+    // Fallback box mini-boss: scaled-down version of box boss
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.25, 0.6), enemyMaterials.bossBody);
+    torso.position.y = 1.175;
+    group.add(torso);
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(1.075, 0.6, 0.66), enemyMaterials.bossArmor);
+    chest.position.set(0, 1.225, 0.04);
+    group.add(chest);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.475, 0.475, 0.475), enemyMaterials.bossBody);
+    head.position.y = 2.075;
+    group.add(head);
+    flashPart = chest;
+  }
+
+  group.position.copy(position);
+  game.scene.add(group);
+
+  const hpMax = options.hp ?? Math.round(3 * (58 + game.wave * 12) * Math.pow(1.1, game.wave));
+  const hpBar = new THREE.Group();
+  const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
+  const hpFill = new THREE.Mesh(
+    game.shared.hpFgGeo,
+    new THREE.MeshBasicMaterial({ color: 0xff4400, side: THREE.DoubleSide }),
+  );
+  hpFill.position.set(-0.6, 0, 0.002);
+  hpBar.add(hpBarBg);
+  hpBar.add(hpFill);
+  game.scene.add(hpBar);
+
+  game.enemies.push({
+    id,
+    type: "miniboss",
+    group,
+    mixer,
+    walkAction,
+    jumpAction,
+    landingAction,
+    kickAction,
+    hitAction,
+    deathAction,
+    currentAction,
+    flashPart,
+    radius: mechBoundsRadius > 0 ? mechBoundsRadius : 0.725,
+    bossHeight: mechBoundsHeight > 0 ? mechBoundsHeight : 2.3,
+    hp: hpMax,
+    maxHp: hpMax,
+    spd: 13.8,
+    atkDmg: Math.round((100 + game.wave * 10) * 0.4),
+    atkTmr: 0,
+    swingTmr: 0,
+    windupTmr: 0,
+    flashTmr: 0,
+    walkT: 0,
+    velX: 0,
+    velZ: 0,
+    velY: 0,
+    stuckTmr: 0,
+    lastTrackX: position.x,
+    lastTrackZ: position.z,
+    hpBar,
+    hpFg: hpFill,
+    bossName: "TITAN SCOUT",
+  });
+}
+
 export function createSkeleton(position, id = Math.random()) {
   const group = new THREE.Group();
   let mixer = null;
@@ -884,7 +999,7 @@ function runOwnedEnemyAI(enemy) {
       12,
     );
   }
-  else if (enemy.type === "boss")     ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
+  else if (enemy.type === "boss" || enemy.type === "miniboss") ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
 }
 
 function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
@@ -1024,8 +1139,8 @@ function activateBossPhase2(enemy) {
 }
 
 function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
-  // ── Phase 2 transition at 50% HP ──────────────────────────────────────────
-  if (!enemy.bossPhase2 && enemy.hp <= enemy.maxHp * 0.5) {
+  // ── Phase 2 transition at 50% HP (regular boss only) ─────────────────────
+  if (enemy.type === "boss" && !enemy.bossPhase2 && enemy.hp <= enemy.maxHp * 0.5) {
     activateBossPhase2(enemy);
   }
   const atkFrequency = enemy.bossPhase2 ? 0.65 : 1.1; // faster attack rate in phase 2
@@ -1035,8 +1150,22 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
     pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + (enemy.bossEfx || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
     pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + (enemy.bossEfz || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
+
+    // Body-slam: damage any target the boss flies into while airborne
+    if (!enemy.bossBumpFired) {
+      const bdx = closest.pos.x - pos.x;
+      const bdz = closest.pos.z - pos.z;
+      const bumpDist = Math.sqrt(bdx * bdx + bdz * bdz);
+      const bumpDy   = Math.abs(closest.pos.y - pos.y);
+      if (bumpDist < enemy.radius + 1.5 && bumpDy < 3.5) {
+        applyMeleeDamage(enemy, closest, Math.round(enemy.atkDmg * 0.75));
+        enemy.bossBumpFired = true;
+      }
+    }
+
     if (pos.y <= 0) {
       pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false;
+      enemy.bossBumpFired = false;
       // Play landing animation on touchdown
       if (enemy.landingAction) {
         enemy.landingAction.reset();
@@ -1054,6 +1183,7 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   const prevX = pos.x;
   const prevZ = pos.z;
   const inAttackRange = dist < 7.8;
+  const playerElevated = closest.pos.y > pos.y + 2.5;
   const isSwinging = (enemy.swingTmr || 0) > 0;
   // Move toward player at full speed when out of range; half-speed during wind-up so boss can close the gap.
   if (!inAttackRange) {
@@ -1080,10 +1210,20 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   if (!inAttackRange && movedDistSq < 0.04) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
   else enemy.stuckTmr = 0;
 
-  if (!enemy.escaping && pos.y === 0 && !inAttackRange && (enemy.stuckTmr || 0) >= 0.9) {
+  // Frustration: boss is horizontally close but player is elevated out of melee reach
+  if (inAttackRange && playerElevated) {
+    enemy.bossFrustrationTmr = (enemy.bossFrustrationTmr || 0) + game.dt;
+  } else {
+    enemy.bossFrustrationTmr = Math.max(0, (enemy.bossFrustrationTmr || 0) - game.dt * 2);
+  }
+
+  const stuckJump = !inAttackRange && (enemy.stuckTmr || 0) >= 0.9;
+  const frustrationJump = inAttackRange && playerElevated && (enemy.bossFrustrationTmr || 0) >= 1.5;
+  if (!enemy.escaping && pos.y === 0 && (stuckJump || frustrationJump)) {
     enemy.bossEfx = ndx; enemy.bossEfz = ndz;
     enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
     enemy.stuckTmr = 0;
+    enemy.bossFrustrationTmr = 0;
     // Clear attack timers so a ghost hit can't fire after landing somewhere new.
     enemy.windupTmr = 0; enemy.swingTmr = 0;
     // Switch to jump animation while airborne
@@ -1197,8 +1337,8 @@ export function handleEnemyDamaged(data) {
   if (!enemy) return;
   enemy.hp -= data.damage;
   enemy.flashTmr = 0.1;
-  // Boss hit-reaction: play HitRecieve_2 briefly without breaking the AI loop
-  if (enemy.type === "boss" && enemy.hitAction && !enemy.escaping && enemy.hp > 0) {
+  // Boss/mini-boss hit-reaction: play HitRecieve_2 briefly without breaking the AI loop
+  if ((enemy.type === "boss" || enemy.type === "miniboss") && enemy.hitAction && !enemy.escaping && enemy.hp > 0) {
     if ((enemy.hitCooldown || 0) <= 0) {
       enemy.hitAction.reset();
       crossfadeToAction(enemy, enemy.hitAction, 0.05);

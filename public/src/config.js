@@ -92,6 +92,20 @@ export const BOSS_TUNING = {
   attackDamagePerWave: 10,
 };
 
+// Mini-boss ("Titan Scout"): half-size version of the boss, spawns from wave 8+
+// HP = 3× a wave-scaled soldier. Speed 15% above boss. Damage 40% of boss.
+// Vulnerable to all weapons (unlike boss which needs pistol/sword/grapple).
+export const MINIBOSS_TUNING = {
+  moveSpeed: 12 * 1.15,            // 13.8 units/s
+  attackDamageBase: 40,            // 40% of boss base (100 × 0.4)
+  attackDamagePerWave: 4,          // 40% of boss per-wave scaling (10 × 0.4)
+  scale: 0.5,
+  spawnChance: 0.08,               // 8% chance per enemy slot in eligible waves
+  maxPerWave: 2,
+  scoreValue: 750,
+  xp: 75,
+};
+
 export const WEAPON_DEFS = {
   pistol: {
     label: "SERVICE PISTOL",

@@ -1,0 +1,26 @@
+{
+  "Patrick": {
+    "kills": 125,
+    "bossKills": 2,
+    "matchesPlayed": 5,
+    "wins": 0,
+    "pvpWins": 0,
+    "ffaWins": 0,
+    "bestWave": 7,
+    "bestScore": 1450,
+    "deaths": 5,
+    "xp": 1320
+  },
+  "Patrick1": {
+    "kills": 0,
+    "bossKills": 0,
+    "matchesPlayed": 0,
+    "wins": 0,
+    "pvpWins": 0,
+    "ffaWins": 0,
+    "bestWave": 0,
+    "bestScore": 0,
+    "deaths": 0,
+    "xp": 0
+  }
+}
