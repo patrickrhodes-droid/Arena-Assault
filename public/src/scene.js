@@ -173,7 +173,7 @@ export function initScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap; // faster than PCFSoft; indistinguishable at play distance
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // softer, more realistic shadow edges
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.28;
   game.dom.gameContainer.appendChild(renderer.domElement);

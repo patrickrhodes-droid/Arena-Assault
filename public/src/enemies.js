@@ -690,7 +690,7 @@ export function removeEnemy(index) {
     enemy.mixer.stopAllAction();
   } else if (enemy.type === "soldier" && game.shared.swatGltf) {
     playSwatDeathEffect(enemy.group.position, enemy.group.rotation.y);
-  } else if (enemy.type === "boss" && enemy.deathAction && enemy.mixer) {
+  } else if ((enemy.type === "boss" || enemy.type === "miniboss") && enemy.deathAction && enemy.mixer) {
     playBossDeathEffect(enemy);
   }
 
@@ -730,13 +730,10 @@ export function updateEnemies() {
   const syncBatch = [];
 
   game.enemies.forEach((enemy) => {
-    // Boss hit-reaction timer (runs on every client so the animation plays everywhere)
-    if (enemy.type === "boss") {
+    // Boss/mini-boss hit-reaction timer + walk fallback (runs on every client)
+    if (enemy.type === "boss" || enemy.type === "miniboss") {
       if ((enemy.hitCooldown || 0) > 0) enemy.hitCooldown -= game.dt;
       if ((enemy.hitTmr || 0) > 0) enemy.hitTmr -= game.dt;
-      // Fall-back to Walk whenever the boss is upright, not mid-attack, and the
-      // current action has finished. This prevents the mech "gliding" after a
-      // one-shot clip (hit/kick/landing) clamps and stops driving the skeleton.
       if (
         enemy.walkAction
         && enemy.currentAction !== enemy.walkAction
@@ -756,8 +753,9 @@ export function updateEnemies() {
         syncBatch.push({ id: enemy.id, x: p.x, y: p.y, z: p.z, rot: enemy.group.rotation.y, walkT: enemy.walkT || 0 });
       }
     } else {
-      const lerpXZ = enemy.type === "boss" ? 25 : 15;
-      const lerpY  = enemy.type === "boss" ? 20 : 12;
+      const isBossType = enemy.type === "boss" || enemy.type === "miniboss";
+      const lerpXZ = isBossType ? 25 : 15;
+      const lerpY  = isBossType ? 20 : 12;
       if (enemy.serverX !== undefined) {
         enemy.group.position.x += (enemy.serverX - enemy.group.position.x) * Math.min(1, lerpXZ * game.dt);
         enemy.group.position.z += (enemy.serverZ - enemy.group.position.z) * Math.min(1, lerpXZ * game.dt);
@@ -768,8 +766,8 @@ export function updateEnemies() {
     }
     updateHealthBar(enemy);
     if (enemy.mixer) {
-      // Bosses are always animated; smaller enemies skip past 30 units to save cycles
-      if (enemy.type === "boss") {
+      // Boss/mini-boss always animated; smaller enemies skip past 30 units to save cycles
+      if (enemy.type === "boss" || enemy.type === "miniboss") {
         enemy.mixer.update(game.dt);
       } else {
         const camDx = enemy.group.position.x - game.camera.position.x;
@@ -1294,11 +1292,12 @@ export function updateWaves() {
 
 
 function isCampaignBossWave() {
-  return game.gameMode === 'campaign' && game.wave === 7;
+  return game.gameMode === 'campaign' && game.wave === (game.campaignMapStartWave || 0) + 7;
 }
 
 export function announceWave() {
   if (!game.dom?.waveAnnounce) return;
+  if (game.gameMode === 'campaign') return; // campaign has no wave banner
   const title = game.dom.waveAnnounce.querySelector(".wa-title");
   const subtitle = game.dom.waveAnnounce.querySelector(".wa-sub");
   const isCampaign = game.gameMode === 'campaign';

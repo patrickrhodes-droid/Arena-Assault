@@ -389,6 +389,7 @@ export function initNetworking(actions) {
     game.waveState = data.state;
     game.waveTmr = data.tmr;
     if (data.gameMode) game.gameMode = data.gameMode;
+    if (typeof data.campaignMapStartWave === "number") game.campaignMapStartWave = data.campaignMapStartWave;
     if (data.state === "SPAWNING" && prevState !== "SPAWNING") {
       game.waveSpawnedTotal = 0;
     }

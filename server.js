@@ -608,7 +608,7 @@ function broadcastPauseState() {
 // ── Server-side game state ────────────────────────────────────────────────────
 
 const CAMPAIGN_MAP_ORDER = ['arena', 'desert', 'city', 'blacksite'];
-const CAMPAIGN_MAX_WAVE = 7;
+const CAMPAIGN_MAX_WAVE = 10; // waves per map before transitioning; boss at wave 7 of each block
 
 // Weapon that drops after the last enemy of each campaign wave (waves 1-7)
 const CAMPAIGN_WAVE_WEAPON_DROP = {
@@ -620,6 +620,7 @@ const gameState = {
     mode: null,
     gameMode: 'endless',  // 'campaign' | 'endless'
     campaignMapIndex: 0,
+    campaignMapStartWave: 0, // absolute wave number at the start of the current campaign map
     // Players (by socket.id) who have clicked DEPLOY in the current campaign
     // cutscene. Reset on every cutscene start; when its size matches the
     // connected-player count, the server broadcasts campaignAllReady.
@@ -667,6 +668,7 @@ function resetGameState(mode, startingWave, gameMode = 'endless', campaignMapInd
     gameState.mode = mode;
     gameState.gameMode = gameMode;
     gameState.campaignMapIndex = campaignMapIndex;
+    gameState.campaignMapStartWave = 0;
     gameState.map = selectedMap;
     gameState.wave = startingWave > 1 ? startingWave - 1 : 0;
     gameState.waveState = 'WAIT';
@@ -856,7 +858,7 @@ function spawnEnemy() {
     const miniBossEligible = w >= 8 || (gameState.gameMode === 'campaign' && selectedMap !== 'arena');
     if (miniBossEligible) {
         const aliveMinis = gameState.enemies.filter(e => e.type === 'miniboss').length;
-        if (aliveMinis < 2 && Math.random() < 0.08) {
+        if (aliveMinis < 2 && Math.random() < 0.16) {
             const mb = makeMiniBoss(cx, cz);
             mb.ownerId = getClosestPlayerId(cx, cz) || Object.keys(players)[0] || null;
             gameState.enemies.push(mb);
@@ -937,30 +939,36 @@ function reviveAllPlayers() {
 }
 
 function finishWave() {
-    if (gameState.gameMode === 'campaign' && gameState.wave >= CAMPAIGN_MAX_WAVE) {
-        // Campaign complete — transition to next map after a short delay
+    if (gameState.gameMode === 'campaign' && gameState.wave >= gameState.campaignMapStartWave + CAMPAIGN_MAX_WAVE) {
+        // Campaign map complete — transition to next map after a short delay
         gameState.waveState = 'WAIT';
         gameState.waveTmr = 99999; // hold until transition fires
-        io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 4, gameMode: 'campaign' });
+        io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 4, gameMode: 'campaign', campaignMapStartWave: gameState.campaignMapStartWave });
         setTimeout(() => handleCampaignWaveComplete(), 3500);
         return;
     }
     gameState.waveState = 'WAIT';
     gameState.waveTmr = 2.5;
-    io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 2.5, gameMode: gameState.gameMode });
+    io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 2.5, gameMode: gameState.gameMode, campaignMapStartWave: gameState.campaignMapStartWave });
 }
 
 function isBossWave() {
-    if (gameState.gameMode === 'campaign') return gameState.wave === CAMPAIGN_MAX_WAVE;
+    if (gameState.gameMode === 'campaign') {
+        // Boss on the 7th wave of each map's 10-wave block; scaling follows endless formula
+        return gameState.wave === gameState.campaignMapStartWave + 7;
+    }
     // Endless: first boss at wave 7, then every 5 waves (7, 12, 17, 22...)
     return gameState.wave >= 7 && (gameState.wave - 7) % 5 === 0;
 }
 
-// Guaranteed mini-boss: endless wave 8; campaign wave 1 on every map after arena
+// Guaranteed mini-boss: endless wave 8; first wave of each post-arena campaign map
 function shouldGuaranteeMiniBoss() {
     if (isBossWave()) return false;
     if (gameState.gameMode === 'endless')  return gameState.wave === 8;
-    if (gameState.gameMode === 'campaign') return gameState.wave === 1 && selectedMap !== 'arena';
+    if (gameState.gameMode === 'campaign') {
+        const relWave = gameState.wave - gameState.campaignMapStartWave;
+        return relWave === 1 && selectedMap !== 'arena';
+    }
     return false;
 }
 
@@ -993,7 +1001,7 @@ function tickWave(dt) {
             gameState.spawnTmr = 0;
             gameState.waveState = 'SPAWNING';
         }
-        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode: gameState.gameMode });
+        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode: gameState.gameMode, campaignMapStartWave: gameState.campaignMapStartWave });
 
     } else if (gameState.waveState === 'SPAWNING') {
         gameState.spawnTmr -= dt;
@@ -1012,7 +1020,7 @@ function tickWave(dt) {
         }
         if (gameState.enemiesToSpawn <= 0 && gameState.skeletonGroupsToSpawn <= 0) {
             gameState.waveState = 'ACTIVE';
-            io.emit('syncWave', { wave: gameState.wave, state: 'ACTIVE', tmr: 0, gameMode: gameState.gameMode });
+            io.emit('syncWave', { wave: gameState.wave, state: 'ACTIVE', tmr: 0, gameMode: gameState.gameMode, campaignMapStartWave: gameState.campaignMapStartWave });
         }
 
     } else if (gameState.waveState === 'ACTIVE') {
@@ -1046,14 +1054,13 @@ function checkCampaignAllReady() {
 }
 
 function handleCampaignWaveComplete() {
-    // Advance to next map after wave 7 in campaign mode
     gameState.campaignMapIndex = (gameState.campaignMapIndex + 1) % CAMPAIGN_MAP_ORDER.length;
     const nextMap = CAMPAIGN_MAP_ORDER[gameState.campaignMapIndex];
     selectedMap = nextMap;
     gameState.map = nextMap;
     resetCampaignReady();
-    // Reset waves back to 0 so the next map starts at wave 1
-    gameState.wave = 0;
+    // Waves do NOT reset — they carry over so boss scaling continues to escalate
+    gameState.campaignMapStartWave = gameState.wave;
     gameState.waveState = 'WAIT';
     gameState.waveTmr = 4;
     gameState.enemies = [];
@@ -1062,7 +1069,7 @@ function handleCampaignWaveComplete() {
     reviveAllPlayers();
     loadMapJson(nextMap).catch(() => {});
     io.emit('campaignNextMap', { map: nextMap, campaignMapIndex: gameState.campaignMapIndex });
-    io.emit('syncWave', { wave: 0, state: 'WAIT', tmr: 4, gameMode: 'campaign' });
+    io.emit('syncWave', { wave: gameState.wave, state: 'WAIT', tmr: 4, gameMode: 'campaign', campaignMapStartWave: gameState.campaignMapStartWave });
 }
 
 // ── Enemy damage + kill ───────────────────────────────────────────────────────
@@ -1702,7 +1709,7 @@ io.on('connection', (socket) => {
         });
         io.emit('invincibilityChanged', { enabled: gameState.invincibility });
         // Send initial wave state immediately so clients don't show "Wave 0".
-        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode });
+        io.emit('syncWave', { wave: gameState.wave, state: gameState.waveState, tmr: gameState.waveTmr, gameMode, campaignMapStartWave: gameState.campaignMapStartWave });
         broadcastPauseState();
     });
 

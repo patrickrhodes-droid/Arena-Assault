@@ -221,13 +221,23 @@ export function pollGamepad(actions) {
   }
 
   // ── RT (button 7) → fire ─────────────────────────────────────────────────
-  const rtDown = (gp.buttons[7]?.value ?? 0) > TRIGGER_THRESHOLD;
-  if (rtDown && !prevRt) game.mouseClicked = true;
-  game.mouseDown = rtDown;
+  // Only override mouse state when the controller is actively being used.
+  // Without this guard, an idle connected controller resets mouseDown/isAiming
+  // every frame, breaking keyboard+mouse input while a pad is plugged in.
+  const rtVal = gp.buttons[7]?.value ?? 0;
+  const ltVal = gp.buttons[6]?.value ?? 0;
+  const rtDown = rtVal > TRIGGER_THRESHOLD;
+  const ltDown = ltVal > TRIGGER_THRESHOLD;
+  const anyStickInput = Math.abs(lx) > DEADZONE || Math.abs(ly) > DEADZONE ||
+                        Math.abs(dead(gp.axes[2] ?? 0)) > 0 || Math.abs(dead(gp.axes[3] ?? 0)) > 0;
+  const gpActiveNow = anyStickInput || rtDown || ltDown || prevRt ||
+                      gp.buttons.some((b) => b?.pressed);
+  if (gpActiveNow) {
+    if (rtDown && !prevRt) game.mouseClicked = true;
+    game.mouseDown = rtDown;
+    game.isAiming  = ltDown;
+  }
   prevRt = rtDown;
-
-  // ── LT (button 6) → aim ──────────────────────────────────────────────────
-  game.isAiming = (gp.buttons[6]?.value ?? 0) > TRIGGER_THRESHOLD;
 
   // ── A (button 0) → jump ──────────────────────────────────────────────────
   if ((gp.buttons[0]?.pressed ?? false) && !prev[0]) actions.tryJump();

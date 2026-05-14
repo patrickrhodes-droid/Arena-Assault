@@ -42,6 +42,7 @@ export const game = {
   camDist: 8,
   sens: 0.003,
   gpSens: 3.0,
+  campaignMapStartWave: 0,
   gpForward: false,
   gpBack: false,
   gpLeft: false,
