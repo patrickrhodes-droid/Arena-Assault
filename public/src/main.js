@@ -93,6 +93,7 @@ const actions = {
       }
       game.dom.pause.style.display = "none";
       game.dom.hud.style.display = "block";
+      syncChatVisibility();
     }
     tryPointerLock();
   },
@@ -154,6 +155,7 @@ const actions = {
         game.state = "PLAYING";
         game.dom.pause.style.display = "none";
         game.dom.hud.style.display = "block";
+        syncChatVisibility();
       }
       game.dom.clickPrompt.style.display = "none";
       game.socket?.emit("playerPaused", { paused: false });
@@ -168,6 +170,7 @@ const actions = {
       game.state = "PAUSED";
       game.dom.pause.style.display = "flex";
       game.socket?.emit("playerPaused", { paused: true });
+      syncChatVisibility();
     }
     if (game.state === "PLAYING" || game.state === "PAUSED") {
       game.dom.clickPrompt.style.display = "block";
@@ -244,6 +247,15 @@ function hideAllLobbyScreens() {
   });
 }
 
+// Hides the floating chat panel during active gameplay (PLAYING/DOWNED/
+// SPECTATING) and shows it elsewhere (MENU/PAUSED/CUTSCENE/GAMEOVER).
+export function syncChatVisibility() {
+  const panel = game.dom?.lobbyChatPanel;
+  if (!panel) return;
+  const hideStates = new Set(["PLAYING", "DOWNED", "SPECTATING"]);
+  panel.classList.toggle("hidden-chat", hideStates.has(game.state));
+}
+
 async function startGame() {
   game.mode = "COOP";
   game.state = "PLAYING";
@@ -251,8 +263,7 @@ async function startGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
   if (game.dom.lobbyCanvas)  game.dom.lobbyCanvas.style.display   = "none";
-  // Chat panel stays visible during gameplay too — messages from other players
-  // (still in lobby or mid-match) should never go un-seen.
+  syncChatVisibility();
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
@@ -297,8 +308,7 @@ async function startPvPGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  // Chat panel stays visible during gameplay too — messages from other players
-  // (still in lobby or mid-match) should never go un-seen.
+  syncChatVisibility();
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -351,8 +361,7 @@ async function startFFAGame() {
   hideAllLobbyScreens();
   if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
   if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  // Chat panel stays visible during gameplay too — messages from other players
-  // (still in lobby or mid-match) should never go un-seen.
+  syncChatVisibility();
   await rebuildArena(game.selectedMap);
   game.dom.gameOver.style.display = "none";
   game.dom.pause.style.display = "none";
@@ -426,6 +435,7 @@ function pickFurthestCorner() {
 function endCompetitiveMatch() {
   game.mode = "COOP";
   game.state = "GAMEOVER";
+  syncChatVisibility();
   game.audio.stopBackgroundMusic();
   game.isAiming = false;
   game.isReloading = false;
@@ -752,6 +762,7 @@ function respawnPlayerLocal(emitToServer = true) {
 
 function gameOver(rankings = null) {
   game.state = "GAMEOVER";
+  syncChatVisibility();
   game.audio.stopBackgroundMusic();
   game.isAiming = false;
   game.isReloading = false;
@@ -882,9 +893,13 @@ export function enterCutsceneMode() {
   // Clear enemies and bullets from the scene so nothing is moving
   cleanupGame();
   game.state = "CUTSCENE";
+  syncChatVisibility();
 }
 
 export function exitCutsceneMode() {
   // Restored to PLAYING by startGame() / rebuildArena flow
-  if (game.state === "CUTSCENE") game.state = "PLAYING";
+  if (game.state === "CUTSCENE") {
+    game.state = "PLAYING";
+    syncChatVisibility();
+  }
 }
