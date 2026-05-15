@@ -20,7 +20,7 @@ const app = express();
 const http = createServer(app);
 const io = new Server(http);
 
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 const publicDir = join(__dirname, 'public');
 
 // ── Network utilities ─────────────────────────────────────────────────────────

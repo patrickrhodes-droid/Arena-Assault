@@ -1,26 +1,60 @@
 'use strict';
 
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell, dialog, utilityProcess } = require('electron');
 const path = require('path');
-const { pathToFileURL } = require('url');
 const { get } = require('http');
+const { createServer: createTcpServer } = require('net');
 const fs = require('fs');
 
-const PORT = 3001;
 let mainWindow = null;
+let serverChild = null;
+let PORT = 3001;
+
+// Try preferred port first; fall back to an OS-assigned free port.
+function findFreePort(preferred) {
+  return new Promise((resolve) => {
+    const srv = createTcpServer();
+    srv.listen(preferred, '127.0.0.1', () => {
+      const p = srv.address().port;
+      srv.close(() => resolve(p));
+    });
+    srv.on('error', () => {
+      const srv2 = createTcpServer();
+      srv2.listen(0, '127.0.0.1', () => {
+        const p = srv2.address().port;
+        srv2.close(() => resolve(p));
+      });
+    });
+  });
+}
 
 async function startServer() {
   const appRoot = app.isPackaged ? app.getAppPath() : __dirname;
-  process.chdir(appRoot);
-
-  // Redirect persistent data (leaderboard, career stats) to a user-writable
-  // directory so it survives app updates and doesn't hit Program Files ACLs.
   const userData = app.getPath('userData');
   fs.mkdirSync(userData, { recursive: true });
-  process.env.ARENA_DATA_DIR = userData;
+
+  PORT = await findFreePort(3001);
 
   const serverPath = path.join(appRoot, 'server.js');
-  await import(pathToFileURL(serverPath).href);
+  serverChild = utilityProcess.fork(serverPath, [], {
+    env: { ...process.env, PORT: String(PORT), ARENA_DATA_DIR: userData },
+    cwd: appRoot,
+    stdio: 'pipe',
+  });
+
+  if (serverChild.stdout) serverChild.stdout.on('data', (d) => process.stdout.write(d));
+  if (serverChild.stderr) serverChild.stderr.on('data', (d) => process.stderr.write(d));
+
+  serverChild.on('exit', (code) => {
+    serverChild = null;
+    if (mainWindow) {
+      dialog.showErrorBox(
+        'Arena Assault — server crashed',
+        `The game server stopped unexpectedly (exit code ${code ?? 'unknown'}).\n\nPlease restart the application.`,
+      );
+      mainWindow.close();
+    }
+  });
 }
 
 // Poll localhost:PORT until it responds (max ~10 s) instead of a fixed sleep.
@@ -29,7 +63,7 @@ function waitForServer(port, maxMs = 10000, intervalMs = 200) {
     const deadline = Date.now() + maxMs;
     function attempt() {
       get(`http://localhost:${port}/`, (res) => {
-        res.resume(); // drain response
+        res.resume();
         resolve();
       }).on('error', () => {
         if (Date.now() >= deadline) {
@@ -81,8 +115,9 @@ app.whenReady().then(async () => {
   } catch (err) {
     await dialog.showErrorBox(
       'Arena Assault — startup error',
-      `The game server failed to start.\n\n${err.message}\n\nMake sure port ${PORT} is not already in use by another application.`,
+      `The game server failed to start.\n\n${err.message}\n\nMake sure no other application is blocking the port.`,
     );
+    if (serverChild) { serverChild.kill(); serverChild = null; }
     app.quit();
     return;
   }
@@ -90,4 +125,7 @@ app.whenReady().then(async () => {
   createWindow();
 });
 
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => {
+  if (serverChild) { serverChild.kill(); serverChild = null; }
+  app.quit();
+});
