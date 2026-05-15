@@ -857,7 +857,7 @@ function makeBoss(x, z, hpMult) {
 function makeMiniBoss(x, z) {
     const w = gameState.wave;
     // HP = 3× a wave-scaled soldier (58 + wave*12) × 1.1^wave
-    const hp = Math.round(3 * (58 + w * 12) * Math.pow(1.1, w));
+    const hp = Math.round(6 * (58 + w * 12) * Math.pow(1.1, w));
     return Object.assign(baseEnemy('miniboss', x, z), {
         hp, maxHp: hp, spd: 13.8,
         atkDmg: Math.round((100 + w * 10) * 0.4),
