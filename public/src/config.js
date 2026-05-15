@@ -85,7 +85,7 @@ export const SOLDIER_TUNING = {
 };
 
 export const BOSS_TUNING = {
-  baseHp: 3600,
+  baseHp: 2700,
   hpScale: 1.1,
   moveSpeed: 12,
   attackDamageBase: 100,

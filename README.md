@@ -21,6 +21,21 @@ or double-click **Startserver.bat** on Windows.
 
 To test multiplayer locally, open multiple browser tabs against the same server.
 
+## Desktop build (Electron)
+
+The game also ships as a standalone Windows desktop app. The Electron wrapper spawns the same `server.js` internally and points a native window at `http://localhost:3001`, so no browser is needed.
+
+```bash
+npm run electron        # run in dev (no installer — same code path as the packaged app)
+npm run dist            # build a Windows NSIS installer in ./dist
+npm run dist:mac        # macOS .dmg
+npm run dist:linux      # Linux AppImage
+```
+
+`npm run electron` reads live from `public/` — edit a file, press **Ctrl+R** in the window, no rebuild required. `npm run dist` performs a full repackage every run; `dist/` is overwritten in place, so there's no need to delete it between builds. The Electron runtime itself is cached in `%LOCALAPPDATA%\electron-builder\Cache` and won't be re-downloaded.
+
+Persistent data (leaderboard, career stats) is redirected to the user-writable Electron `userData` folder when running packaged, so it survives app updates and avoids Program Files ACL issues.
+
 ## Editors
 
 ### Map editor
@@ -77,7 +92,7 @@ The server PC sees a **COPY JOIN LINK** button in the lobby that copies this add
 
 The lobby uses two screens:
 
-1. **OPERATOR** — Enter a name and pick your character. A live chat box lets players communicate before the match. Click **READY UP** when set. Once every player has readied, the host moves to the next screen automatically.
+1. **OPERATOR** — Enter a name and pick your character. A live chat box lets players communicate before the match. Click **READY UP** when set. Once every player has readied, the host moves to the next screen automatically. A **← BACK** button (or **B** on controller) returns to the LAN list.
 2. **MODE & MAP** — The host picks a game mode (Campaign / Endless / Gun Game / Free For All) and, for non-campaign modes, selects a map. All players see the selection update in real-time. Host clicks **START MISSION** (co-op), **START GUN GAME**, or **START FREE FOR ALL**. PvP modes require 2+ players.
 
 **Host controls** (bottom-left of the lobby once joined): Start at Wave, Invincibility, Room Password, Copy Join Link.
@@ -147,7 +162,7 @@ Full controller support — no mouse or keyboard required once the game is launc
 | Start | Pause / Resume settings menu |
 | D-pad / Left Stick | Navigate menus (up+left = back, down+right = forward) |
 | A | Confirm / activate focused element |
-| B | Back / resume when paused |
+| B | Back / resume when paused — also returns to the LAN list from the operator/ready-up screen |
 
 ## Weapons
 
@@ -232,7 +247,7 @@ In both PvP modes, firing the Grapple Hook at another player will:
 | Dog | Wave 3+ (Endless) / Wave 5+ (Campaign) | Fast melee rush. Chance increases each wave up to 55% in Endless. |
 | Soldier | Wave 6+ (Endless) / Wave 3+ (Campaign) | Ranged. Keeps distance, shoots at players. HP and fire rate scale with wave. |
 | **Titan Scout** (mini-boss) | **Wave 8+ (Endless) / Dust Bowl onwards (Campaign)** | Half-size version of the Titan Brute. Same attack patterns but 15% faster (13.8 u/s). 40% of boss damage. HP ≈ 3× a wave-scaled soldier. **All weapons deal full damage** — no immunity like the full boss. Rare: 8% chance per enemy slot, max 1–2 per wave. Drops 750 score and 75 XP. |
-| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 50% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck or when player is elevated. **Body-slam during jump**: deals 75% melee damage if the boss passes through a player while airborne. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. **Sword deals 1.5× (150%) damage to the boss.** |
+| Titan Brute (boss) | Every 5th wave (Endless) / Wave 7 (Campaign) | Large melee boss with club attack. Two phases: Phase 1 (full HP) — 12 u/s speed, 1.1 s attack cooldown. Phase 2 (≤ 33% HP) — body glows orange-red, speed rises to 18.6 u/s, attack cooldown drops to 0.65 s. Phase 1 takes ~2/3 of the bar, phase 2 the last ~1/3. Telegraphed wind-up before each swing. Heavy knockback, jump-escape when stuck or when player is elevated. **Body-slam during jump**: deals 75% melee damage if the boss passes through a player while airborne. Multiple bosses from wave 10 onward (Endless only). Only the Pistol, Sword, Grapple, and Bazooka damage the Titan Brute. **Sword deals 1.5× (150%) damage to the boss.** |
 
 The Titan Brute attack has a 7.8 unit reach and swings every 1.1 s (phase 1) or 0.65 s (phase 2). **Aiming down sights reduces all weapon recoil to 25%** (does not affect the Bazooka).
 
@@ -302,6 +317,8 @@ Press **Esc** (or **Start** on controller) in-game to pause. The pause panel has
 - **HUD** — Crosshair style selector (Default / Dot / Cross / Plus / Circle) and Damage Numbers toggle.
 
 Controller players can navigate the pause menu with D-pad / left stick, open sections with **A**, adjust sliders with D-pad left/right, and resume with **Start** or **B**.
+
+The same panel is reachable from the lobby via the **⚙ SETTINGS** button on each lobby screen. In lobby mode the Resume / Give Up / Exit-to-Menu buttons are hidden, but **Fullscreen**, **View (third/first person)**, and **Career Stats** stay available so they can be toggled before a match.
 
 ## Leaderboard
 
@@ -419,7 +436,8 @@ Mini-boss tuning: `public/src/config.js` -> `MINIBOSS_TUNING`.
 
 | Stat | Current value |
 |---|---:|
-| HP | `round(3600 * 1.1^wave * hpMult)` |
+| HP | `round(2700 * 1.1^wave * hpMult)` |
+| Phase 2 trigger | HP ≤ `maxHp / 3` |
 | Move speed | 12 |
 | Melee damage | `100 + wave * 10` |
 | Attack reach | 7.8 |

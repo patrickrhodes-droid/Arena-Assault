@@ -1,5 +1,8 @@
 {
   "name": "arena-assault",
+  "version": "1.0.0",
+  "description": "Arena Assault",
+  "author": "prs16",
   "private": true,
   "type": "module",
   "main": "electron-main.cjs",

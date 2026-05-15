@@ -294,8 +294,16 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 
       for (let enemyIndex = game.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
         const enemy = game.enemies[enemyIndex];
-        const enemyHeight = enemy.type === "soldier" ? 1.2 : enemy.type === "dog" ? 0.6 : 2.4;
-        const hitRadiusSq = enemy.type === "boss" ? 5.2 : enemy.type === "skeleton" ? 2.2 : 1.0;
+        const enemyHeight =
+          enemy.type === "soldier" ? 1.2 :
+          enemy.type === "dog" ? 0.6 :
+          enemy.type === "miniboss" ? 1.15 :
+          2.4;
+        const hitRadiusSq =
+          enemy.type === "boss" ? 5.2 :
+          enemy.type === "miniboss" ? 1.6 :
+          enemy.type === "skeleton" ? 2.2 :
+          1.0;
         _enemyCenterVec.set(
           enemy.group.position.x,
           enemy.group.position.y + enemyHeight,

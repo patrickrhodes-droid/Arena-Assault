@@ -1137,8 +1137,10 @@ function activateBossPhase2(enemy) {
 }
 
 function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
-  // ── Phase 2 transition at 50% HP (regular boss only) ─────────────────────
-  if (enemy.type === "boss" && !enemy.bossPhase2 && enemy.hp <= enemy.maxHp * 0.5) {
+  // ── Phase 2 transition (regular boss only) ───────────────────────────────
+  // Triggers at 1/3 HP so phase 1 takes ~2/3 of the bar (same damage as the
+  // previous 50% slice of a larger bar) and phase 2 takes the remaining 1/3.
+  if (enemy.type === "boss" && !enemy.bossPhase2 && enemy.hp <= enemy.maxHp / 3) {
     activateBossPhase2(enemy);
   }
   const atkFrequency = enemy.bossPhase2 ? 0.65 : 1.1; // faster attack rate in phase 2

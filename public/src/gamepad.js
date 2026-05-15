@@ -92,6 +92,16 @@ function navigateMenus(gp) {
     }
   }
 
+  // B (no modal open) on the operator/ready-up screen → back to LAN list.
+  if (bBtn) {
+    const playerScreen = document.getElementById("screen-player");
+    if (playerScreen?.classList.contains("active")) {
+      document.getElementById("back-to-connect-btn")?.click();
+      menuNavCooldown = MENU_NAV_REPEAT;
+      return;
+    }
+  }
+
   const container  = getMenuContainer();
   const focusables = getFocusables(container);
   if (focusables.length === 0) return;

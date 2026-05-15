@@ -356,10 +356,9 @@ canvas {
 .lobby-settings-trigger:hover { color: var(--accent); }
 
 /* ── Pause panel in lobby/settings mode ── */
+/* Hide only the truly in-game buttons; fullscreen / view / career are useful
+   from the lobby too. */
 #pause-panel.lobby-mode #resume-btn,
-#pause-panel.lobby-mode #view-btn,
-#pause-panel.lobby-mode #fullscreen-btn,
-#pause-panel.lobby-mode #pause-career-btn,
 #pause-panel.lobby-mode #pause-give-up-btn,
 #pause-panel.lobby-mode #exit-btn { display: none; }
 
@@ -1341,7 +1340,7 @@ canvas {
 #pause-menu {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 220;
   display: none;
   flex-direction: column;
   align-items: center;
@@ -2284,10 +2283,29 @@ canvas {
   background: rgba(0, 204, 170, 0.15);
   border-color: var(--accent);
 }
+.back-btn {
+  margin-top: 6px;
+  padding: 6px 14px;
+  background: rgba(4,9,16,0.85);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.back-btn:hover,
+.back-btn:focus {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--text);
+  color: var(--text);
+  outline: none;
+}
 #career-stats-modal {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 240;
   background: rgba(0,0,0,0.78);
   align-items: center;
   justify-content: center;

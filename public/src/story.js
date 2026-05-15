@@ -535,6 +535,14 @@ export function showPreGameCharSelect() {
     if (banner) banner.style.display = 'none';
     if (waitSt) waitSt.style.display = 'none';
 
+    // Hide the lobby screens behind the overlay so the map/operator UI doesn't
+    // bleed through the (intentionally semi-transparent) cutscene background.
+    ["screen-player", "screen-map"].forEach((id) => {
+      document.getElementById(id)?.classList.remove("active");
+    });
+    const lobbyBg = document.getElementById("lobby-bg");
+    if (lobbyBg) lobbyBg.style.display = "none";
+
     ov.style.display = 'flex';
     void ov.offsetWidth;
     ov.classList.add('show');

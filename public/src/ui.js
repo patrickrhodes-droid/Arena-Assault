@@ -311,6 +311,11 @@ export function bindConnectScreen() {
 
   playBtn?.addEventListener('click', () => showScreen('screen-player'));
 
+  // Back button on the operator/ready-up screen → return to the LAN list.
+  document.getElementById('back-to-connect-btn')?.addEventListener('click', () => {
+    showScreen('screen-connect');
+  });
+
   function renderServer(s) {
     const stateLabel = s.state === 'IN GAME' ? `Wave ${s.wave}` : 'LOBBY';
     const mapLabel   = s.map ? ` · ${s.map.toUpperCase()}` : '';
