@@ -2,12 +2,61 @@
   "name": "arena-assault",
   "private": true,
   "type": "module",
+  "main": "electron-main.cjs",
   "scripts": {
     "start": "node server.js",
-    "editor": "node map-editor-server.js"
+    "electron": "electron .",
+    "editor": "node map-editor-server.js",
+    "dist": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
   },
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.arenaassault.game",
+    "productName": "Arena Assault",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-main.cjs",
+      "server.js",
+      "public/**/*",
+      "package.json",
+      "!public/editor/**/*",
+      "!**/*.md",
+      "!*.bat",
+      "!dist/**/*",
+      "!.git/**/*",
+      "!.claude/**/*",
+      "!careerStats.json",
+      "!leaderboard.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

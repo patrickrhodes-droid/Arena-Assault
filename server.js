@@ -124,7 +124,10 @@ app.get('/arenatest.html', (req, res) => res.redirect('/'));
 
 // ── Persistent leaderboard ────────────────────────────────────────────────────
 
-const LEADERBOARD_FILE = join(__dirname, 'leaderboard.json');
+// When running inside Electron, ARENA_DATA_DIR points to the user's AppData
+// folder so writes don't hit Program Files permission restrictions.
+const _dataDir = process.env.ARENA_DATA_DIR || __dirname;
+const LEADERBOARD_FILE = join(_dataDir, 'leaderboard.json');
 const LEADERBOARD_MAX = 20; // keep top 20 entries per mode
 
 function loadLeaderboard() {
@@ -210,7 +213,7 @@ app.get('/api/lan-servers', (_req, res) => {
 // Stored on disk so they survive restarts. The key is the trimmed playerName
 // (case-sensitive). Anonymous / empty names are never persisted.
 
-const CAREER_FILE = join(__dirname, 'careerStats.json');
+const CAREER_FILE = join(_dataDir, 'careerStats.json');
 
 function loadCareerStats() {
     try {
