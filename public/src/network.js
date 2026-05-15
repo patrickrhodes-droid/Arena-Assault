@@ -315,11 +315,16 @@ export function initNetworking(actions) {
     }
   });
 
+  let _matchHandling = false; // guard against duplicate matchStarted events
   game.socket.on("matchStarted", async (payload) => {
+    if (_matchHandling) return;
+    _matchHandling = true;
     const mode = payload?.mode || "COOP";
     if (payload?.map) game.selectedMap = payload.map;
     if (payload?.gameMode) game.gameMode = payload.gameMode;
     if (typeof payload?.startingWave === 'number') game.startingWave = payload.startingWave;
+    // Reset wave tracking so a fresh match never inherits state from the previous one
+    game.campaignMapStartWave = 0;
 
     if (mode === "FFA") {
       game.collectedWeapons = new Set(WEAPON_ORDER);
@@ -370,6 +375,7 @@ export function initNetworking(actions) {
       actions.startGame();
     }
     actions.tryPointerLock();
+    _matchHandling = false;
   });
 
   game.socket.on("newPlayer", (playerInfo) => {

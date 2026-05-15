@@ -153,7 +153,8 @@ function navigateMenus(gp) {
 // ── Main poll (called every frame from animate) ───────────────────────────────
 
 export function pollGamepad(actions) {
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  let pads = [];
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : []; } catch {}
   let gp = null;
   for (const pad of pads) {
     if (pad?.connected) { gp = pad; break; }
@@ -163,6 +164,9 @@ export function pollGamepad(actions) {
     game.gpBack    = false;
     game.gpLeft    = false;
     game.gpRight   = false;
+    // If RT was held when the controller disconnected, release fire so the
+    // weapon doesn't stay stuck firing after the pad reconnects.
+    if (prevRt) { game.mouseDown = false; prevRt = false; }
     return;
   }
 

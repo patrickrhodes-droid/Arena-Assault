@@ -517,7 +517,13 @@ function showCharSelect() {
 // Pre-game character select for non-campaign modes — shows the same char panel
 // as the campaign cutscene but without dialogue or server campaignReady handshake.
 // Returns a Promise that resolves with the chosen character id.
+let _preGameSelectActive = false;
 export function showPreGameCharSelect() {
+  if (_preGameSelectActive) {
+    // Already showing (e.g. matchStarted fired twice) — return current selection.
+    return Promise.resolve(game.myCharacter || 'iestyn');
+  }
+  _preGameSelectActive = true;
   return new Promise((resolve) => {
     const ov      = document.getElementById('cutscene-overlay');
     const panel   = document.getElementById('cutscene-char-panel');
@@ -585,13 +591,15 @@ export function showPreGameCharSelect() {
     confirm.onclick = () => {
       game.myCharacter = selected;
       game.socket?.emit('playerCharacterUpdate', { character: selected });
+      _preGameSelectActive = false;
       ov.classList.remove('show');
+      // Resolve after the fade-out so the game starts with a clean screen
       setTimeout(() => {
         ov.style.display = 'none';
         panel.style.display = 'none';
         if (bar) bar.style.display = '';
+        resolve(selected);
       }, 420);
-      resolve(selected);
     };
   });
 }

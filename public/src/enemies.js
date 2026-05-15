@@ -696,8 +696,10 @@ export function removeEnemy(index) {
 
   game.scene.remove(enemy.group);
   disposeObject3D(enemy.group);
-  game.scene.remove(enemy.hpBar);
-  disposeObject3D(enemy.hpBar);
+  if (enemy.hpBar) {
+    game.scene.remove(enemy.hpBar);
+    disposeObject3D(enemy.hpBar);
+  }
   game.enemies.splice(index, 1);
 
   if (

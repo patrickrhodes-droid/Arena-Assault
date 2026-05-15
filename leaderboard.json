@@ -1,14 +1,6 @@
 {
   "coop": [
     {
-      "playerName": "Patrick",
-      "score": 5500,
-      "wave": 8,
-      "kills": 54,
-      "date": "2026-05-14",
-      "token": null
-    },
-    {
       "playerName": "Iestyn",
       "score": 4825,
       "wave": 7,
@@ -17,16 +9,9 @@
     },
     {
       "playerName": "Patrick",
-      "score": 4075,
-      "wave": 7,
-      "kills": 34,
-      "date": "2026-05-13"
-    },
-    {
-      "playerName": "Patrick",
-      "score": 3900,
-      "wave": 4,
-      "kills": 27,
+      "score": 2950,
+      "wave": 8,
+      "kills": 4,
       "date": "2026-05-14",
       "token": null
     },
@@ -41,16 +26,17 @@
       "playerName": "Patrick",
       "score": 2050,
       "wave": 7,
-      "kills": 43,
+      "kills": 44,
       "date": "2026-05-14",
       "token": null
     },
     {
-      "playerName": "William",
-      "score": 1750,
-      "wave": 7,
-      "kills": 23,
-      "date": "2026-05-13"
+      "playerName": "Patrick",
+      "score": 1450,
+      "wave": 6,
+      "kills": 34,
+      "date": "2026-05-14",
+      "token": null
     },
     {
       "playerName": "Patrick",
@@ -58,13 +44,6 @@
       "wave": 7,
       "kills": 20,
       "date": "2026-05-08"
-    },
-    {
-      "playerName": "Iestyn",
-      "score": 1075,
-      "wave": 7,
-      "kills": 29,
-      "date": "2026-05-13"
     },
     {
       "playerName": "Iestyn",
@@ -82,10 +61,11 @@
     },
     {
       "playerName": "Patrick",
-      "score": 800,
-      "wave": 7,
-      "kills": 8,
-      "date": "2026-05-13"
+      "score": 500,
+      "wave": 4,
+      "kills": 0,
+      "date": "2026-05-14",
+      "token": null
     }
   ],
   "pvp": [
@@ -93,28 +73,6 @@
       "playerName": "Patrick",
       "kills": 1,
       "date": "2026-05-08"
-    },
-    {
-      "playerName": "Iestyn",
-      "kills": 0,
-      "date": "2026-05-13"
-    },
-    {
-      "playerName": "Patrick",
-      "kills": 0,
-      "date": "2026-05-13"
-    },
-    {
-      "playerName": "Iestyn",
-      "kills": 0,
-      "date": "2026-05-14",
-      "token": null
-    },
-    {
-      "playerName": "Patrick",
-      "kills": 0,
-      "date": "2026-05-14",
-      "token": null
     }
   ]
 }
