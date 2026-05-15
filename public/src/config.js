@@ -149,8 +149,8 @@ export const WEAPON_DEFS = {
     fireRate: 0.72,
     reload: 2.2,
     pellets: 8,
-    damage: 72,
-    minDamage: 8,
+    damage: 144,
+    minDamage: 16,
     falloffStart: 8,
     falloffEnd: 30,
     spreadHip: 0.12,
@@ -221,9 +221,9 @@ export const WEAPON_DEFS = {
     fireRate: 1.8,
     reload: 3.2,
     pellets: 1,
-    damage: 500,        // direct-hit damage (same as sniper)
+    damage: 1000,       // direct-hit damage
     splashRadius: 6.0,  // world units of splash damage reach
-    splashDamage: 400,  // damage at blast centre (falls off with distance; was 180)
+    splashDamage: 800,  // damage at blast centre (falls off with distance)
     spreadHip: 0.008,
     spreadAim: 0.004,
     bulletSpeed: 55,
