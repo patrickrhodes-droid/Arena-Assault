@@ -985,7 +985,7 @@ function runOwnedEnemyAI(enemy) {
   enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
   if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
   else if (enemy.type === "dog") {
-    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12, DOG_TUNING.preferredCombatDist, DOG_TUNING.backOffDuration);
+    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12, DOG_TUNING.preferredCombatDist, 0);
   } else if (enemy.type === "skeleton") {
     ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, SKELETON_TUNING.attackRange, SKELETON_TUNING.attackFrequency, 12, SKELETON_TUNING.preferredCombatDist, 0);
   }

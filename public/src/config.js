@@ -61,8 +61,7 @@ export const DOG_TUNING = {
   attackDamagePerWave: 2,
   attackRange: 2.5,
   attackFrequency: 1.0,
-  preferredCombatDist: 3.5, // retreat to this distance after each strike
-  backOffDuration: 0.65,    // seconds to actively back away before charging again
+  preferredCombatDist: 1.8, // don't crowd closer than this (same style as skeleton)
 };
 
 export const SOLDIER_TUNING = {
