@@ -30,7 +30,9 @@
       "Bash(ls *.json)",
       "Bash(dir /b \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\public\")",
       "Bash(dir /b \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\public\\\\assets\\\\models\")",
-      "Bash(grep -v \"//\")"
+      "Bash(grep -v \"//\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\" -Recurse -File | Select-Object -First 30 | ForEach-Object { $_.FullName })",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\\" -Recurse -Include \"*.js\" | Select-Object -ExpandProperty FullName | head -20)"
     ]
   }
 }
