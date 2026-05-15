@@ -106,8 +106,8 @@ function spawnBulletHole(prevPos, dir, stepDist) {
   _bhRaycaster.far = stepDist + 1.0;
   const hits = _bhRaycaster.intersectObject(game.arenaGroup, true);
 
-  // Find first hit that is an actual indexed mesh (DecalGeometry needs one)
-  const hit = hits.find(h => h.object.isMesh && h.object.geometry?.index && h.face);
+  // Find first hit that is a static mesh (skip SkinnedMesh — bind-pose vertices misalign with animated pose)
+  const hit = hits.find(h => h.object.isMesh && !h.object.isSkinnedMesh && h.face);
   if (!hit) return;
 
   const targetMesh = hit.object;
