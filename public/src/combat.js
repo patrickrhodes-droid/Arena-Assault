@@ -86,7 +86,7 @@ const _bhSize      = new THREE.Vector3();
 const _bhOrientation = new THREE.Euler();
 const _bhNormalMatrix = new THREE.Matrix3();
 
-const _bhTex = new THREE.TextureLoader().load("/images/bullet-holes.png");
+const _bhTex = new THREE.TextureLoader().load("/assets/Images/bullet-holes.jpg");
 _bhTex.colorSpace = THREE.SRGBColorSpace;
 
 const _bhMaterial = new THREE.MeshStandardMaterial({
@@ -99,11 +99,16 @@ const _bhMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8,
 });
 
+const _bhOrigin = new THREE.Vector3();
+
 function spawnBulletHole(prevPos, dir, stepDist) {
   if (!game.scene || !game.arenaGroup) return;
 
-  _bhRaycaster.set(prevPos, dir);
-  _bhRaycaster.far = stepDist + 1.0;
+  // Back the origin up half a unit so it starts outside the surface even if
+  // prevPos landed exactly on (or just inside) the wall due to float imprecision.
+  _bhOrigin.copy(prevPos).addScaledVector(dir, -0.5);
+  _bhRaycaster.set(_bhOrigin, dir);
+  _bhRaycaster.far = stepDist + 1.5;
   const hits = _bhRaycaster.intersectObject(game.arenaGroup, true);
 
   // Find first hit that is a static mesh (skip SkinnedMesh — bind-pose vertices misalign with animated pose)
