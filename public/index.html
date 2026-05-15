@@ -48,6 +48,7 @@
       <div id="lan-server-list">
         <div class="lan-status">Scanning local network…</div>
       </div>
+      <button type="button" class="lobby-settings-trigger" id="settings-btn-connect">⚙ SETTINGS</button>
     </div>
   </div>
 
@@ -60,28 +61,6 @@
       <div class="menu-name-wrap">
         <label for="player-name">PLAYER NAME</label>
         <input type="text" id="player-name" maxlength="16" placeholder="Enter your name">
-      </div>
-
-      <div id="character-select" hidden>
-        <div class="character-select-title">SELECT OPERATOR</div>
-        <div id="character-grid">
-          <button type="button" class="character-card" data-character="iestyn">
-            <canvas class="char-card-canvas" width="88" height="88"></canvas>
-            <div class="character-name">IESTYN</div>
-          </button>
-          <button type="button" class="character-card" data-character="patrick">
-            <canvas class="char-card-canvas" width="88" height="88"></canvas>
-            <div class="character-name">PATRICK</div>
-          </button>
-          <button type="button" class="character-card" data-character="will">
-            <canvas class="char-card-canvas" width="88" height="88"></canvas>
-            <div class="character-name">WILL</div>
-          </button>
-          <button type="button" class="character-card" data-character="matt">
-            <canvas class="char-card-canvas" width="88" height="88"></canvas>
-            <div class="character-name">MATT</div>
-          </button>
-        </div>
       </div>
 
       <!-- Players waiting list -->
@@ -99,6 +78,7 @@
 
       <button class="deploy-btn" id="deploy-btn" disabled>READY UP</button>
       <button type="button" id="career-stats-btn" class="career-btn">CAREER STATS</button>
+      <button type="button" class="lobby-settings-trigger" id="settings-btn-player">⚙ SETTINGS</button>
 
       <!-- Unused but kept for DOM refs -->
       <button id="btn-to-map" style="display:none"></button>
@@ -243,6 +223,7 @@
           </div>
         </div>
       </details>
+      <button type="button" class="lobby-settings-trigger" id="settings-btn-map">⚙ SETTINGS</button>
     </div>
   </div>
 
@@ -422,7 +403,8 @@
 
   <div id="pause-menu">
     <div id="pause-panel">
-      <h2>PAUSED</h2>
+      <h2 id="pause-title">PAUSED</h2>
+      <button class="pause-btn" id="settings-close-btn" style="display:none">← BACK</button>
       <button class="pause-btn" id="resume-btn">RESUME</button>
       <button class="pause-btn" id="view-btn">VIEW: THIRD PERSON</button>
       <button class="pause-btn" id="fullscreen-btn">FULLSCREEN</button>

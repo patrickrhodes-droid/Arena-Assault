@@ -6,7 +6,7 @@ import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthP
 import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
-import { showCampaignCutscene, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
+import { showCampaignCutscene, showPreGameCharSelect, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
 import { fireBanter } from "./banter.js";
 import { registerKillForCombo, resetComboState, bumpCareerStat, recordMatchResult } from "./features.js";
 
@@ -327,10 +327,12 @@ export function initNetworking(actions) {
       game.ffaDuration = payload?.ffaDuration || 300;
       game.ffaTimeLeft = game.ffaDuration;
       game.ffaKills = 0;
+      await showPreGameCharSelect();
       actions.startFFAGame();
     } else if (mode === "PVP") {
       game.collectedWeapons = new Set(WEAPON_ORDER);
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
+      await showPreGameCharSelect();
       actions.startPvPGame();
     } else {
       // COOP (both campaign and endless)
@@ -343,16 +345,10 @@ export function initNetworking(actions) {
       }
       if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
 
-      // Campaign: show story cutscene before the map loads.
-      // Use game.gameMode (already updated above) because subsequent map-transition
-      // matchStarted events may not include gameMode in the payload.
       if (game.gameMode === "campaign") {
         const mapId = game.selectedMap || "arena";
         const campaignMapIndex = payload?.campaignMapIndex ?? 0;
-        // When the host has skipped past arena (e.g. starting at Desert W1),
-        // unlock all operators that the player would have met along the way.
         if (campaignMapIndex >= 1) {
-          // Desert intro is where Matt and Will are introduced — unlock them.
           try {
             const stored = JSON.parse(localStorage.getItem("arena_unlocked_chars") || "null");
             const set = new Set(Array.isArray(stored) ? stored : ["iestyn", "patrick"]);
@@ -360,12 +356,16 @@ export function initNetworking(actions) {
             localStorage.setItem("arena_unlocked_chars", JSON.stringify([...set]));
           } catch {}
         }
-        // Skip the cutscene for the chosen map if the host is starting mid-map
-        // (W > 1). The first wave of a map is treated as a fresh entrance so
-        // the intro still plays.
+        // Campaign cutscene already contains a char select — no separate step needed.
         if (sw === 1) {
           await showCampaignCutscene(mapId);
+        } else {
+          // Mid-campaign start: still let players pick their operator
+          await showPreGameCharSelect();
         }
+      } else {
+        // Endless mode
+        await showPreGameCharSelect();
       }
       actions.startGame();
     }

@@ -269,6 +269,29 @@ export function updateLobbyCharacterLocks(mode = game.selectedGameMode) {
   });
 }
 
+// ── Lobby settings overlay ────────────────────────────────────────────────────
+// Reuses the pause panel but hides game-only controls and shows a Close button.
+
+function openLobbySettings() {
+  const panel = document.getElementById("pause-panel");
+  const title = document.getElementById("pause-title");
+  const closeBtn = document.getElementById("settings-close-btn");
+  if (panel) panel.classList.add("lobby-mode");
+  if (title) title.textContent = "SETTINGS";
+  if (closeBtn) closeBtn.style.display = "";
+  if (game.dom.pause) game.dom.pause.style.display = "flex";
+}
+
+function closeLobbySettings() {
+  const panel = document.getElementById("pause-panel");
+  const title = document.getElementById("pause-title");
+  const closeBtn = document.getElementById("settings-close-btn");
+  if (panel) panel.classList.remove("lobby-mode");
+  if (title) title.textContent = "PAUSED";
+  if (closeBtn) closeBtn.style.display = "none";
+  if (game.dom.pause) game.dom.pause.style.display = "none";
+}
+
 // ── LAN connection screen ─────────────────────────────────────────────────────
 
 export function bindConnectScreen() {
@@ -287,6 +310,7 @@ export function bindConnectScreen() {
   const refreshBtn = document.getElementById('btn-refresh-lan');
 
   playBtn?.addEventListener('click', () => showScreen('screen-player'));
+  document.getElementById('settings-btn-connect')?.addEventListener('click', openLobbySettings);
 
   function renderServer(s) {
     const stateLabel = s.state === 'IN GAME' ? `Wave ${s.wave}` : 'LOBBY';
@@ -345,7 +369,7 @@ export function bindConnectScreen() {
 export function bindMenuControls(actions) {
   const { audioInit, startMatch, readyUp, toggleView, updateSensitivity, updatePlayerName, reloadPage, copyJoinLink } = actions;
 
-  // ── Ready Up button (screen-player) ──
+  // ── Ready Up button (screen-player) — character is chosen right before playing ──
   game.dom.deployBtn.addEventListener("click", () => {
     const name = game.dom.playerName.value.trim();
     if (!name) {
@@ -353,16 +377,11 @@ export function bindMenuControls(actions) {
       game.dom.playerName.placeholder = "Name required!";
       return;
     }
-    if (!game.myCharacter) {
-      game.dom.characterSelect.style.borderColor = "var(--danger)";
-      return;
-    }
     audioInit();
     readyUp();
     game.dom.deployBtn.disabled = true;
     game.dom.deployBtn.style.opacity = "0.5";
     game.dom.deployBtn.textContent = "READY ✓";
-    // Navigate immediately — no server round-trip needed
     showScreen("screen-map");
     applyMapScreenRole();
   });
@@ -406,24 +425,6 @@ export function bindMenuControls(actions) {
       startMatch();
     });
   }
-
-  game.dom.characterCards.forEach((card) => {
-    const canvas = card.querySelector(".char-card-canvas");
-    const charId = card.dataset.character;
-
-    card.addEventListener("click", () => {
-      if (!charId || !CHARACTERS[charId]) return;
-      if (card.classList.contains("locked")) return; // campaign-locked operator
-      game.myCharacter = charId;
-      game.dom.characterCards.forEach((c) => c.classList.toggle("selected", c === card));
-      game.dom.characterSelect.style.borderColor = "";
-      setSelectedCharCard(charId); // make selected card spin, others bob
-      if (game.visuals?.player?.headGroup) {
-        applyCharacterHead(game.visuals.player.headGroup, charId, { visor: game.visuals.player.visor });
-      }
-      game.socket?.emit("playerCharacterUpdate", { character: charId });
-    });
-  });
 
   if (game.dom.pvpMatchBtn) {
     game.dom.pvpMatchBtn.addEventListener("click", () => {
@@ -675,6 +676,15 @@ export function bindMenuControls(actions) {
     }
   });
 
+  // ── Lobby settings (⚙ buttons on player / map screens) ─────────────────────
+  document.querySelectorAll(".lobby-settings-trigger").forEach((btn) => {
+    btn.addEventListener("click", openLobbySettings);
+  });
+  const settingsCloseBtn = document.getElementById("settings-close-btn");
+  if (settingsCloseBtn) {
+    settingsCloseBtn.addEventListener("click", closeLobbySettings);
+  }
+
   if (game.dom.leaderboardBtn) {
     game.dom.leaderboardBtn.addEventListener("click", () => {
       const sec = game.dom.leaderboardSection;
@@ -767,16 +777,11 @@ export function updateLobbyUI(players) {
   }
 
   const hasName = Boolean(localPlayer.playerName);
-  const wasHidden = game.dom.characterSelect.hidden;
-  game.dom.characterSelect.hidden = !hasName;
-  // Start card animations the first time the panel becomes visible
-  if (wasHidden && hasName) initCharCardAnimations();
 
-  // Ready button: only update it if the player hasn't clicked ready yet
+  // Ready button: only name required — character is picked right before playing
   if (!localPlayer.isReady) {
-    const canReady = hasName && Boolean(game.myCharacter);
-    game.dom.deployBtn.disabled = !canReady;
-    game.dom.deployBtn.style.opacity = canReady ? "1" : "0.5";
+    game.dom.deployBtn.disabled = !hasName;
+    game.dom.deployBtn.style.opacity = hasName ? "1" : "0.5";
     game.dom.deployBtn.textContent = "READY UP";
   }
 

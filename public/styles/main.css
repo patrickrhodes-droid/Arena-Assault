@@ -340,6 +340,29 @@ canvas {
 }
 .lan-join-btn:hover { background: var(--accent); color: var(--bg); }
 
+/* ── Lobby settings trigger button (⚙ on each lobby screen) ── */
+.lobby-settings-trigger {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-top: 4px;
+  transition: color 0.15s;
+}
+.lobby-settings-trigger:hover { color: var(--accent); }
+
+/* ── Pause panel in lobby/settings mode ── */
+#pause-panel.lobby-mode #resume-btn,
+#pause-panel.lobby-mode #view-btn,
+#pause-panel.lobby-mode #fullscreen-btn,
+#pause-panel.lobby-mode #pause-career-btn,
+#pause-panel.lobby-mode #pause-give-up-btn,
+#pause-panel.lobby-mode #exit-btn { display: none; }
+
 /* ── Controls collapsible ── */
 .controls-details {
   width: 100%;

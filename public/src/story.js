@@ -514,6 +514,80 @@ function showCharSelect() {
   };
 }
 
+// Pre-game character select for non-campaign modes — shows the same char panel
+// as the campaign cutscene but without dialogue or server campaignReady handshake.
+// Returns a Promise that resolves with the chosen character id.
+export function showPreGameCharSelect() {
+  return new Promise((resolve) => {
+    const ov      = document.getElementById('cutscene-overlay');
+    const panel   = document.getElementById('cutscene-char-panel');
+    const grid    = document.getElementById('cs-char-grid');
+    const confirm = document.getElementById('cs-deploy-btn');
+    const bar     = document.getElementById('cutscene-bar');
+    const chCard  = document.getElementById('cutscene-chapter-card');
+    const banner  = document.getElementById('cs-unlock-banner');
+    const waitSt  = document.getElementById('cs-waiting-status');
+    if (!ov || !panel || !grid || !confirm) { resolve(game.myCharacter || 'iestyn'); return; }
+
+    // Hide story elements — pure operator select
+    if (bar)    bar.style.display    = 'none';
+    if (chCard) { chCard.classList.remove('show'); chCard.style.display = 'none'; }
+    if (banner) banner.style.display = 'none';
+    if (waitSt) waitSt.style.display = 'none';
+
+    ov.style.display = 'flex';
+    void ov.offsetWidth;
+    ov.classList.add('show');
+
+    const ALL_CHARS = [
+      { id: 'iestyn', name: 'IESTYN', color: '#ff6655' },
+      { id: 'patrick', name: 'PATRICK', color: '#55aaff' },
+      { id: 'will',   name: 'WILL',   color: '#66dd66' },
+      { id: 'matt',   name: 'MATT',   color: '#ffcc33' },
+    ];
+    let selected = game.myCharacter || 'iestyn';
+
+    grid.innerHTML = '';
+    ALL_CHARS.forEach(({ id, name, color }) => {
+      const card = document.createElement('div');
+      card.className = `cs-char-card${id === selected ? ' selected' : ''}`;
+      card.dataset.char = id;
+      card.tabIndex = 0;
+      card.style.setProperty('--char-color', color);
+      const cv = document.createElement('canvas');
+      cv.className = 'char-card-canvas'; cv.width = cv.height = 88;
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'character-name'; nameDiv.textContent = name;
+      card.appendChild(cv); card.appendChild(nameDiv); grid.appendChild(card);
+      ensureRenderer(); buildCharGroup(id); renderCharToCanvas(id, 0, 0, cv);
+      const sel = () => {
+        selected = id;
+        grid.querySelectorAll('.cs-char-card').forEach(c => c.classList.toggle('selected', c.dataset.char === id));
+        setCsCharSelectedAnim(id);
+      };
+      card.addEventListener('click', sel);
+      card.addEventListener('focus', sel);
+    });
+
+    panel.style.display = 'flex';
+    startCsCharAnimations(grid, selected);
+
+    confirm.disabled = false;
+    confirm.textContent = 'DEPLOY';
+    confirm.onclick = () => {
+      game.myCharacter = selected;
+      game.socket?.emit('playerCharacterUpdate', { character: selected });
+      ov.classList.remove('show');
+      setTimeout(() => {
+        ov.style.display = 'none';
+        panel.style.display = 'none';
+        if (bar) bar.style.display = '';
+      }, 420);
+      resolve(selected);
+    };
+  });
+}
+
 // Allows network.js to update the "waiting for X/Y" status during a cutscene.
 export function updateCutsceneReadyStatus(ready, total) {
   const waitStatus = document.getElementById("cs-waiting-status");
