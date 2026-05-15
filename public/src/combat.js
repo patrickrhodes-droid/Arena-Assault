@@ -86,7 +86,7 @@ const _bhSize      = new THREE.Vector3();
 const _bhOrientation = new THREE.Euler();
 const _bhNormalMatrix = new THREE.Matrix3();
 
-const _bhTex = new THREE.TextureLoader().load("/assets/Images/bullet-holes.jpg");
+const _bhTex = new THREE.TextureLoader().load("/assets/Images/bullet-holes.png");
 _bhTex.colorSpace = THREE.SRGBColorSpace;
 
 const _bhMaterial = new THREE.MeshStandardMaterial({
