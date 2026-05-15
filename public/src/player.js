@@ -540,8 +540,13 @@ export function updatePlayer(actions) {
   }
 
   if (game.knockbackX !== 0 || game.knockbackZ !== 0) {
-    game.visuals.player.playerGroup.position.x += game.knockbackX * game.dt;
-    game.visuals.player.playerGroup.position.z += game.knockbackZ * game.dt;
+    let kdx = game.knockbackX * game.dt;
+    let kdz = game.knockbackZ * game.dt;
+    // Cap per-frame displacement so large forces slide smoothly rather than teleport
+    const kLen = Math.sqrt(kdx * kdx + kdz * kdz);
+    if (kLen > 0.6) { const s = 0.6 / kLen; kdx *= s; kdz *= s; }
+    game.visuals.player.playerGroup.position.x += kdx;
+    game.visuals.player.playerGroup.position.z += kdz;
     const decay = Math.pow(0.04, game.dt);
     game.knockbackX *= decay;
     game.knockbackZ *= decay;

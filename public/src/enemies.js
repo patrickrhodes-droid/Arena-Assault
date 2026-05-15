@@ -917,8 +917,8 @@ function applyMeleeDamage(enemy, target, damage) {
   const pos = enemy.group.position;
   const dx = target.pos.x - pos.x, dz = target.pos.z - pos.z;
   const len = Math.sqrt(dx * dx + dz * dz) || 1;
-  // Knockback force — boss retains full push; dog and skeleton both 10
-  const force = enemy.type === "boss" ? 185 : 10;
+  // Knockback force — boss retains full push; dog and skeleton get a noticeable shove
+  const force = enemy.type === "boss" ? 185 : 22;
   game.socket?.emit("enemyMeleeAttempt", {
     enemyId: enemy.id, targetId: target.id, damage,
     ex: pos.x, ey: pos.y, ez: pos.z,
@@ -985,19 +985,9 @@ function runOwnedEnemyAI(enemy) {
   enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
   if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
   else if (enemy.type === "dog") {
-    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12);
+    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12, DOG_TUNING.preferredCombatDist, DOG_TUNING.backOffDuration);
   } else if (enemy.type === "skeleton") {
-    ownedMeleeAI(
-      enemy,
-      pos,
-      closest,
-      dist,
-      ndx,
-      ndz,
-      SKELETON_TUNING.attackRange,
-      SKELETON_TUNING.attackFrequency,
-      12,
-    );
+    ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, SKELETON_TUNING.attackRange, SKELETON_TUNING.attackFrequency, 12, SKELETON_TUNING.preferredCombatDist, 0);
   }
   else if (enemy.type === "boss" || enemy.type === "miniboss") ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
 }
@@ -1085,23 +1075,38 @@ function trackStuck(enemy, pos, targetPos) {
   if (enemy._stuckSecs >= 15) unstuckTeleport(enemy, pos, targetPos);
 }
 
-function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult) {
+function ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, range, freq, walkMult, preferredDist = 0, backOffDur = 0) {
+  // Tick back-off timer (dogs retreat after each strike before lunging again)
+  enemy.backOffTmr = Math.max(0, (enemy.backOffTmr ?? 0) - game.dt);
+  const backingOff = enemy.backOffTmr > 0;
+  // Too close — back up to preferred standoff distance
+  const tooClose = preferredDist > 0 && dist < preferredDist && !backingOff;
+
   const prevX = pos.x;
   const prevZ = pos.z;
-  const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
-  const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
-  moveEnemyWithCollision(pos, dirX, dirZ, enemy.spd);
-  updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, range);
+
+  if (backingOff || tooClose) {
+    // Retreat: move away from player at 75% speed
+    moveEnemyWithCollision(pos, -ndx, -ndz, enemy.spd * 0.75);
+    if (enemy.walkAction) crossfadeToAction(enemy, enemy.walkAction, 0.2);
+  } else {
+    const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
+    const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
+    moveEnemyWithCollision(pos, dirX, dirZ, enemy.spd);
+    updateDetourState(enemy, pos, closest.pos, (pos.x - prevX) ** 2 + (pos.z - prevZ) ** 2, range);
+  }
+
   trackStuck(enemy, pos, closest.pos);
   enemy.walkT = (enemy.walkT || 0) + game.dt * walkMult;
-  enemy.atkTmr = (enemy.atkTmr || 0) - game.dt;
+  enemy.atkTmr = (enemy.atkTmr ?? 0) - game.dt;
 
-  if (dist < range && enemy.atkTmr <= 0) {
+  if (dist < range && enemy.atkTmr <= 0 && !backingOff) {
     enemy.atkTmr = freq;
+    if (backOffDur > 0) enemy.backOffTmr = backOffDur;
     if (enemy.attackAction) crossfadeToAction(enemy, enemy.attackAction, 0.05);
     applyMeleeDamage(enemy, closest, enemy.atkDmg);
-  } else if (dist >= range) {
-    enemy.atkTmr = Math.min(enemy.atkTmr || 0, 0.3);
+  } else if (!backingOff && !tooClose && dist >= range) {
+    enemy.atkTmr = Math.min(enemy.atkTmr ?? 0, 0.3);
     // Charging: use gallop if available, otherwise walk
     const moveAnim = dist > range + 1 ? (enemy.gallopAction ?? enemy.walkAction) : enemy.walkAction;
     if (moveAnim) crossfadeToAction(enemy, moveAnim, 0.2);
