@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { B_SPD_E, DEFAULT_WEAPON, P_MAX_HP, WEAPON_DEFS, WEAPON_ORDER } from "./config.js";
 import { game } from "./state.js";
 import { bulletHitObstacle } from "./collision.js";
@@ -77,31 +78,70 @@ export function tickDamageNumbers(dt) {
   }
 }
 
-// ── Wall-hit decals (Sprite so they're camera-facing and visible on any surface) ──
-const _decals    = [];
-const MAX_DECALS = 80;
+// ── Bullet-hole decals using DecalGeometry ────────────────────────────────────
+const _decals      = [];
+const MAX_DECALS   = 60;
+const _bhRaycaster = new THREE.Raycaster();
+const _bhSize      = new THREE.Vector3();
+const _bhOrientation = new THREE.Euler();
+const _bhNormalMatrix = new THREE.Matrix3();
 
-function spawnWallDecal(pos) {
-  if (!game.scene) return;
-  // Sprite is always camera-facing — works on walls, boxes, and floor alike
-  const mat = new THREE.SpriteMaterial({
-    color: 0x050505,
-    transparent: true,
-    opacity: 0.70,
-    depthWrite: false,
-    sizeAttenuation: true,
-  });
-  const sprite = new THREE.Sprite(mat);
-  const sz = 0.10 + Math.random() * 0.06; // slight size variety
-  sprite.scale.set(sz, sz, 1);
-  sprite.position.set(pos.x, pos.y, pos.z);
-  sprite.renderOrder = 2;
-  game.scene.add(sprite);
-  _decals.push(sprite);
+const _bhTex = new THREE.TextureLoader().load("/images/bullet-holes.png");
+_bhTex.colorSpace = THREE.SRGBColorSpace;
+
+const _bhMaterial = new THREE.MeshStandardMaterial({
+  map: _bhTex,
+  transparent: true,
+  depthTest: true,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -4,
+  roughness: 0.8,
+});
+
+function spawnBulletHole(prevPos, dir, stepDist) {
+  if (!game.scene || !game.arenaGroup) return;
+
+  _bhRaycaster.set(prevPos, dir);
+  _bhRaycaster.far = stepDist + 1.0;
+  const hits = _bhRaycaster.intersectObject(game.arenaGroup, true);
+
+  // Find first hit that is an actual indexed mesh (DecalGeometry needs one)
+  const hit = hits.find(h => h.object.isMesh && h.object.geometry?.index && h.face);
+  if (!hit) return;
+
+  const targetMesh = hit.object;
+
+  // Transform face normal to world space
+  _bhNormalMatrix.getNormalMatrix(targetMesh.matrixWorld);
+  const worldNormal = hit.face.normal.clone().applyNormalMatrix(_bhNormalMatrix).normalize();
+
+  // Orient a dummy along the surface normal, then add random spin
+  const dummy = new THREE.Object3D();
+  dummy.position.copy(hit.point);
+  dummy.lookAt(hit.point.clone().add(worldNormal));
+  _bhOrientation.copy(dummy.rotation);
+  _bhOrientation.z = Math.random() * Math.PI * 2;
+
+  const scale = 0.28 + Math.random() * 0.20;
+  _bhSize.set(scale, scale, scale);
+
+  let geom;
+  try {
+    geom = new DecalGeometry(targetMesh, hit.point, _bhOrientation, _bhSize);
+  } catch {
+    return; // non-indexed geometry — skip silently
+  }
+
+  const decal = new THREE.Mesh(geom, _bhMaterial);
+  decal.renderOrder = 3 + (_decals.length % 60);
+  targetMesh.attach(decal);
+  _decals.push(decal);
+
   if (_decals.length > MAX_DECALS) {
     const old = _decals.shift();
-    game.scene.remove(old);
-    old.material.dispose();
+    old.parent?.remove(old);
+    old.geometry.dispose();
   }
 }
 
@@ -273,8 +313,8 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
     if (!shouldRemove && bulletHitObstacle(position.x, position.y, position.z)) {
       shouldRemove = true;
       spawnParticles(position, bullet.splashRadius > 0 ? 72 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 30 : 2, bullet.splashRadius > 0);
-      // Wall-hit decal (bullet hole mark) — skip for bazooka/splash since it leaves a big crater
-      if (!bullet.splashRadius && bullet.isPlayer) spawnWallDecal(position);
+      // Bullet hole decal on the wall/floor surface
+      if (!bullet.splashRadius && bullet.isPlayer) spawnBulletHole(bullet.prevPos, bullet.dir, step);
       if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
         applySplashDamage(bullet, position, processHit);
       }
@@ -651,8 +691,8 @@ export function resetCombatState() {
   game.currentWeapon = DEFAULT_WEAPON;
   syncCurrentAmmo();
   applyWeaponModel();
-  // Clear wall decals on new round
-  for (const d of _decals) { game.scene?.remove(d); d.material?.dispose(); }
+  // Clear bullet hole decals
+  for (const d of _decals) { d.parent?.remove(d); d.geometry.dispose(); }
   _decals.length = 0;
   // Clear any leftover floating damage numbers from the previous match
   for (const dn of _damageNumbers) {
