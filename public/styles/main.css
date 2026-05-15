@@ -566,6 +566,13 @@ canvas {
   outline: none;
 }
 
+#name-error {
+  color: var(--danger);
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
 #lobby-status {
   margin-bottom: 24px;
   background: rgba(0, 0, 0, 0.3);

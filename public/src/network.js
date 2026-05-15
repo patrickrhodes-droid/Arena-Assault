@@ -142,6 +142,23 @@ export function initNetworking(actions) {
     }
   });
 
+  game.socket.on("nameConflict", ({ name }) => {
+    const btn = game.dom?.deployBtn;
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.textContent = "READY UP"; }
+    const nameInput = game.dom?.playerName;
+    if (nameInput) nameInput.style.borderColor = "var(--danger)";
+    const errEl = document.getElementById("name-error");
+    if (errEl) {
+      errEl.textContent = `"${name}" is already taken — choose a different name.`;
+      errEl.style.display = "block";
+      clearTimeout(errEl._hideTimeout);
+      errEl._hideTimeout = setTimeout(() => {
+        errEl.style.display = "none";
+        if (nameInput) nameInput.style.borderColor = "";
+      }, 4000);
+    }
+  });
+
   game.socket.on("matchStartError", (data) => {
     // Re-show host controls so the host can try again
     game.matchStarting = false;

@@ -1682,7 +1682,12 @@ io.on('connection', (socket) => {
 
     socket.on('playerReady', () => {
         if (!players[socket.id]) return;
-        if (!players[socket.id].playerName?.trim()) return;
+        const myName = players[socket.id].playerName?.trim();
+        if (!myName) return;
+        const nameTaken = Object.entries(players).some(
+            ([id, p]) => id !== socket.id && p.playerName?.trim().toLowerCase() === myName.toLowerCase(),
+        );
+        if (nameTaken) { socket.emit('nameConflict', { name: myName }); return; }
         players[socket.id].isReady = true;
         io.emit('updateLobby', players);
         // Check if all connected players with names are ready
