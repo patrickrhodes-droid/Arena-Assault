@@ -310,7 +310,6 @@ export function bindConnectScreen() {
   const refreshBtn = document.getElementById('btn-refresh-lan');
 
   playBtn?.addEventListener('click', () => showScreen('screen-player'));
-  document.getElementById('settings-btn-connect')?.addEventListener('click', openLobbySettings);
 
   function renderServer(s) {
     const stateLabel = s.state === 'IN GAME' ? `Wave ${s.wave}` : 'LOBBY';

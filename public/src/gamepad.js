@@ -30,13 +30,17 @@ window.addEventListener("gamepadconnected", () => {
 // ── Menu navigation ───────────────────────────────────────────────────────────
 
 function getMenuContainer() {
-  if (game.state === "PAUSED")   return document.getElementById("pause-panel");
-  if (game.state === "GAMEOVER") return document.querySelector(".gameover-panel");
-  if (game.state === "CUTSCENE") {
-    const charPanel = document.getElementById("cutscene-char-panel");
-    if (charPanel && getComputedStyle(charPanel).display !== "none") return charPanel;
-    return null;
+  // Check visible overlays first — these float above everything else regardless of game.state.
+  // This handles: campaign cutscene char select, pre-game char select, lobby settings panel.
+  const charPanel = document.getElementById("cutscene-char-panel");
+  if (charPanel && getComputedStyle(charPanel).display !== "none") return charPanel;
+
+  const pauseMenu = document.getElementById("pause-menu");
+  if (pauseMenu && getComputedStyle(pauseMenu).display !== "none") {
+    return document.getElementById("pause-panel");
   }
+
+  if (game.state === "GAMEOVER") return document.querySelector(".gameover-panel");
   if (game.state === "MENU") {
     return document.querySelector(".lobby-screen.active .lobby-panel");
   }
@@ -73,11 +77,19 @@ function navigateMenus(gp) {
   const navBack    = dUp    || dLeft    || stickUp    || stickLeft;
   const navForward = dDown  || dRight   || stickDown  || stickRight;
 
-  // Start / B → resume if paused
-  if ((startBtn || bBtn) && game.state === "PAUSED") {
-    document.getElementById("resume-btn")?.click();
-    menuNavCooldown = MENU_NAV_REPEAT;
-    return;
+  // Start / B → close whatever modal is open (pause in-game, or settings from lobby)
+  if (startBtn || bBtn) {
+    const pauseMenu = document.getElementById("pause-menu");
+    if (pauseMenu && getComputedStyle(pauseMenu).display !== "none") {
+      if (game.state === "PAUSED") {
+        document.getElementById("resume-btn")?.click();
+      } else {
+        // Lobby settings — ← BACK closes it
+        document.getElementById("settings-close-btn")?.click();
+      }
+      menuNavCooldown = MENU_NAV_REPEAT;
+      return;
+    }
   }
 
   const container  = getMenuContainer();
