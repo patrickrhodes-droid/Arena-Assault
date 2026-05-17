@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
 import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, WALL_H } from "./config.js";
 import { game } from "./state.js";
@@ -213,11 +214,27 @@ function buildGrappleVisuals() {
   game.visuals.grapple = { hookMesh, rope };
 }
 
+const _rgbeLoader = new RGBELoader();
+
+function loadHDRSky(path) {
+  // Dispose previous texture background if any
+  if (game.scene.background?.isTexture) game.scene.background.dispose();
+  _rgbeLoader.load(path, (tex) => {
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    game.scene.background = tex;
+  });
+}
+
 export async function rebuildArena(mapId) {
   // Remove old arena objects.
   if (game.arenaGroup) {
     game.scene.remove(game.arenaGroup);
     disposeObject3D(game.arenaGroup);
+  }
+  // Dispose HDR sky texture if present
+  if (game.scene.background?.isTexture) {
+    game.scene.background.dispose();
+    game.scene.background = null;
   }
   for (const light of game.arenaLights) {
     game.scene.remove(light);
@@ -295,7 +312,7 @@ function addSun(color, intensity, px, py, pz) {
 function buildArenaOriginal() {
   game.scene.fog = new THREE.FogExp2(0x10242c, 0.0054);
   game.scene.background = new THREE.Color(0x10242c);
-  buildSkybox(0x080e18, 0x10242c, 0x050c12);
+  loadHDRSky('/assets/Skies/arenasky.hdr');
   addSun(0xdff7ff, 1.8, 36, 64, 18);
 
   // Teal reactor accent floor lights.
@@ -540,7 +557,7 @@ function buildArenaOriginal() {
 function buildArenaDesert() {
   game.scene.fog = new THREE.FogExp2(0xdbb07d, 0.004);
   game.scene.background = new THREE.Color(0xe3c4a1);
-  buildSkybox(0x4a90d9, 0xe8c87a, 0xd4a46a);
+  loadHDRSky('/assets/Skies/desertsky.hdr');
   addSun(0xfffef0, 2.5, 50, 80, 10);
 
   // Warm amber fill lights — scattered lanterns.
@@ -658,7 +675,7 @@ function buildArenaDesert() {
 function buildArenaCity() {
   game.scene.fog = new THREE.FogExp2(0xc9d8e4, 0.0018);
   game.scene.background = new THREE.Color(0x87b8e8);
-  buildSkybox(0x2a6bcc, 0xff8040, 0xd49060);
+  loadHDRSky('/assets/Skies/Citysky.hdr');
   addSun(0xfff4d6, 2.85, 34, 78, -24);
   addSun(0xffd1a8, 0.8, -18, 36, 30);
   const cityHemi = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 1.1);
