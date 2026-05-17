@@ -29,6 +29,7 @@ import { getBossEnemy } from "./enemies.js";
 
 let bossAlertCooldown = 0;
 let _prevVelY       = 0; // track vertical velocity between frames for landing detection
+const _aimRaycaster = new THREE.Raycaster(); // reused for crosshair→world aim point
 let _swayX          = 0; // current weapon sway offset X
 let _swayY          = 0; // current weapon sway offset Y
 let _mouseDeltaX    = 0; // accumulated mouse X delta since last weapon update
@@ -782,9 +783,20 @@ function handleFiring(actions) {
       let bulletPosition = muzzlePosition.clone();
       let bulletDirection = aimDirection;
       if (!usingFirstPersonView()) {
-        const aimPoint = game.camera.position.clone().addScaledVector(aimDirection, 160);
+        // Raycast from camera through crosshair centre to find the real world aim point.
+        // Without this, bullets fire from the off-centre muzzle toward a fixed point
+        // 160 u ahead of the camera, creating a parallax gap at close range.
+        _aimRaycaster.set(game.camera.position, aimDirection);
+        _aimRaycaster.near = 0.5;
+        _aimRaycaster.far  = 300;
+        const wallHits = game.arenaGroup
+          ? _aimRaycaster.intersectObject(game.arenaGroup, true).filter(h => !h.object.isSkinnedMesh)
+          : [];
+        const aimPoint = wallHits.length > 0
+          ? wallHits[0].point.clone()
+          : game.camera.position.clone().addScaledVector(aimDirection, 300);
         bulletDirection = aimPoint.sub(muzzlePosition).normalize();
-        bulletPosition = muzzlePosition.clone().addScaledVector(bulletDirection, 0.2);
+        bulletPosition  = muzzlePosition.clone().addScaledVector(bulletDirection, 0.2);
       }
       spawnBullet(bulletPosition, bulletDirection, true, {
         spd: weapon.bulletSpeed,
