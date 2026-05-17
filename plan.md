@@ -13,6 +13,7 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Sprint visual feedback** — subtle FOV increase (+8°) and head-bob when sprinting.
 - **Jump feel** — add a small squash-and-stretch animation to the player model on land impact.
 - ✅ **Coyote time** — 80 ms grace window after walking off a ledge before gravity locks in.
+- ✅ **Landing sound** — soft/hard landing variants (impactGeneric_light / impactMetal_heavy) based on fall velocity.
 - **Wall running / slide** — stretch goal; would add significant skill ceiling.
 
 ### 1.2 Weapons
@@ -20,9 +21,11 @@ This document captures everything needed to take the project from its current pr
 - **Reload animation** — add a simple transform animation (gun dips down, comes back up) instead of just text.
 - ✅ **Muzzle flash 3× bigger** — flash sphere radius 0.1 → 0.32, light range 5 → 9, duration 0.04 → 0.10 s.
 - ✅ **Hit markers** — crosshair dot flashes white → orange when a shot connects.
-- **Ammo pickups** — add ammo crates to maps (similar to health packs) so players can resupply mid-wave.
-- **Weapon balancing pass** — pistol ADS accuracy is nearly as good as the rifle. Pistol should have a larger aim spread penalty. Shotgun needs damage falloff review.
-- **Sword lunge** — allow the player to dash 2–3 units forward when swinging the sword, making it feel aggressive.
+- ✅ **Empty mag feedback** — impactMetal_light dry-fire click when attempting to fire with 0 ammo.
+- ✅ **Weapon balancing pass** — shotgun 72 → 144 per pellet; bazooka 500 → 1000 direct, 400 → 800 splash.
+- ✅ **Crosshair / bullet alignment** — third-person bullets now raycast from camera through crosshair centre to find the real world hit point, eliminating close-range parallax offset.
+- **Ammo pickups** — add ammo crates to maps so players can resupply mid-wave.
+- **Sword lunge** — allow the player to dash 2–3 units forward when swinging the sword.
 
 ### 1.3 Enemy AI
 - **Enemy pathfinding fix** — the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
@@ -30,6 +33,8 @@ This document captures everything needed to take the project from its current pr
 - **Soldier suppression** — soldiers should strafe laterally when behind cover, not just stand and shoot.
 - ✅ **Enemy awareness** — brief "notice" pause (0.35–0.6 s) before first charge; removes instant aggro.
 - ✅ **Boss roar** — phase 2 transition: red flash + heavy screen shake + HUD alert.
+- ✅ **Dog / skeleton standoff** — both types now maintain a minimum gap (1.8 u dog, 1.7 u skeleton) rather than stacking on the player's position.
+- ✅ **Smooth knockback** — per-frame displacement capped at 0.6 u so high-force impulses (boss, grapple) slide the player rather than teleporting them.
 
 ---
 
@@ -38,40 +43,47 @@ This document captures everything needed to take the project from its current pr
 ### 2.1 Character & Animation
 - ✅ **Walk cycle head-bob** — sinusoidal vertical camera offset in first-person while walking/sprinting.
 - **Landing animation** — camera dips on heavy landing.
-- **Crouch transition** — currently uses y-scale squeeze; replace with proper crouch by lowering `playerGroup.position.y` 0.6 units so the character actually crouches rather than squishes.
+- **Crouch transition** — currently uses y-scale squeeze; replace with proper crouch.
 - **Remote player interpolation** — remote players stutter slightly at low frame rates. Use proper lerp with a 100 ms buffer.
-- **Shadow** — the directional light casts a shadow that appears to disconnect from the player (shadow to the left on Arena). Fix by tweaking the shadow camera position and bias per map.
+- **Shadow** — the directional light casts a shadow that appears to disconnect from the player. Fix per-map shadow bias.
 
 ### 2.2 Maps
-- **Desert and City colours too similar** — Desert is warm brown/orange, City is warm orange-grey. One of them needs a stronger colour shift (City could be cooler/blue-grey).
-- **Ladder visuals** — City and Desert ladders are invisible (just collision zones). Add GLB ladder prop models matched to the ladder zones.
-- **Map props at night** — after dark the City street lights should actually cast point light shadows to give the map depth.
-- **Blacksite corner rooms** — the "corner room divider walls" placed inside the solid masses are unreachable. Either open them up (add corridors) or remove the divider walls and let the corner masses be plain.
-- ✅ **Skybox** — gradient sky sphere per map: Arena (night teal), Desert (sunny blue-orange), City (golden sunset), Blacksite (near-black emergency).
-- **Water in Desert** — the oasis compound has no water feature. A blue plane inside the compound walls would read as an oasis immediately.
+- **Desert and City colours too similar** — one needs a stronger colour shift.
+- **Ladder visuals** — City and Desert ladders are invisible. Add GLB ladder prop models matched to the ladder zones.
+- **Map props at night** — City street lights should cast point light shadows.
+- ✅ **Skybox** — HDR equirectangular sky per map (arenasky.hdr, desertsky.hdr, Citysky.hdr). Blacksite keeps the dark gradient sphere.
+- **Water in Desert** — a blue plane inside the oasis compound walls.
 
 ### 2.3 Effects
-- ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss (boss also gets 40 big particles vs 18).
-- ✅ **Wall hit decals** — small dark bullet-hole circles appear on walls/floor on every non-splash hit (max 80, oldest replaced).
+- ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss.
+- ✅ **Bullet-hole decals** — DecalGeometry with bullet-holes.png projects onto walls, floors, and static GLB props. Pool of 60; oldest disposed when exceeded.
 - ✅ **Explosive barrel pre-warning** — proximity warning banner appears when player enters blast radius.
-- **Post-processing** — Three.js `EffectComposer` with a mild bloom pass (for the green glow in Blacksite, neon in City) and vignette would dramatically improve visual quality. No quality loss for the gameplay.
-- **Muzzle smoke** — a small wisp of semi-transparent particle at the barrel on fire adds realism.
-- **Boss slam shockwave** — when the boss swings its club, spawn a ring of particles at ground level expanding outward.
+- **Post-processing** — Three.js `EffectComposer` with bloom and vignette.
+- **Muzzle smoke** — a small wisp of semi-transparent particle at the barrel on fire.
+- **Boss slam shockwave** — ring of particles at ground level expanding outward on swing.
 
 ---
 
 ## 3. Audio
 
-All items here require new audio assets (WAV/OGG files).
-
-- **Footstep sounds** — different clips per surface: metal (Arena/Blacksite), sand (Desert), concrete (City). Trigger on each step during the walk cycle.
-- **Weapon audio** — each weapon needs: fire sound, reload start, reload end, click-on-empty. Currently all weapons share a generic tone.
+- ✅ **Footstep sounds** — concrete (Arena/City), carpet (Blacksite), grass (Desert). Pace varies: sprint 0.30 s, walk 0.44 s, crouch 0.60 s. Only plays when grounded.
+- ✅ **Wall impact** — impactMetal_medium on every bullet hole placement.
+- ✅ **Enemy hit feedback** — impactSoft_medium for regular enemies; impactPlate_heavy for boss/miniboss.
+- ✅ **Melee damage** — impactPunch_heavy (dog/boss), impactPunch_medium (skeleton lighter hit).
+- ✅ **Kill confirmation bell** — impactBell_heavy on every killCredit.
+- ✅ **Weapon / health pickup** — impactTin_medium for weapons, impactGeneric_light for health packs.
+- ✅ **Sword hit** — impactPlank_medium layered with synth sword sound when swing connects.
+- ✅ **Prop destruction** — impactWood_heavy on destructible barrel/crate.
+- ✅ **Boss footstep** — impactMining every 0.55 s while the boss is charging.
+- ✅ **Grapple hook hit** — impactMetal_heavy when hook latches onto surface.
+- ✅ **Landing sound** — soft/hard variant based on fall speed.
+- ✅ **Empty mag click** — impactMetal_light on dry-fire, throttled at 0.3 s.
+- ✅ **UI audio** — click1–5 (buttons), rollover1–6 (hover), switch1–10 (toggles/sliders), mouseclick1 (Ready Up confirm).
+- **Weapon fire sounds** — each weapon needs a real fire/reload sample. Currently all use synthesised tones.
 - **Enemy audio** — dog growl on aggro; skeleton rattle on attack; soldier "contact!" on seeing player.
-- **Boss audio** — charge roar, swing whoosh, phase-2 transition snarl, death explosion.
-- **Ambient audio** — desert wind, urban noise (traffic, distant birds), industrial hum for Arena/Blacksite.
-- **UI audio** — button clicks, wave start sting, wave clear sting, leaderboard appearance.
-- **Hit confirmation sound** — a tight "tick" when a bullet connects with an enemy; distinct from the impact spark.
-- **Low health heartbeat** — slow heartbeat + red vignette pulse when player HP < 25%.
+- **Boss audio** — charge roar, swing whoosh, phase-2 snarl, death explosion.
+- **Ambient audio** — desert wind, urban noise, industrial hum for Arena/Blacksite.
+- **Low health heartbeat** — slow heartbeat + red vignette pulse when HP < 25%.
 
 ---
 
@@ -79,80 +91,80 @@ All items here require new audio assets (WAV/OGG files).
 
 ### 4.1 HUD
 - ✅ **Damage direction indicator** — red arc at the edge of the screen pointing toward the damage source.
-- **Enemy distance labels** — in wave mode, show a small dot with the distance to the nearest enemy on the minimap.
-- ✅ **Wave progression bar** — thin bar + "N LEFT" count below the wave number showing enemies remaining.
-- ✅ **Score pop-ups** — "+100" floats up from the crosshair area on each kill, color-coded by enemy type.
+- **Enemy distance labels** — small dot with distance to nearest enemy on the minimap.
+- ✅ **Wave progression bar** — thin bar + "N LEFT" count below the wave number.
+- ✅ **Score pop-ups** — "+100" floats up from the crosshair on each kill.
 - ✅ **Boss phase indicator** — "PHASE 1" / "PHASE 2 — ENRAGED" label beneath the boss HP bar.
-- ✅ **Crosshair hit flash** — crosshair dot flashes white → orange when a bullet connects.
+- ✅ **Crosshair hit flash** — dot flashes white → orange when a bullet connects.
 
 ### 4.2 Menus & Flow
-- **Map preview thumbnails** — replace the procedural gradient cards with actual screenshot thumbnails of each map (saved PNG files).
-- **Post-game vote** — after a COOP round ends, show a "Play again?" / "Change map?" vote panel before redeploying.
-- ✅ **Settings screen** — pause menu now includes: Master/Music/SFX sliders, Shadows toggle, Particles toggle. All persist via localStorage.
-- **Tutorial popup** — on first launch, a dismissable overlay showing the 5 most important controls.
-- ✅ **Lobby chat** — text chat in lobby; messages broadcast to all players via socket.io.
+- **Map preview thumbnails** — replace gradient lobby cards with actual screenshot thumbnails.
+- **Post-game vote** — "Play again?" / "Change map?" vote panel before redeploying.
+- ✅ **Settings screen** — Master/Music/SFX sliders, Shadows toggle, Particles toggle. All persist via localStorage.
+- **Tutorial popup** — dismissable overlay on first launch showing the 5 most important controls.
+- ✅ **Lobby chat** — text chat in lobby broadcast to all players via Socket.IO.
 - ✅ **Ping display** — live ms counter in top-right of HUD; colour-coded green/amber/red.
-- **PvP weapon progression display** — in PvP, show all 7 weapons in a horizontal strip with the current weapon highlighted and a kill count to the next unlock.
+- **PvP weapon progression display** — weapon strip with current weapon highlighted and kill count to next unlock.
+- ✅ **Lobby background** — arenabackground.jpg shown behind lobby panels.
+- ✅ **Duplicate name check** — server rejects playerReady if another player already has that name; client re-enables the button with a red error message.
 
 ---
 
 ## 5. Technical / Architecture
 
 ### 5.1 Server
-- ✅ **Shared constants** — server.js now imports `ARENA_SIZE`, `HALF`, `P_MAX_HP`, `WEAPON_ORDER`, `PVP_WIN_KILLS`, `PVP_CORNERS` from `gameConstants.js`.
-- **Enemy AI fallback** — `tickEnemies` in server.js is never called. If the host disconnects mid-wave, all enemies freeze. Add a fallback: after 5 s with no `ownedEnemiesSync` packets for an enemy, the server runs minimal AI for it.
-- ✅ **Rate limiting** — `bulletHit` (max ~25/s) and `enemyMeleeAttempt` (max ~8/s) and `chatMessage` (max 2/s) are rate-limited per socket.
-- ✅ **Leaderboard uniqueness** — session-token-keyed dedup: same token only updates its existing entry (best score kept).
-- **Reconnection window** — 60 s is generous but the state is held in memory. If the server restarts, it's gone. Write the in-progress game state to a `session.json` that survives restarts.
+- ✅ **Shared constants** — server.js imports game constants from `gameConstants.js`.
+- **Enemy AI fallback** — if the host disconnects mid-wave, enemies freeze. Add server-side minimal AI after 5 s of no sync packets.
+- ✅ **Rate limiting** — bulletHit, enemyMeleeAttempt, chatMessage are rate-limited per socket.
+- ✅ **Leaderboard uniqueness** — session-token-keyed dedup.
+- **Reconnection window** — in-progress game state is held in memory. Write to a `session.json` that survives server restarts.
 
 ### 5.2 Client Performance
-- **Instanced mesh for repeated props** — barrels, crates, bollards placed at many positions are separate draw calls. Convert to `THREE.InstancedMesh` to cut draw calls by 40–60%.
-- **Texture atlas** — GLB props each bring their own textures. A shared atlas would cut GPU texture swaps.
-- **Occlusion culling** — Blacksite has many interior walls. Enemies and props behind walls are still rendered. `three-mesh-bvh` can provide basic culling.
-- **FXAA post-process** — current MSAA antialiasing (`antialias: true`) is expensive. Replace with an FXAA pass for mobile/low-end PCs.
+- **Instanced mesh for repeated props** — convert repeated BoxGeometry props to `THREE.InstancedMesh` to cut draw calls by 40–60%.
+- **Texture atlas** — a shared atlas would cut GPU texture swaps.
+- **Occlusion culling** — `three-mesh-bvh` for Blacksite.
+- **FXAA post-process** — replace MSAA with FXAA for mobile/low-end PCs.
 - **LOD for enemy models** — switch GLB enemies to lower-poly versions beyond 40 units.
 
 ### 5.3 Networking
-- **Delta compression for enemy sync** — currently sends full x/y/z/rot/walkT for every enemy every 50 ms. Only send changed fields.
-- **Client-side prediction** — player movement is fully client-authoritative (good). But bullet hits go through an async round-trip that can feel laggy. For LAN play this is fine; for WAN play, client-side hit confirmation would help.
-- **Reconnection token persistence** — tokens survive tab refresh (localStorage) but not server restart. Write a token→name mapping to disk so reconnection works across server restarts.
+- **Delta compression for enemy sync** — only send changed fields per 50 ms tick.
+- **Reconnection token persistence** — survive server restarts.
+
+### 5.4 Distribution (Electron)
+- ✅ **Installer / .exe** — Electron 42 wraps game as a Windows NSIS installer; `npm run dist`.
+- ✅ **Dynamic port selection** — tries 3001, falls back to any free OS port. Prevents conflicts when two instances run on the same machine.
+- ✅ **Child process isolation** — server.js runs in a `utilityProcess.fork()` subprocess. Server crashes no longer kill the Electron window; user sees an error dialog and can restart.
+- ✅ **Writable data path** — leaderboard and career stats redirect to `userData` folder to avoid Program Files ACL issues.
+- **Auto-update** — version check against GitHub releases; prompt to pull latest.
+- **Firewall rule** — NSIS installer script registers exceptions for UDP 45678 and TCP (dynamic port) so Windows Firewall doesn't block LAN discovery on first run.
+- **Accessibility** — colour-blind mode; adjustable HUD text size.
 
 ---
 
 ## 6. Content / Modes
 
-- **More waves** — currently the wave system caps at whatever you can survive. Add scripted events: at wave 15, all enemies get a speed buff; at wave 20, double skeleton groups; at wave 25, a boss *and* normal enemies.
-- **Challenge modifiers** — host-selectable modifiers: double enemy speed, no health packs, one-hit-kill mode.
-- **Horde mode** — a variant where enemies spawn infinitely and the goal is pure score. No wave breaks.
-- **Co-op revive challenge** — a wave where downed players can only be revived by a specific action (sword kill near them).
-- **New enemy: Brute Dog** — a larger, slower dog variant that can knock players back; introduces a heavier melee threat.
-- **New enemy: Sniper Skeleton** — a skeleton that holds position and throws bones at range; forces players to stay mobile.
-- **Map: Rooftop** — a city rooftop map with exposed edges, air conditioning units as cover, and a helicopter that circles and fires at players periodically (boss equivalent).
-- **Map: Bunker** — underground concrete bunker; single large room with a T-shaped corridor and two side rooms; very tight, CQB-focused.
-- **Destructible environment** — extend destructible props to walls (thin partitions that can be blasted open with the bazooka).
-
----
-
-## 7. Release Readiness
-
-- **Installer / .exe** — wrap with Electron or pkg for a one-click LAN launcher that doesn't require Node.js installed separately.
-- **Auto-update** — a version check against a GitHub release tag; prompt players to pull the latest version.
-- **Error handling** — socket disconnection, server crash, and bad data are largely unhandled on the client. Add a "Connection lost — reconnecting…" overlay and graceful degradation.
-- **Accessibility** — colour-blind mode (replace red enemy indicators with shapes); adjustable text size in HUD.
-- **GDPR / privacy** — the leaderboard stores player names. Add a disclaimer and opt-out if distributing beyond a private LAN.
-- **Performance target** — define a minimum spec (e.g., integrated GPU, 60 fps in 4-player COOP on the Arena map) and test against it. Profile with Chrome DevTools and address the top 3 bottlenecks.
+- **More waves** — scripted events: wave 15 speed buff, wave 20 double skeletons, wave 25 boss + normal enemies.
+- **Challenge modifiers** — double enemy speed, no health packs, one-hit-kill.
+- **Horde mode** — infinite enemies, pure score, no wave breaks.
+- **Co-op revive challenge** — downed players can only be revived by a sword kill nearby.
+- **New enemy: Brute Dog** — larger, slower dog with heavy knockback.
+- **New enemy: Sniper Skeleton** — bone-throwing skeleton that holds range.
+- **Map: Rooftop** — exposed edges, AC units as cover, circling helicopter boss.
+- **Map: Bunker** — underground CQB map with T-shaped corridor and two side rooms.
+- **Destructible environment** — extend destructibles to thin partition walls (bazooka-only).
 
 ---
 
 ## Priority Order (if shipping soon)
 
-1. ✅ Hit markers (done — crosshair dot flash on hit)
+1. ✅ Hit markers
 2. Enemy pathfinding fix (2 h, gameplay critical)
-3. Weapon audio assets (external, high impact)
-4. ✅ Damage direction indicator (done)
+3. ✅ Weapon audio assets — real fire/reload sounds still needed
+4. ✅ Damage direction indicator
 5. Post-processing bloom (2 h)
 6. Map thumbnails for lobby (1 h)
-7. ✅ Wave progress bar (done)
-8. ✅ Settings screen (done)
+7. ✅ Wave progress bar
+8. ✅ Settings screen
 9. Instanced mesh for props (4 h, performance)
-10. Electron packager (2 h, distribution)
+10. ✅ Electron packager + dynamic port + child process isolation
+11. Firewall NSIS rule (1 h, first-run UX)
