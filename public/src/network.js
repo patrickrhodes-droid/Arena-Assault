@@ -495,7 +495,7 @@ export function initNetworking(actions) {
     game.hp = Math.max(0, game.hp - data.damage);
     game.audio.damage();
     if (data.knockbackX || data.knockbackZ) {
-      game.audio.meleeDamage();
+      game.audio.meleeDamage(enemyType === 'skeleton');
       game.knockbackX = data.knockbackX;
       game.knockbackZ = data.knockbackZ;
     }
@@ -898,6 +898,7 @@ export function initNetworking(actions) {
 
   // Server awards kill credit to the shooter
   game.socket.on("killCredit", (data) => {
+    game.audio.killBell();
     const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "miniboss" ? "TITAN SCOUT" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
     pushKillFeed(`${game.playerName || "YOU"} → ${typeLabel} +${data.score}`, data.type === "boss" ? "boss-kill" : "");
     showScorePopup(data.score, data.type);
@@ -949,6 +950,7 @@ export function initNetworking(actions) {
     removeWeaponPickup(data.dropId);
     if (data.playerId === game.socket?.id) {
       collectWeapon(data.weaponId);
+      game.audio.weaponPickup();
       actions.setWeapon(data.weaponId);
       actions.updateHUD();
     }

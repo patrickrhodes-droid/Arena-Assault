@@ -86,6 +86,7 @@ function tryGrapplePlayerPull() {
   // Show hook flash at the hit point for 0.4 s then auto-release.
   game.grapplePoint = hits[0].point.clone();
   game.grappleState = "hooked";
+  game.audio?.grappleHit?.();
   window.setTimeout(() => {
     if (game.grappleState === "hooked") releaseGrapple();
   }, 400);
@@ -465,7 +466,9 @@ export function updatePlayer(actions) {
       _stepTmr -= game.dt;
       if (_stepTmr <= 0) {
         _stepTmr = game.isSprinting ? 0.30 : game.isCrouching ? 0.60 : 0.44;
-        const surf = (game.selectedMap === 'blacksite') ? 'carpet' : 'concrete';
+        const surf = game.selectedMap === 'blacksite' ? 'carpet'
+                   : game.selectedMap === 'desert'   ? 'grass'
+                   : 'concrete';
         game.audio?.footstep?.(surf);
       }
     }
@@ -528,16 +531,20 @@ export function updatePlayer(actions) {
 
     if (game.playerVelY <= 0 && supportY > 0 && game.visuals.player.playerGroup.position.y <= supportY + LAND_SNAP) {
       game.visuals.player.playerGroup.position.y = supportY;
+      if (_prevVelY < -4) game.audio?.land?.(_prevVelY < -10);
       game.playerVelY = 0;
       game.isGrounded = true;
     } else if (game.visuals.player.playerGroup.position.y <= 0) {
       game.visuals.player.playerGroup.position.y = 0;
+      if (_prevVelY < -4) game.audio?.land?.(_prevVelY < -10);
       game.playerVelY = 0;
       game.isGrounded = true;
     } else {
       game.isGrounded = false;
     }
   }
+
+  _prevVelY = game.playerVelY;
 
   // Coyote time: allow jump for 80 ms after walking off a ledge
   if (wasGrounded && !game.isGrounded && !game.isOnLadder && game.playerVelY <= 0) {
@@ -727,6 +734,10 @@ function handleFiring(actions) {
   const triggerDown = weapon.mode === "pistol" || weapon.mode === "grapple" || weapon.mode === "bazooka"
     ? game.mouseClicked
     : game.mouseDown;
+  const emptyClick = triggerDown && game.localPlayerIsAlive && !game.isReloading
+    && game.ammo <= 0 && weapon.mode !== "sword" && weapon.mode !== "grapple" && game.fireTmr <= 0;
+  if (emptyClick) { game.audio?.emptyMag?.(); game.fireTmr = 0.3; }
+
   if (
     !triggerDown
     || !game.localPlayerIsAlive

@@ -690,6 +690,7 @@ export function updateHealthPacks(updateHUD) {
     }
 
     // Server validates and broadcasts removal; all clients use the same path.
+    game.audio?.healthPickup?.();
     game.socket?.emit("pickupHealthPack", { packId: pack.id });
     break;
   }

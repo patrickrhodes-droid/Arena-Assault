@@ -1195,6 +1195,8 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   // Move toward player at full speed when out of range; half-speed during wind-up so boss can close the gap.
   if (!inAttackRange) {
     moveEnemyWithCollision(pos, ndx, ndz, enemy.spd);
+    enemy._stepTmr = (enemy._stepTmr || 0) - game.dt;
+    if (enemy._stepTmr <= 0) { enemy._stepTmr = 0.55; game.audio?.bossStep?.(); }
   } else if ((enemy.windupTmr || 0) > 0) {
     moveEnemyWithCollision(pos, ndx, ndz, enemy.spd * 0.5);
   }
@@ -1409,6 +1411,7 @@ export function trySwordHit() {
     const toEnemy = enemy.group.position.clone().sub(playerPos).normalize();
     if (toEnemy.dot(cameraDirection) > 0.5) {
       const swordDmg = enemy.type === "boss" ? 250 : 500;
+      game.audio?.swordHit?.();
       processHit(enemy, swordDmg, enemy.group.position.clone().setY(1.5));
     }
   }

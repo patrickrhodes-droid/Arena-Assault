@@ -382,6 +382,7 @@ export function bindMenuControls(actions) {
       return;
     }
     audioInit();
+    game.audio?.uiConfirm?.();
     readyUp();
     game.dom.deployBtn.disabled = true;
     game.dom.deployBtn.style.opacity = "0.5";

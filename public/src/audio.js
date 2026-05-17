@@ -306,12 +306,24 @@ export function createAudioController() {
     if (type === 'boss' || type === 'miniboss') _sfx('impactPlate_heavy', 5, 0.38);
     else _sfx('impactSoft_medium', 5, 0.32);
   }
-  function meleeDamage() { _sfx('impactPunch_heavy', 5, 0.55); }
+  function meleeDamage(light = false) {
+    _sfx(light ? 'impactPunch_medium' : 'impactPunch_heavy', 5, 0.55);
+  }
   function propBreak()   { _sfx('impactWood_heavy',  5, 0.55); }
+  function killBell()    { _sfx('impactBell_heavy',  5, 0.55); }
+  function grappleHit()  { _sfx('impactMetal_heavy', 5, 0.40); }
+  function land(hard = false) {
+    hard ? _sfx('impactMetal_heavy', 5, 0.45) : _sfx('impactGeneric_light', 5, 0.35);
+  }
+  function emptyMag()    { _sfx('impactMetal_light',  5, 0.40); }
+  function weaponPickup(){ _sfx('impactTin_medium',   5, 0.45); }
+  function healthPickup(){ _sfx('impactGeneric_light', 5, 0.40); }
+  function swordHit()    { _sfx('impactPlank_medium', 5, 0.50); }
+  function bossStep()    { _sfx('impactMining',        5, 0.30); }
 
   function uiClick()   { _playFile(`${UI}click${1 + _rnd(5)}.ogg`,     0.45); }
   function uiHover()   { _playFile(`${UI}rollover${1 + _rnd(6)}.ogg`,  0.20); }
-  function uiConfirm() { _playFile(`${UI}mouseclick1.ogg`,              0.50); }
+  function uiConfirm() { _playFile(`${UI}mouseclick1.ogg`,              0.55); }
   function uiSwitch()  { _playFile(`${UI}switch${1 + _rnd(10)}.ogg`,   0.35); }
 
   function dialogueTick() {
@@ -354,6 +366,14 @@ export function createAudioController() {
     enemyHit,
     meleeDamage,
     propBreak,
+    killBell,
+    grappleHit,
+    land,
+    emptyMag,
+    weaponPickup,
+    healthPickup,
+    swordHit,
+    bossStep,
     uiClick,
     uiHover,
     uiConfirm,
