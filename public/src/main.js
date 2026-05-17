@@ -232,6 +232,7 @@ window.addEventListener("resize", () => {
   game.camera.aspect = window.innerWidth / window.innerHeight;
   game.camera.updateProjectionMatrix();
   game.renderer.setSize(window.innerWidth, window.innerHeight);
+  game.composer?.setSize(window.innerWidth, window.innerHeight);
 });
 
 window.addEventListener("load", () => {
@@ -945,7 +946,8 @@ function animate(time) {
     if (doMinimap) drawMinimap();
   }
 
-  game.renderer.render(game.scene, game.camera);
+  if (game.composer) game.composer.render();
+  else game.renderer.render(game.scene, game.camera);
   requestAnimationFrame(animate);
 }
 

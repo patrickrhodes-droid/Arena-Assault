@@ -993,6 +993,16 @@ function runOwnedEnemyAI(enemy) {
 }
 
 function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
+  // Strafe timer: alternate lateral direction every 1.5–3 s so soldiers sidestep
+  enemy.strafeTmr = (enemy.strafeTmr ?? 0) - game.dt;
+  if (enemy.strafeTmr <= 0) {
+    enemy.strafeTmr = 1.5 + Math.random() * 1.5;
+    enemy.strafeDir = Math.random() < 0.5 ? 1 : -1;
+  }
+  const sd = enemy.strafeDir ?? 1;
+  const strafeX = -ndz * sd;
+  const strafeZ =  ndx * sd;
+
   const moveSpd = dist > SOLDIER_TUNING.kiteAdvanceDistance
     ? enemy.spd
     : dist < SOLDIER_TUNING.kiteRetreatDistance ? -enemy.spd * SOLDIER_TUNING.retreatSpeedMultiplier : 0;
@@ -1000,7 +1010,17 @@ function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {
   const prevZ = pos.z;
   const dirX = enemy.avoidTmr > 0 ? enemy.avoidDirX : ndx;
   const dirZ = enemy.avoidTmr > 0 ? enemy.avoidDirZ : ndz;
-  moveEnemyWithCollision(pos, dirX, dirZ, moveSpd);
+
+  if (moveSpd === 0 && enemy.avoidTmr <= 0) {
+    // Kite zone: strafe laterally instead of standing still
+    moveEnemyWithCollision(pos, strafeX, strafeZ, enemy.spd * 0.55);
+  } else {
+    // Advancing / retreating: blend in a little lateral movement
+    const bx = dirX * 0.82 + strafeX * 0.18;
+    const bz = dirZ * 0.82 + strafeZ * 0.18;
+    const bl = Math.sqrt(bx * bx + bz * bz) || 1;
+    moveEnemyWithCollision(pos, bx / bl, bz / bl, Math.abs(moveSpd));
+  }
   updateDetourState(
     enemy,
     pos,

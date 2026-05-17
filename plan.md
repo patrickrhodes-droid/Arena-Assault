@@ -18,20 +18,20 @@ This document captures everything needed to take the project from its current pr
 - **Wall running / slide** — stretch goal; would add significant skill ceiling.
 
 ### 1.2 Weapons
-- **Weapon sway / bob** — first-person gun should sway gently while moving and settle when still.
-- **Reload animation** — add a simple transform animation (gun dips down, comes back up) instead of just text.
+- ✅ **Weapon sway / bob** — movement bob (sin wave at 5.5 rad/s, ±0.004/0.006 u) layered on top of existing idle breathe and mouse sway.
+- ✅ **Reload animation** — gun dips down via a sin curve over the reload duration and returns when complete.
 - ✅ **Muzzle flash 3× bigger** — flash sphere radius 0.1 → 0.32, light range 5 → 9, duration 0.04 → 0.10 s.
 - ✅ **Hit markers** — crosshair dot flashes white → orange when a shot connects.
 - ✅ **Empty mag feedback** — impactMetal_light dry-fire click when attempting to fire with 0 ammo.
 - ✅ **Weapon balancing pass** — shotgun 72 → 144 per pellet; bazooka 500 → 1000 direct, 400 → 800 splash.
 - ✅ **Crosshair / bullet alignment** — third-person bullets now raycast from camera through crosshair centre to find the real world hit point, eliminating close-range parallax offset.
 - **Ammo pickups** — add ammo crates to maps so players can resupply mid-wave.
-- **Sword lunge** — allow the player to dash 2–3 units forward when swinging the sword.
+- ✅ **Sword lunge** — forward knockback impulse (22 u/s) when swinging while grounded, dashing the player ~2–3 u in the facing direction.
 
 ### 1.3 Enemy AI
 - **Enemy pathfinding fix** — the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
 - **Dog animation** — dogs currently use the Wolf GLB walk. A proper dog-run animation or faster gallop cycle would look better.
-- **Soldier suppression** — soldiers should strafe laterally when behind cover, not just stand and shoot.
+- ✅ **Soldier suppression** — soldiers strafe perpendicular to the player in the kite zone (direction alternates every 1.5–3 s). Also blends lateral movement while advancing/retreating.
 - ✅ **Enemy awareness** — brief "notice" pause (0.35–0.6 s) before first charge; removes instant aggro.
 - ✅ **Boss roar** — phase 2 transition: red flash + heavy screen shake + HUD alert.
 - ✅ **Dog / skeleton standoff** — both types now maintain a minimum gap (1.8 u dog, 1.7 u skeleton) rather than stacking on the player's position.
@@ -59,7 +59,7 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss.
 - ✅ **Bullet-hole decals** — DecalGeometry with bullet-holes.png projects onto walls, floors, and static GLB props. Pool of 60; oldest disposed when exceeded.
 - ✅ **Explosive barrel pre-warning** — proximity warning banner appears when player enters blast radius.
-- **Post-processing** — Three.js `EffectComposer` with bloom and vignette.
+- ✅ **Post-processing bloom** — EffectComposer + UnrealBloomPass (strength 0.38, radius 0.55, threshold 0.82). Muzzle flashes and explosions glow; normal geometry unaffected.
 - ✅ **Muzzle smoke** — 3 small grey particles spawned at the barrel on every non-bazooka/grapple shot.
 - ✅ **Boss slam shockwave** — burst of orange particles + large embers at ground level when boss swing fires.
 

@@ -129,6 +129,7 @@ export const game = {
   scene: null,
   camera: null,
   renderer: null,
+  composer: null,
   dom: null,
   audio: null,
   visuals: {},

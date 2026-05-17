@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
 import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, WALL_H } from "./config.js";
 import { game } from "./state.js";
@@ -182,6 +185,17 @@ export function initScene() {
   game.scene = scene;
   game.camera = camera;
   game.renderer = renderer;
+
+  // Post-processing: subtle bloom so muzzle flashes and bright particles glow
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.38,  // strength — noticeable but not overwhelming
+    0.55,  // radius
+    0.82,  // threshold — only very bright surfaces (muzzle flash, explosions) bloom
+  ));
+  game.composer = composer;
 
   addPermanentLighting();
   buildPlayer();

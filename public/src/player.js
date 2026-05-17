@@ -773,6 +773,11 @@ function handleFiring(actions) {
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
+    // Lunge: propel player forward in facing direction for a 2-3 unit dash
+    if (game.isGrounded && !game.isCrouching) {
+      game.knockbackX += -Math.sin(game.camTheta) * 22;
+      game.knockbackZ += -Math.cos(game.camTheta) * 22;
+    }
     actions.handleSwordAttack();
   } else if (weapon.mode === "grapple") {
     game.audio.playWeapon(weapon);
@@ -908,15 +913,25 @@ function updateWeaponVisuals() {
   if (Math.abs(_mouseDeltaX) < 0.05) _mouseDeltaX = 0;
   if (Math.abs(_mouseDeltaY) < 0.05) _mouseDeltaY = 0;
 
-  // ── Idle weapon breathe (only when still) ────────────────────────────────
+  // ── Idle breathe + movement bob ──────────────────────────────────────────
   const t = performance.now() * 0.001;
   const idleX = game.isMoving ? 0 : Math.sin(t * 0.85) * 0.0035;
   const idleY = game.isMoving ? 0 : Math.sin(t * 1.7)  * 0.0025;
+  // Movement: gun bobs gently in sync with walking pace
+  const walkBobX = game.isMoving && !game.isAiming ? Math.sin(t * 5.5) * 0.004 : 0;
+  const walkBobY = game.isMoving && !game.isAiming ? -Math.abs(Math.sin(t * 5.5)) * 0.006 : 0;
+
+  // ── Reload dip: gun sweeps down then back during reload ───────────────────
+  let reloadDipY = 0;
+  if (game.isReloading) {
+    const progress = Math.max(0, 1 - game.reloadTmr / getWeapon().reload);
+    reloadDipY = Math.sin(progress * Math.PI) * 0.08;
+  }
 
   const model       = game.visuals.weapon.weaponModels[game.currentWeapon];
   const basePosition = game.isAiming ? model.fpAdsPos : model.fpPos;
-  const targetX = basePosition[0] + _swayX + idleX;
-  const targetY = basePosition[1] + _swayY + idleY;
+  const targetX = basePosition[0] + _swayX + idleX + walkBobX;
+  const targetY = basePosition[1] + _swayY + idleY + walkBobY - reloadDipY;
   const targetZ = basePosition[2] + game.fpRecoilZ;
 
   game.visuals.weapon.firstPersonGun.position.x += (targetX - game.visuals.weapon.firstPersonGun.position.x) * 0.22;
