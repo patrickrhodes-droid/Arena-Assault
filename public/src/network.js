@@ -898,7 +898,6 @@ export function initNetworking(actions) {
 
   // Server awards kill credit to the shooter
   game.socket.on("killCredit", (data) => {
-    game.audio.killBell();
     const typeLabel = data.type === "boss" ? "TITAN BRUTE" : data.type === "miniboss" ? "TITAN SCOUT" : data.type === "dog" ? "DOG" : data.type === "skeleton" ? "SKELETON" : "SOLDIER";
     pushKillFeed(`${game.playerName || "YOU"} → ${typeLabel} +${data.score}`, data.type === "boss" ? "boss-kill" : "");
     showScorePopup(data.score, data.type);
