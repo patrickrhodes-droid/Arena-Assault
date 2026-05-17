@@ -24,6 +24,43 @@
   <canvas id="lobby-canvas"></canvas>
   <div id="vignette"></div>
   <div id="landing-flash"></div>
+  <!-- ── First-launch tutorial ── -->
+  <div id="tutorial-overlay">
+    <div id="tutorial-panel">
+      <h2>CONTROLS</h2>
+      <div class="tutorial-cols">
+        <div class="tutorial-col">
+          <div class="tutorial-heading">KEYBOARD / MOUSE</div>
+          <div class="tutorial-row"><span class="tkey">W A S D</span><span>Move</span></div>
+          <div class="tutorial-row"><span class="tkey">Space</span><span>Jump</span></div>
+          <div class="tutorial-row"><span class="tkey">Shift</span><span>Sprint</span></div>
+          <div class="tutorial-row"><span class="tkey">Ctrl</span><span>Crouch</span></div>
+          <div class="tutorial-row"><span class="tkey">LMB</span><span>Fire</span></div>
+          <div class="tutorial-row"><span class="tkey">RMB</span><span>Aim</span></div>
+          <div class="tutorial-row"><span class="tkey">R</span><span>Reload</span></div>
+          <div class="tutorial-row"><span class="tkey">E</span><span>Pick up / Revive</span></div>
+          <div class="tutorial-row"><span class="tkey">G</span><span>Grapple</span></div>
+          <div class="tutorial-row"><span class="tkey">Q</span><span>Cycle weapon</span></div>
+          <div class="tutorial-row"><span class="tkey">Esc</span><span>Pause</span></div>
+        </div>
+        <div class="tutorial-col">
+          <div class="tutorial-heading">CONTROLLER (XBOX)</div>
+          <div class="tutorial-row"><span class="tkey">L Stick</span><span>Move</span></div>
+          <div class="tutorial-row"><span class="tkey">R Stick</span><span>Look</span></div>
+          <div class="tutorial-row"><span class="tkey">A</span><span>Jump</span></div>
+          <div class="tutorial-row"><span class="tkey">RT</span><span>Fire</span></div>
+          <div class="tutorial-row"><span class="tkey">LT</span><span>Aim</span></div>
+          <div class="tutorial-row"><span class="tkey">X</span><span>Reload</span></div>
+          <div class="tutorial-row"><span class="tkey">B</span><span>Pick up / Revive</span></div>
+          <div class="tutorial-row"><span class="tkey">R3</span><span>Grapple</span></div>
+          <div class="tutorial-row"><span class="tkey">LB / RB</span><span>Cycle weapon</span></div>
+          <div class="tutorial-row"><span class="tkey">Y</span><span>Crouch</span></div>
+          <div class="tutorial-row"><span class="tkey">Start</span><span>Pause</span></div>
+        </div>
+      </div>
+      <button id="tutorial-close-btn" class="deploy-btn">GOT IT</button>
+    </div>
+  </div>
 
   <!-- ── SCREEN 0: LAN CONNECTION ── -->
   <div id="screen-connect" class="lobby-screen active">

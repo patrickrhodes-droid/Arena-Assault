@@ -355,6 +355,21 @@ export async function buildMapFromJson(mapId, { scene, arenaGroup, arenaLights, 
 
   const mats = materials(mapDef.theme || 'arena');
 
+  // Theme-specific decorations
+  if (mapDef.theme === 'desert') {
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x1a6aaa, transparent: true, opacity: 0.70,
+      roughness: 0.08, metalness: 0.15,
+    });
+    // Two oasis water pools (north and south compounds)
+    [{ x: 0, z: -48 }, { x: 0, z: 48 }].forEach(({ x, z }) => {
+      const water = new THREE.Mesh(new THREE.PlaneGeometry(13, 7), waterMat);
+      water.rotation.x = -Math.PI / 2;
+      water.position.set(x, 0.03, z);
+      arenaGroup.add(water);
+    });
+  }
+
   for (const obj of (mapDef.objects || [])) {
     switch (obj.type) {
       case 'box':

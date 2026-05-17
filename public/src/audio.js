@@ -326,6 +326,25 @@ export function createAudioController() {
   function uiConfirm() { _playFile(`${UI}mouseclick1.ogg`,              0.55); }
   function uiSwitch()  { _playFile(`${UI}switch${1 + _rnd(10)}.ogg`,   0.35); }
 
+  function heartbeat() {
+    if (!context) return;
+    const v = effectiveVol(0.22 * sfxVolume);
+    if (v < 0.001) return;
+    const t = context.currentTime;
+    [0, 0.15].forEach(d => {
+      const osc = context.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(58, t + d);
+      osc.frequency.exponentialRampToValueAtTime(28, t + d + 0.14);
+      const g = context.createGain();
+      g.gain.setValueAtTime(v, t + d);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.2);
+      osc.connect(g).connect(context.destination);
+      osc.start(t + d);
+      osc.stop(t + d + 0.2);
+    });
+  }
+
   function dialogueTick() {
     if (!context) return;
     const v = effectiveVol(0.028 * sfxVolume);
@@ -374,6 +393,7 @@ export function createAudioController() {
     healthPickup,
     swordHit,
     bossStep,
+    heartbeat,
     uiClick,
     uiHover,
     uiConfirm,

@@ -139,6 +139,25 @@ export function cacheDom() {
   game.dom.minimapContext = game.dom.minimap.getContext("2d");
 }
 
+export function initTutorial() {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (!overlay) return;
+  try {
+    if (!localStorage.getItem('arena_tutorial_seen')) {
+      overlay.classList.add('show');
+    }
+  } catch { /* localStorage unavailable */ }
+
+  const close = () => {
+    overlay.classList.remove('show');
+    try { localStorage.setItem('arena_tutorial_seen', '1'); } catch {}
+  };
+  document.getElementById('tutorial-close-btn')?.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && overlay.classList.contains('show')) close();
+  });
+}
+
 function showScreen(id) {
   ["screen-connect", "screen-player", "screen-map"].forEach((s) => {
     document.getElementById(s)?.classList.toggle("active", s === id);

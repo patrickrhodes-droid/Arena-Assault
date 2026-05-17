@@ -21,6 +21,7 @@ import {
   getWeapon,
   processHit,
   spawnBullet,
+  spawnParticles,
   startReload,
   usingFirstPersonView,
   usingScopedSniperView,
@@ -30,6 +31,8 @@ import { getBossEnemy } from "./enemies.js";
 let bossAlertCooldown = 0;
 let _prevVelY       = 0; // track vertical velocity between frames for landing detection
 let _stepTmr        = 0; // footstep interval timer
+let _landDip        = 0; // camera dip magnitude on landing, decays each frame
+let _hbTimer        = 0; // low-health heartbeat interval timer
 const _aimRaycaster = new THREE.Raycaster(); // reused for crosshair→world aim point
 let _swayX          = 0; // current weapon sway offset X
 let _swayY          = 0; // current weapon sway offset Y
@@ -585,6 +588,7 @@ export function updatePlayer(actions) {
   const justLanded = !wasGrounded && game.isGrounded && _prevVelY < -7;
   if (justLanded) {
     const impactAmt = Math.min(0.55, Math.abs(_prevVelY) * 0.018);
+    _landDip = Math.min(0.18, Math.abs(_prevVelY) * 0.013);
     addShake(impactAmt);
     // Squish player model briefly (lerps back in animatePlayerBody)
     game.visuals.player.playerGroup.scale.y = Math.max(0.5, game.visuals.player.playerGroup.scale.y - impactAmt * 1.8);
@@ -597,6 +601,18 @@ export function updatePlayer(actions) {
     }
   }
   _prevVelY = game.playerVelY;
+
+  // ── Low health heartbeat ─────────────────────────────────────────────────
+  const lowHp = game.localPlayerIsAlive && !game.localPlayerIsDowned && game.hp > 0 && game.hp < (game.effectiveMaxHP ?? 1000) * 0.25;
+  if (lowHp) {
+    _hbTimer -= game.dt;
+    if (_hbTimer <= 0) {
+      _hbTimer = 0.85;
+      game.audio?.heartbeat?.();
+    }
+  } else {
+    _hbTimer = 0;
+  }
 
   // ── Crosshair spread class ───────────────────────────────────────────────
   const xh = game.dom?.crosshair;
@@ -835,6 +851,10 @@ function handleFiring(actions) {
         shooterId: game.socket?.id,
         weapon: game.currentWeapon,
       });
+      // Muzzle smoke — small grey puff (skip bazooka/grapple/sword which have their own effects)
+      if (weapon.mode !== 'bazooka' && weapon.mode !== 'grapple' && weapon.mode !== 'sword') {
+        spawnParticles(muzzlePosition.clone(), 3, 0xbbbbbb, 1.4);
+      }
       // Broadcast for visibility on other clients (visual-only bullet there).
       game.socket?.emit("fireBullet", {
         x: bulletPosition.x,
@@ -953,6 +973,14 @@ export function updateCamera() {
   // FPS head-bob: gentle vertical oscillation when walking in first-person
   if (inFirstPerson && game.isMoving && game.isGrounded && !game.isCrouching) {
     target.y += Math.sin(game.walkTime) * (game.isSprinting ? 0.055 : 0.038);
+  }
+
+  // Landing camera dip — quick downward punch that springs back
+  if (_landDip > 0.001) {
+    target.y -= _landDip;
+    _landDip *= Math.pow(0.002, game.dt);
+  } else {
+    _landDip = 0;
   }
 
   game.camera.position.lerp(target, Math.min(1, 12 * game.dt));

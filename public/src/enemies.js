@@ -1204,7 +1204,14 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
   enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
   if ((enemy.windupTmr || 0) > 0) {
     enemy.windupTmr -= game.dt;
-    if (enemy.windupTmr <= 0) { enemy.windupTmr = 0; enemy.swingTmr = 0.22; }
+    if (enemy.windupTmr <= 0) {
+      enemy.windupTmr = 0;
+      enemy.swingTmr = 0.22;
+      // Ground shockwave ring when the swing fires
+      const sw = new THREE.Vector3(pos.x, 0.1, pos.z);
+      spawnParticles(sw, 20, 0xff4400, 6, false);
+      spawnParticles(sw, 8, 0xff8800, 4, true);
+    }
   } else if (isSwinging) {
     const prev = enemy.swingTmr;
     enemy.swingTmr -= game.dt;

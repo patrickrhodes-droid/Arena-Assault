@@ -100,7 +100,7 @@ A **⚙ SETTINGS** button is available on every lobby screen.
 | Map | Theme | Description |
 |---|---|---|
 | **Combat Arena** | Industrial | The original 144 × 144 unit arena with metal staircases, crate clusters, bunkers, and 4 double-height sniper towers. Night sky with teal accent lighting. |
-| **Dust Bowl** | Desert | Sandy, open layout with ruined archways, stone pillars, oasis compounds, low sand-dune ridges, and two stepped-pyramid sniper platforms. Warm amber sky. |
+| **Dust Bowl** | Desert | Sandy, open layout with ruined archways, stone pillars, oasis compounds with water, low sand-dune ridges, and two stepped-pyramid sniper platforms. Warm amber sky. |
 | **Downtown** | City (Day) | Tight urban grid with four large climbable buildings, a central plaza, jersey barriers, alleyways, and dumpsters. Bright sunlit skyline. |
 | **Blacksite** | Indoor | Abandoned research compound. A cross-shaped ground floor with a central atrium, four long corridors, and four large corner rooms. Second floor features catwalks and a raised central observation deck. |
 
@@ -114,6 +114,8 @@ All maps are stored as JSON files in `public/maps/` and loaded by both the game 
 - **Explosive barrels** — red barrels and gas cans scattered throughout the corridors detonate when shot.
 
 Selecting a map in the lobby rebuilds the 3D background in real time so you can preview it before starting.
+
+On **first launch** a controls reference overlay appears showing the full keyboard and controller layout. Dismiss it by clicking **GOT IT** or pressing Esc — it won't show again.
 
 ## Controls
 
@@ -265,7 +267,6 @@ All sound effects use a lazy-loaded buffer cache (first play fetches, subsequent
 | Prop destroyed | `impactWood_heavy` |
 | Boss footstep (charging) | `impactMining` |
 | Grapple hook lands | `impactMetal_heavy` |
-| Kill confirmed | `impactBell_heavy` |
 | Weapon pickup | `impactTin_medium` |
 | Health pack pickup | `impactGeneric_light` |
 | Empty mag dry-fire | `impactMetal_light` |

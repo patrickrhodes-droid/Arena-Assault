@@ -40,6 +40,7 @@ import {
   bindMenuControls,
   drawMinimap,
   hideRankings,
+  initTutorial,
   pushKillFeed,
   renderJoinLinkControls,
   setCopyJoinLinkStatus,
@@ -58,6 +59,7 @@ cacheDom();
 game.audio = createAudioController();
 initScene();
 applyWeaponModel();
+initTutorial();
 
 const actions = {
   addShake,

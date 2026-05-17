@@ -14,6 +14,7 @@ This document captures everything needed to take the project from its current pr
 - **Jump feel** — add a small squash-and-stretch animation to the player model on land impact.
 - ✅ **Coyote time** — 80 ms grace window after walking off a ledge before gravity locks in.
 - ✅ **Landing sound** — soft/hard landing variants (impactGeneric_light / impactMetal_heavy) based on fall velocity.
+- ✅ **Landing camera dip** — camera punches down on impact and springs back over ~0.4 s.
 - **Wall running / slide** — stretch goal; would add significant skill ceiling.
 
 ### 1.2 Weapons
@@ -52,15 +53,15 @@ This document captures everything needed to take the project from its current pr
 - **Ladder visuals** — City and Desert ladders are invisible. Add GLB ladder prop models matched to the ladder zones.
 - **Map props at night** — City street lights should cast point light shadows.
 - ✅ **Skybox** — HDR equirectangular sky per map (arenasky.hdr, desertsky.hdr, Citysky.hdr). Blacksite keeps the dark gradient sphere.
-- **Water in Desert** — a blue plane inside the oasis compound walls.
+- ✅ **Water in Desert** — semi-transparent blue planes at both oasis compounds (y=0.03, 13×7 u).
 
 ### 2.3 Effects
 - ✅ **Color-coded death particles** — white for skeletons, dark red for soldiers, orange for dogs, gold for boss.
 - ✅ **Bullet-hole decals** — DecalGeometry with bullet-holes.png projects onto walls, floors, and static GLB props. Pool of 60; oldest disposed when exceeded.
 - ✅ **Explosive barrel pre-warning** — proximity warning banner appears when player enters blast radius.
 - **Post-processing** — Three.js `EffectComposer` with bloom and vignette.
-- **Muzzle smoke** — a small wisp of semi-transparent particle at the barrel on fire.
-- **Boss slam shockwave** — ring of particles at ground level expanding outward on swing.
+- ✅ **Muzzle smoke** — 3 small grey particles spawned at the barrel on every non-bazooka/grapple shot.
+- ✅ **Boss slam shockwave** — burst of orange particles + large embers at ground level when boss swing fires.
 
 ---
 
@@ -70,7 +71,7 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Wall impact** — impactMetal_medium on every bullet hole placement.
 - ✅ **Enemy hit feedback** — impactSoft_medium for regular enemies; impactPlate_heavy for boss/miniboss.
 - ✅ **Melee damage** — impactPunch_heavy (dog/boss), impactPunch_medium (skeleton lighter hit).
-- ✅ **Kill confirmation bell** — impactBell_heavy on every killCredit.
+- ✅ **Kill confirmation bell** — removed (sounded bad).
 - ✅ **Weapon / health pickup** — impactTin_medium for weapons, impactGeneric_light for health packs.
 - ✅ **Sword hit** — impactPlank_medium layered with synth sword sound when swing connects.
 - ✅ **Prop destruction** — impactWood_heavy on destructible barrel/crate.
@@ -83,7 +84,7 @@ This document captures everything needed to take the project from its current pr
 - **Enemy audio** — dog growl on aggro; skeleton rattle on attack; soldier "contact!" on seeing player.
 - **Boss audio** — charge roar, swing whoosh, phase-2 snarl, death explosion.
 - **Ambient audio** — desert wind, urban noise, industrial hum for Arena/Blacksite.
-- **Low health heartbeat** — slow heartbeat + red vignette pulse when HP < 25%.
+- ✅ **Low health heartbeat** — double-thump synth heartbeat every 0.85 s when HP < 25%. Vignette pulse already existed.
 
 ---
 
@@ -101,7 +102,7 @@ This document captures everything needed to take the project from its current pr
 - **Map preview thumbnails** — replace gradient lobby cards with actual screenshot thumbnails.
 - **Post-game vote** — "Play again?" / "Change map?" vote panel before redeploying.
 - ✅ **Settings screen** — Master/Music/SFX sliders, Shadows toggle, Particles toggle. All persist via localStorage.
-- **Tutorial popup** — dismissable overlay on first launch showing the 5 most important controls.
+- ✅ **Tutorial popup** — full keyboard + controller control reference shown on first launch (localStorage flag). Dismissed by clicking GOT IT or pressing Esc.
 - ✅ **Lobby chat** — text chat in lobby broadcast to all players via Socket.IO.
 - ✅ **Ping display** — live ms counter in top-right of HUD; colour-coded green/amber/red.
 - **PvP weapon progression display** — weapon strip with current weapon highlighted and kill count to next unlock.

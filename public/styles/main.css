@@ -2492,6 +2492,72 @@ canvas {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   FIRST-LAUNCH TUTORIAL OVERLAY
+   ═══════════════════════════════════════════════════════════════════════════ */
+#tutorial-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.82);
+  align-items: center;
+  justify-content: center;
+}
+#tutorial-overlay.show { display: flex; }
+
+#tutorial-panel {
+  background: rgba(12, 22, 32, 0.97);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  padding: 28px 32px 24px;
+  max-width: 680px;
+  width: 90%;
+  text-align: center;
+}
+#tutorial-panel h2 {
+  letter-spacing: 5px;
+  color: var(--accent);
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+.tutorial-cols {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  margin-bottom: 22px;
+  text-align: left;
+}
+.tutorial-col { flex: 1; min-width: 0; }
+.tutorial-heading {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+.tutorial-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tutorial-row span:last-child { color: var(--text); }
+.tkey {
+  background: rgba(0, 204, 170, 0.12);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    IN-GAME SQUAD BANTER BOX (campaign mode)
    ═══════════════════════════════════════════════════════════════════════════ */
 #banter-box {
