@@ -249,22 +249,27 @@ export async function rebuildArena(mapId) {
 
   // Try JSON-based loading first; fall back to legacy builders if unavailable.
   const result = await buildMapFromJson(mapId);
-  if (result.ok) {
-    console.log(`[mapLoader] Loaded ${mapId}.json`);
-    return;
+  if (!result.ok) {
+    // ── Legacy fallback ────────────────────────────────────────────────────
+    console.warn(`[mapLoader] Could not load /maps/${mapId}.json — using legacy builder`);
+    if (mapId === "desert") {
+      buildArenaDesert();
+    } else if (mapId === "city") {
+      buildArenaCity();
+    } else if (mapId === "blacksite") {
+      buildArenaBlacksite();
+    } else {
+      buildArenaOriginal();
+    }
   }
 
-  // ── Legacy fallback ──────────────────────────────────────────────────────
-  console.warn(`[mapLoader] Could not load /maps/${mapId}.json — using legacy builder`);
-  if (mapId === "desert") {
-    buildArenaDesert();
-  } else if (mapId === "city") {
-    buildArenaCity();
-  } else if (mapId === "blacksite") {
-    buildArenaBlacksite();
-  } else {
-    buildArenaOriginal();
-  }
+  // Load HDR sky — runs for both JSON and legacy paths so the sky is always applied.
+  const HDR_SKIES = {
+    arena:   '/assets/Skies/arenasky.hdr',
+    desert:  '/assets/Skies/desertsky.hdr',
+    city:    '/assets/Skies/Citysky.hdr',
+  };
+  if (HDR_SKIES[mapId]) loadHDRSky(HDR_SKIES[mapId]);
 }
 
 // ── Gradient sky sphere ───────────────────────────────────────────────────────
@@ -312,7 +317,6 @@ function addSun(color, intensity, px, py, pz) {
 function buildArenaOriginal() {
   game.scene.fog = new THREE.FogExp2(0x10242c, 0.0054);
   game.scene.background = new THREE.Color(0x10242c);
-  loadHDRSky('/assets/Skies/arenasky.hdr');
   addSun(0xdff7ff, 1.8, 36, 64, 18);
 
   // Teal reactor accent floor lights.
@@ -557,7 +561,6 @@ function buildArenaOriginal() {
 function buildArenaDesert() {
   game.scene.fog = new THREE.FogExp2(0xdbb07d, 0.004);
   game.scene.background = new THREE.Color(0xe3c4a1);
-  loadHDRSky('/assets/Skies/desertsky.hdr');
   addSun(0xfffef0, 2.5, 50, 80, 10);
 
   // Warm amber fill lights — scattered lanterns.
@@ -675,7 +678,6 @@ function buildArenaDesert() {
 function buildArenaCity() {
   game.scene.fog = new THREE.FogExp2(0xc9d8e4, 0.0018);
   game.scene.background = new THREE.Color(0x87b8e8);
-  loadHDRSky('/assets/Skies/Citysky.hdr');
   addSun(0xfff4d6, 2.85, 34, 78, -24);
   addSun(0xffd1a8, 0.8, -18, 36, 30);
   const cityHemi = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 1.1);
