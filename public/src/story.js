@@ -523,6 +523,8 @@ export function showPreGameCharSelect() {
     // Already showing (e.g. matchStarted fired twice) — return current selection.
     return Promise.resolve(game.myCharacter || 'iestyn');
   }
+  // Character already known (mid-match rejoin after refresh) — skip the overlay.
+  if (game.myCharacter) return Promise.resolve(game.myCharacter);
   _preGameSelectActive = true;
   return new Promise((resolve) => {
     const ov      = document.getElementById('cutscene-overlay');
