@@ -714,6 +714,35 @@ export function bindMenuControls(actions) {
         .catch(() => { game.dom.leaderboardContent.innerHTML = "<p style='color:var(--warn)'>Could not load leaderboard.</p>"; sec.hidden = false; });
     });
   }
+
+  // ── UI sound delegation — lobby screens only, not during gameplay ─────────
+  document.addEventListener("click", (e) => {
+    if (game.state === "PLAYING") return;
+    if (e.target.closest("button, summary, .mode-card, .map-card, .lan-join-btn")) {
+      game.audio?.uiClick?.();
+    }
+  }, true);
+
+  document.addEventListener("mouseover", (e) => {
+    if (game.state === "PLAYING") return;
+    const btn = e.target.closest("button, .mode-card, .map-card, .lan-join-btn");
+    if (btn && btn !== document._lastHoveredBtn) {
+      document._lastHoveredBtn = btn;
+      game.audio?.uiHover?.();
+    }
+  }, true);
+
+  document.addEventListener("mouseout", (e) => {
+    if (e.target === document._lastHoveredBtn) document._lastHoveredBtn = null;
+  }, true);
+
+  // Toggles and selects → switch sound
+  document.addEventListener("change", (e) => {
+    if (game.state === "PLAYING") return;
+    if (e.target.matches("input[type='checkbox'], select, input[type='range']")) {
+      game.audio?.uiSwitch?.();
+    }
+  }, true);
 }
 
 export function syncMapCards(mapId) {

@@ -264,6 +264,56 @@ export function createAudioController() {
     gunshot();
   }
 
+  // ── File-based SFX (buffer-cached, lazy-loaded) ───────────────────────────
+  const _bufCache = new Map();
+
+  async function _loadBuf(path) {
+    if (_bufCache.has(path)) return _bufCache.get(path);
+    try {
+      const resp = await fetch(path);
+      if (!resp.ok) throw new Error(resp.status);
+      const buf = await context.decodeAudioData(await resp.arrayBuffer());
+      _bufCache.set(path, buf);
+      return buf;
+    } catch { _bufCache.set(path, null); return null; }
+  }
+
+  function _playBuf(buf, vol) {
+    if (!buf || !context) return;
+    const src = context.createBufferSource();
+    src.buffer = buf;
+    const g = context.createGain();
+    g.gain.setValueAtTime(effectiveVol(vol * sfxVolume), context.currentTime);
+    src.connect(g).connect(context.destination);
+    src.start();
+  }
+
+  function _playFile(path, vol = 0.5) {
+    if (!context) return;
+    _loadBuf(path).then(buf => _playBuf(buf, vol));
+  }
+
+  const SFX = '/assets/SFX/';
+  const UI  = '/assets/UISFX/';
+  function _rnd(n) { return Math.floor(Math.random() * n); }
+  function _sfx(name, count = 5, vol = 0.5) {
+    _playFile(`${SFX}${name}_${String(_rnd(count)).padStart(3, '0')}.ogg`, vol);
+  }
+
+  function footstep(surface = 'concrete') { _sfx(`footstep_${surface}`, 5, 0.22); }
+  function wallImpact()  { _sfx('impactMetal_medium', 5, 0.30); }
+  function enemyHit(type) {
+    if (type === 'boss' || type === 'miniboss') _sfx('impactPlate_heavy', 5, 0.38);
+    else _sfx('impactSoft_medium', 5, 0.32);
+  }
+  function meleeDamage() { _sfx('impactPunch_heavy', 5, 0.55); }
+  function propBreak()   { _sfx('impactWood_heavy',  5, 0.55); }
+
+  function uiClick()   { _playFile(`${UI}click${1 + _rnd(5)}.ogg`,     0.45); }
+  function uiHover()   { _playFile(`${UI}rollover${1 + _rnd(6)}.ogg`,  0.20); }
+  function uiConfirm() { _playFile(`${UI}mouseclick1.ogg`,              0.50); }
+  function uiSwitch()  { _playFile(`${UI}switch${1 + _rnd(10)}.ogg`,   0.35); }
+
   function dialogueTick() {
     if (!context) return;
     const v = effectiveVol(0.028 * sfxVolume);
@@ -298,5 +348,15 @@ export function createAudioController() {
     sword,
     setVolumes,
     getVolumes: () => ({ master: masterVolume, music: musicVolume, sfx: sfxVolume }),
+    // File-based SFX
+    footstep,
+    wallImpact,
+    enemyHit,
+    meleeDamage,
+    propBreak,
+    uiClick,
+    uiHover,
+    uiConfirm,
+    uiSwitch,
   };
 }

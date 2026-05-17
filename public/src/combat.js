@@ -142,6 +142,7 @@ function spawnBulletHole(prevPos, dir, stepDist) {
   decal.renderOrder = 3 + (_decals.length % 60);
   targetMesh.attach(decal);
   _decals.push(decal);
+  game.audio?.wallImpact?.();
 
   if (_decals.length > MAX_DECALS) {
     const old = _decals.shift();
@@ -458,6 +459,7 @@ export function processHit(enemy, damage, particlePosition) {
   }
   // Local audio + particles for instant feedback.
   game.audio.hit();
+  game.audio.enemyHit(enemy.type);
   spawnParticles(particlePosition, 5, 0xff6622, 4);
   spawnDamageNumber(enemy.group.position, Math.min(damage, Math.max(0, enemy.hp || damage)));
   game.stats.shotsHit += 1;
@@ -578,6 +580,7 @@ export function triggerDestructible(propId, origin, processHit) {
   if (d.mesh?.parent) d.mesh.parent.remove(d.mesh);
   // Deactivate collision entry (push it out of reach)
   if (d.obsEntry) { d.obsEntry.h = -9999; }
+  game.audio?.propBreak?.();
   // Big explosion particles — 3× size cubes for dramatic barrel explosions
   spawnParticles(origin, 32, 0xff5500, 14, true);
   spawnParticles(origin, 16, 0xffcc00, 8, true);

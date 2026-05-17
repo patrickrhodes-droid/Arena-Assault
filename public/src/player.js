@@ -29,6 +29,7 @@ import { getBossEnemy } from "./enemies.js";
 
 let bossAlertCooldown = 0;
 let _prevVelY       = 0; // track vertical velocity between frames for landing detection
+let _stepTmr        = 0; // footstep interval timer
 const _aimRaycaster = new THREE.Raycaster(); // reused for crosshair→world aim point
 let _swayX          = 0; // current weapon sway offset X
 let _swayY          = 0; // current weapon sway offset Y
@@ -457,6 +458,19 @@ export function updatePlayer(actions) {
     if (inFirstPerson) {
       game.visuals.player.playerGroup.rotation.y = game.camTheta;
     }
+
+    // Footstep audio — only when grounded (y near floor level)
+    const grounded = game.visuals.player.playerGroup.position.y < 0.15;
+    if (grounded && !game.isOnLadder) {
+      _stepTmr -= game.dt;
+      if (_stepTmr <= 0) {
+        _stepTmr = game.isSprinting ? 0.30 : game.isCrouching ? 0.60 : 0.44;
+        const surf = (game.selectedMap === 'blacksite') ? 'carpet' : 'concrete';
+        game.audio?.footstep?.(surf);
+      }
+    }
+  } else {
+    _stepTmr = 0;
   }
 
   // ── Ladder cooldown ──

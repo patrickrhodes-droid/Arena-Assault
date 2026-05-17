@@ -494,12 +494,13 @@ export function initNetworking(actions) {
 
     game.hp = Math.max(0, game.hp - data.damage);
     game.audio.damage();
-    actions.showDamage();
-    actions.addShake(0.15);
     if (data.knockbackX || data.knockbackZ) {
+      game.audio.meleeDamage();
       game.knockbackX = data.knockbackX;
       game.knockbackZ = data.knockbackZ;
     }
+    actions.showDamage();
+    actions.addShake(0.15);
     recordDamageAngle(enemyX, enemyZ);
     if (data.enemyId) {
       game.lastDamageShooter = data.enemyId;
