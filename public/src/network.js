@@ -322,6 +322,7 @@ export function initNetworking(actions) {
     if (!data?.map) return;
     game.selectedMap = data.map;
     syncMapCards(data.map);
+    rebuildArena(data.map).catch(() => {});
     // Update guest display
     if (!game.isHost) {
       const hostDisplay = document.getElementById('host-selection-display');

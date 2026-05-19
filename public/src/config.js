@@ -96,7 +96,7 @@ export const BOSS_TUNING = {
 
 // Mini-boss ("Titan Scout"): half-size version of the boss, spawns from wave 8+
 // HP = 3× a wave-scaled soldier. Speed 15% above boss. Damage 40% of boss.
-// Vulnerable to all weapons (unlike boss which needs pistol/sword/grapple).
+// Vulnerable to all weapons at full damage (boss takes reduced damage from heavy weapons).
 export const MINIBOSS_TUNING = {
   moveSpeed: 12 * 1.15,            // 13.8 units/s
   attackDamageBase: 40,            // 40% of boss base (100 × 0.4)

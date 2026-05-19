@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { game } from "./state.js";
+import { applyCharacterHead } from "./scene.js";
 
 // ── Character unlock system ────────────────────────────────────────────────────
 const STORAGE_KEY = "arena_unlocked_chars";
@@ -447,6 +448,14 @@ function showCharSelect() {
   // If current selection is locked, pick first available
   if (!freshUnlocked.has(selected)) selected = [...freshUnlocked][0] || "iestyn";
 
+  // Apply selected character to the lobby 3D player immediately
+  function applyLobbyCharacter(id) {
+    const hg = game.visuals?.player?.headGroup;
+    const visor = game.visuals?.player?.visor;
+    if (hg) applyCharacterHead(hg, id, { visor });
+  }
+  applyLobbyCharacter(selected);
+
   grid.innerHTML = "";
   ALL_CHARS.forEach(({ id, name, color }) => {
     const isLocked = !freshUnlocked.has(id);
@@ -480,6 +489,7 @@ function showCharSelect() {
           c.classList.toggle("selected", c.dataset.char === id);
         });
         setCsCharSelectedAnim(id);
+        applyLobbyCharacter(id);
       };
 
       card.addEventListener("click", selectCard);

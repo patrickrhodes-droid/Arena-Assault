@@ -1232,13 +1232,7 @@ export function showWeaponUnlockAlert(weaponLabel) {
   el.classList.add("show");
 }
 
-export function showBossImperviousAlert() {
-  const el = game.dom.bossImperviousAlert;
-  el.textContent = "ONLY THE PISTOL AND SWORD CAN HURT TITAN BRUTE";
-  el.classList.remove("show");
-  void el.offsetWidth;
-  el.classList.add("show");
-}
+export function showBossImperviousAlert() { /* no-op — all weapons now affect boss */ }
 
 // World units visible from the player in each direction on the minimap.
 const MINIMAP_VIEW_RADIUS = 48;

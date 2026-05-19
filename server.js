@@ -1910,8 +1910,11 @@ io.on('connection', (socket) => {
         damage = Math.min(damage, 10000);           // clamp runaway values
         const enemy = gameState.enemies.find(e => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
-        if (enemy.type === 'boss' && weapon !== 'sword' && weapon !== 'pistol' && weapon !== 'grapple' && weapon !== 'bazooka') return;
-        if (enemy.type === 'boss' && weapon === 'sword') damage = Math.round(damage * 1.5);
+        if (enemy.type === 'boss') {
+            const m = { sword: 1.5, assault: 0.25, shotgun: 0.5, sniper: 0.7 }[weapon] ?? 1.0;
+            damage = Math.round(damage * m);
+            if (damage <= 0) return;
+        }
         enemy.hp = Math.max(0, enemy.hp - damage);
         io.emit('enemyDamaged', { id: enemyId, damage });
         if (enemy.hp <= 0) killEnemy(enemy, socket.id);

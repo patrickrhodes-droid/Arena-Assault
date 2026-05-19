@@ -209,10 +209,10 @@ const LINES = {
   ],
 
   boss_spotted: [
-    { c: "iestyn",  t: "TITAN BRUTE! Switch to pistol or sword — it's impervious to everything else!" },
+    { c: "iestyn",  t: "TITAN BRUTE! Heavy weapons do reduced damage — sword and pistol hit hardest!" },
     { c: "matt",    t: "That thing is enormous. And apparently bulletproof. Of course it is." },
     { c: "will",    t: "COME ON THEN. Let's go." },
-    { c: "patrick", t: "Boss unit confirmed. Standard weapons deflect off its hide — pistol and sword only." },
+    { c: "patrick", t: "Boss unit confirmed. Heavy weapons do reduced damage — hit it with the sword for maximum effect." },
   ],
 
   miniboss_spotted: [

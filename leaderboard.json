@@ -40,6 +40,22 @@
     },
     {
       "playerName": "Patrick",
+      "score": 2050,
+      "wave": 7,
+      "kills": 43,
+      "date": "2026-05-19",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
+      "score": 2000,
+      "wave": 7,
+      "kills": 45,
+      "date": "2026-05-19",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
       "score": 1950,
       "wave": 7,
       "kills": 45,

@@ -779,15 +779,15 @@ function handleFiring(actions) {
     return;
   }
 
-  const bossIsActive = game.currentWeapon !== "sword" && game.currentWeapon !== "pistol" && game.currentWeapon !== "grapple" && game.currentWeapon !== "bazooka" && Boolean(getBossEnemy());
+  const bossIsActive = false; // all weapons now affect boss
 
   game.fireTmr = weapon.fireRate;
   if (weapon.mode === "pistol" || weapon.mode === "grapple" || weapon.mode === "bazooka") game.mouseClicked = false;
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
-    // Lunge: only when pressing forward
-    if (!game.isCrouching && (game.keys.KeyW || game.gpForward)) {
+    // Lunge in the direction the camera is facing
+    if (!game.isCrouching) {
       game.knockbackX += -Math.sin(game.camTheta) * 45;
       game.knockbackZ += -Math.cos(game.camTheta) * 45;
     }
