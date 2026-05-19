@@ -23,7 +23,7 @@ export function applyCharacterHead(headGroup, characterId, options = {}) {
 
   if (gltf) {
     const model = gltf.scene.clone(true);
-    model.rotation.y = Math.PI; // face forward (GLB imports facing +Z)
+    model.rotation.y = gltf.userData.rotY ?? Math.PI; // face forward
     const bbox = new THREE.Box3().setFromObject(model);
     const dims = new THREE.Vector3();
     bbox.getSize(dims);
@@ -613,10 +613,11 @@ function buildSharedRuntimeAssets() {
     patrick: { file: "/assets/models/PatrickHead.glb" },
     iestyn:  { file: "/assets/models/iestynhead.glb" },
     will:    { file: "/assets/models/WillHead.glb" },
-    matt:    { file: "/assets/models/MattHead.glb" },
+    matt:    { file: "/assets/models/MattHead.glb", rotY: -Math.PI / 2 },
   };
   for (const [characterId, def] of Object.entries(characterHeadDefs)) {
     new GLTFLoader().load(def.file, (gltf) => {
+      gltf.userData.rotY = def.rotY ?? Math.PI;
       game.shared.characterHeadGltfs[characterId] = gltf;
       if (game.myCharacter === characterId && game.visuals?.player?.headGroup) {
         applyCharacterHead(game.visuals.player.headGroup, characterId, { visor: game.visuals.player.visor });
