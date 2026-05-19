@@ -194,6 +194,7 @@ export function initScene() {
   buildWeaponVisuals();
   buildGrappleVisuals();
   buildSharedRuntimeAssets();
+  preloadHDRSkies();
   // Load editor overrides asynchronously — apply once everything is built
   loadCharConfig().then(applyCharConfig);
 }
@@ -224,24 +225,58 @@ const _rgbeLoader = new RGBELoader();
 
 const HDR_ENV_INTENSITY = 0.38;
 
-function loadHDRSky(path, useAsEnv = false) {
-  if (game.scene.background?.isTexture) game.scene.background.dispose();
-  game.scene.environment = null;
-  _rgbeLoader.load(path, (tex) => {
-    tex.mapping = THREE.EquirectangularReflectionMapping;
-    game.scene.background = tex;
-    if (useAsEnv) {
+// Pre-processed HDR cache: path → { bg: Texture, env: Texture|null }
+// Populated at startup so map transitions apply skyboxes instantly.
+const _hdrCache = new Map();
+
+const HDR_SKY_PATHS = {
+  arena:  '/assets/Skies/arenasky.hdr',
+  desert: '/assets/Skies/desertsky.hdr',
+  city:   '/assets/Skies/Citysky.hdr',
+};
+
+function _applyHDRToScene(bg, env) {
+  game.scene.background = bg;
+  game.scene.environment = env ?? null;
+  if (env) {
+    game.scene.traverse((node) => {
+      if (!node.isMesh) return;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      for (const mat of mats) if (mat) mat.envMapIntensity = HDR_ENV_INTENSITY;
+    });
+  }
+}
+
+function preloadHDRSkies() {
+  for (const path of Object.values(HDR_SKY_PATHS)) {
+    _rgbeLoader.load(path, (tex) => {
+      tex.mapping = THREE.EquirectangularReflectionMapping;
       const pmrem = new THREE.PMREMGenerator(game.renderer);
       pmrem.compileEquirectangularShader();
-      game.scene.environment = pmrem.fromEquirectangular(tex).texture;
+      const env = pmrem.fromEquirectangular(tex).texture;
       pmrem.dispose();
-      // Reduce IBL contribution on all currently-loaded materials
-      game.scene.traverse((node) => {
-        if (!node.isMesh) return;
-        const mats = Array.isArray(node.material) ? node.material : [node.material];
-        for (const mat of mats) if (mat) mat.envMapIntensity = HDR_ENV_INTENSITY;
-      });
-    }
+      _hdrCache.set(path, { bg: tex, env });
+    });
+  }
+}
+
+function loadHDRSky(path, useAsEnv = false) {
+  game.scene.background = null;
+  game.scene.environment = null;
+  const cached = _hdrCache.get(path);
+  if (cached) {
+    _applyHDRToScene(cached.bg, useAsEnv ? cached.env : null);
+    return;
+  }
+  // Cache miss (shouldn't happen after startup) — load and cache on the fly
+  _rgbeLoader.load(path, (tex) => {
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    const pmrem = new THREE.PMREMGenerator(game.renderer);
+    pmrem.compileEquirectangularShader();
+    const env = pmrem.fromEquirectangular(tex).texture;
+    pmrem.dispose();
+    _hdrCache.set(path, { bg: tex, env });
+    _applyHDRToScene(tex, useAsEnv ? env : null);
   });
 }
 
@@ -251,11 +286,8 @@ export async function rebuildArena(mapId) {
     game.scene.remove(game.arenaGroup);
     disposeObject3D(game.arenaGroup);
   }
-  // Dispose HDR sky and environment textures if present
-  if (game.scene.background?.isTexture) {
-    game.scene.background.dispose();
-    game.scene.background = null;
-  }
+  // Clear sky references — don't dispose, textures stay in the HDR cache for reuse
+  game.scene.background = null;
   game.scene.environment = null;
   for (const light of game.arenaLights) {
     game.scene.remove(light);
@@ -270,13 +302,7 @@ export async function rebuildArena(mapId) {
 
   await buildMapFromJson(mapId);
 
-  // Load HDR sky — runs for both JSON and legacy paths so the sky is always applied.
-  const HDR_SKIES = {
-    arena:   '/assets/Skies/arenasky.hdr',
-    desert:  '/assets/Skies/desertsky.hdr',
-    city:    '/assets/Skies/Citysky.hdr',
-  };
-  if (HDR_SKIES[mapId]) loadHDRSky(HDR_SKIES[mapId], true);
+  if (HDR_SKY_PATHS[mapId]) loadHDRSky(HDR_SKY_PATHS[mapId], true);
 }
 
 function addPermanentLighting() {
