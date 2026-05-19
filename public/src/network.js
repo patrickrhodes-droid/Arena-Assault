@@ -35,7 +35,6 @@ export function initNetworking(actions) {
   }
 
   game.socket = window.io();
-  game.socket.emit("playerNameUpdate", { playerName: "" });
 
   // Retrieve or create a persistent session token stored in localStorage.
   // This is a unique identifier that survives page refreshes and lets the server
@@ -50,10 +49,17 @@ export function initNetworking(actions) {
   } catch { /* localStorage unavailable (private browsing etc.) — use in-memory only */ }
   game.sessionToken = sessionToken;
 
-  // On connect/reconnect: register the token and — if we left a match marker
-  // behind from before a refresh — attempt to rejoin straight back into it.
+  // On connect/reconnect: register the token, send the saved player name (so the
+  // server has the correct name before broadcasting lobbyUpdate), then attempt
+  // to rejoin any active match.
   game.socket.on("connect", () => {
     if (sessionToken) game.socket.emit("registerToken", { token: sessionToken });
+
+    // Always send the real saved name on connect so the server's first lobbyUpdate
+    // already has it — avoids the deploy button staying disabled after a refresh.
+    const savedName = (() => { try { return localStorage.getItem("arena_player_name") || ""; } catch { return ""; } })();
+    game.socket.emit("playerNameUpdate", { playerName: savedName });
+
     let activeMatch = null;
     try { activeMatch = JSON.parse(localStorage.getItem("arena_active_match") || "null"); } catch {}
     const haveActiveMatch = game.state === "PLAYING" || !!activeMatch;
