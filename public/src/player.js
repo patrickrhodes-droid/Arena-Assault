@@ -367,7 +367,7 @@ export function setupInput(actions) {
     if (usingFirstPersonView()) {
       game.camPhi = Math.max(-1.25, Math.min(1.5, game.camPhi + event.movementY * game.sens));
     } else {
-      game.camPhi = Math.max(-0.55, Math.min(0.85, game.camPhi - event.movementY * game.sens));
+      game.camPhi = Math.max(-1.1, Math.min(0.85, game.camPhi - event.movementY * game.sens));
     }
 
     // Accumulate for weapon sway
