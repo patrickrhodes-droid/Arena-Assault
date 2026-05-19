@@ -1124,62 +1124,6 @@
       "model": "/assets/models/City Props asset pack/Street Light.glb"
     },
     {
-      "id": "prp_050",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        20,
-        0,
-        -22
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
-      "id": "prp_051",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        -20,
-        0,
-        22
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
       "id": "prp_052",
       "type": "prop",
       "label": "City / Street Light",
@@ -1213,62 +1157,6 @@
       "label": "City / Street Light",
       "position": [
         -55,
-        0,
-        -18
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
-      "id": "prp_054",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        -55,
-        0,
-        18
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
-      "id": "prp_055",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        55,
         0,
         -18
       ],
@@ -1327,62 +1215,6 @@
         -20,
         0,
         -50
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
-      "id": "prp_058",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        20,
-        0,
-        -50
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "size": [
-        2,
-        2,
-        2
-      ],
-      "collidable": true,
-      "scale": [
-        2,
-        2,
-        2
-      ],
-      "material": "metal",
-      "model": "/assets/models/City Props asset pack/Street Light.glb"
-    },
-    {
-      "id": "prp_059",
-      "type": "prop",
-      "label": "City / Street Light",
-      "position": [
-        -20,
-        0,
-        50
       ],
       "rotation": [
         0,
@@ -2497,7 +2329,7 @@
     },
     {
       "id": "prp_147",
-      "type": "prop",
+      "type": "destructible",
       "label": "City / Broken Car NW",
       "position": [
         39.5,
@@ -2520,12 +2352,13 @@
         1.5,
         1.5
       ],
+      "triggerRadius": 3.5,
       "material": "metal",
       "model": "/assets/models/shooter asset pack/Broken Car.glb"
     },
     {
       "id": "prp_148",
-      "type": "prop",
+      "type": "destructible",
       "label": "City / Broken Car SE",
       "position": [
         26,
@@ -2548,6 +2381,7 @@
         1.5,
         1.5
       ],
+      "triggerRadius": 3.5,
       "material": "metal",
       "model": "/assets/models/shooter asset pack/Broken Car.glb"
     },

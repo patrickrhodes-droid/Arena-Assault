@@ -835,6 +835,21 @@ canvas {
   font-size: 28px;
   font-weight: 700;
 }
+#score-value.score-pop {
+  animation: score-pop 0.25s ease-out forwards;
+}
+@keyframes score-pop {
+  0%   { transform: scale(1.4); color: #ffee44; }
+  100% { transform: scale(1);   color: inherit; }
+}
+
+#ammo-current.ammo-critical {
+  animation: ammo-pulse 0.55s ease-in-out infinite;
+}
+@keyframes ammo-pulse {
+  0%, 100% { color: #ff2222; opacity: 1; }
+  50%       { color: #ff6666; opacity: 0.6; }
+}
 
 #wave-display {
   position: absolute;
@@ -1613,6 +1628,69 @@ canvas {
   font-size: 18px;
   color: var(--muted);
   margin-bottom: 6px;
+}
+
+/* ── XP results panel ─────────────────────────────────────────────────── */
+#xp-screen {
+  margin-top: 18px;
+}
+#xp-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin-bottom: 14px;
+}
+#xp-gained-label {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: #ffee44;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+#xp-level-row {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 7px;
+}
+#xp-bar-wrap {
+  height: 9px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+#xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #88ffdd);
+  border-radius: 5px;
+  width: 0%;
+}
+#xp-bar-nums {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-align: center;
+}
+#xp-levelup-banner {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: #ffee44;
+  text-align: center;
+  margin-top: 10px;
+  min-height: 30px;
+  text-shadow: 0 0 20px rgba(255,238,68,0.7);
+}
+@keyframes xp-levelup-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  50%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.xp-levelup-show {
+  animation: xp-levelup-pop 0.4s ease-out forwards;
 }
 
 .go-stat span {

@@ -117,16 +117,28 @@ function spawnBulletHole(prevPos, dir, stepDist) {
 
   const targetMesh = hit.object;
 
+  // Surface-specific impact particles
+  if (game.particlesEnabled) {
+    const mat = targetMesh.material;
+    let pColor = 0xbbbbbb;
+    if (mat?.color) {
+      const { r, g } = mat.color;
+      if (r > 0.55 && r > g * 1.25) pColor = 0xd4a06a; // warm/sandy
+      else if (r < 0.18 && g < 0.25) pColor = 0x4a6070; // dark blacksite
+    }
+    spawnParticles(hit.point.clone(), 5, pColor, 2.2, false, 12);
+  }
+
   // Transform face normal to world space
   _bhNormalMatrix.getNormalMatrix(targetMesh.matrixWorld);
   const worldNormal = hit.face.normal.clone().applyNormalMatrix(_bhNormalMatrix).normalize();
 
-  // Orient a dummy along the surface normal, then add random spin
+  // Orient a dummy along the surface normal, then spin around the local projection axis
   const dummy = new THREE.Object3D();
   dummy.position.copy(hit.point);
   dummy.lookAt(hit.point.clone().add(worldNormal));
+  dummy.rotateZ(Math.random() * Math.PI * 2);
   _bhOrientation.copy(dummy.rotation);
-  _bhOrientation.z = Math.random() * Math.PI * 2;
 
   const scale = 0.28 + Math.random() * 0.20;
   _bhSize.set(scale, scale, scale);
@@ -318,7 +330,7 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
 
     if (!shouldRemove && bulletHitObstacle(position.x, position.y, position.z)) {
       shouldRemove = true;
-      spawnParticles(position, bullet.splashRadius > 0 ? 72 : 2, bullet.splashRadius > 0 ? 0xff6600 : 0xff8844, bullet.splashRadius > 0 ? 30 : 2, bullet.splashRadius > 0);
+      if (bullet.splashRadius > 0) spawnParticles(position, 72, 0xff6600, 30, true);
       // Bullet hole decal on the wall/floor surface
       if (!bullet.splashRadius && bullet.isPlayer) spawnBulletHole(bullet.prevPos, bullet.dir, step);
       if (bullet.splashRadius > 0 && bullet.isPlayer && !bullet.fromRemote) {
@@ -457,6 +469,11 @@ export function processHit(enemy, damage, particlePosition) {
     void dot.offsetWidth;
     dot.classList.add("hit");
   }
+  // Kill slow-mo: brief world time-scale dip on the killing blow
+  if (damage >= (enemy.hp || 0) && (enemy.hp || 0) > 0) {
+    game.killSlowTmr = 0.12;
+  }
+
   // Local audio + particles for instant feedback.
   game.audio.hit();
   game.audio.enemyHit(enemy.type);
@@ -466,16 +483,16 @@ export function processHit(enemy, damage, particlePosition) {
   // Cap by enemy.hp so we record actual damage dealt, not overkill damage.
   game.stats.damageDealt += Math.min(damage, Math.max(0, enemy.hp));
 
-  // Knockback: push enemy away from the player on every hit so melee enemies
-  // can't immediately follow up. Boss doesn't get pushed (too heavy).
-  if (enemy.type !== "boss") {
+  // Knockback: push enemy away from player. Boss gets a small nudge only from bazooka.
+  const isBoss = enemy.type === "boss";
+  const isBazooka = game.currentWeapon === "bazooka";
+  if (!isBoss || isBazooka) {
     const playerPos = game.visuals?.player?.playerGroup?.position;
     if (playerPos) {
       const dx = enemy.group.position.x - playerPos.x;
       const dz = enemy.group.position.z - playerPos.z;
       const len = Math.sqrt(dx * dx + dz * dz) || 1;
-      // Sword hits punch harder; bullets just nudge slightly
-      const force = game.currentWeapon === "sword" ? 2.5 : 0.8;
+      const force = isBoss ? 0.4 : game.currentWeapon === "sword" ? 2.5 : 0.8;
       enemy.group.position.x += (dx / len) * force;
       enemy.group.position.z += (dz / len) * force;
       enemy.serverX = enemy.group.position.x;
@@ -497,9 +514,88 @@ export function processHit(enemy, damage, particlePosition) {
   });
 }
 
+// ── Bullet tracers ────────────────────────────────────────────────────────────
+const _tracers = [];
+
+export function spawnTracer(position, direction) {
+  if (!game.scene || !game.particlesEnabled) return;
+  const end = position.clone().addScaledVector(direction, 16);
+  const geo = new THREE.BufferGeometry().setFromPoints([position.clone(), end]);
+  const mat = new THREE.LineBasicMaterial({ color: 0xfff6aa, transparent: true, opacity: 0.65 });
+  const line = new THREE.Line(geo, mat);
+  line.frustumCulled = false;
+  game.scene.add(line);
+  _tracers.push({ line, mat, life: 0.06, maxLife: 0.06 });
+}
+
+export function updateTracers() {
+  for (let i = _tracers.length - 1; i >= 0; i--) {
+    const t = _tracers[i];
+    t.life -= game.dt;
+    t.mat.opacity = Math.max(0, (t.life / t.maxLife) * 0.65);
+    if (t.life <= 0) {
+      game.scene.remove(t.line);
+      t.line.geometry.dispose();
+      t.mat.dispose();
+      _tracers.splice(i, 1);
+    }
+  }
+}
+
+// ── Shell ejection ────────────────────────────────────────────────────────────
+const _shells = [];
+const _shellGeo = new THREE.BoxGeometry(0.05, 0.018, 0.018);
+
+export function spawnShell(position, rightVec) {
+  if (!game.scene || !game.particlesEnabled) return;
+  const mat = new THREE.MeshStandardMaterial({ color: 0xcc9922, roughness: 0.35, metalness: 0.85, transparent: true });
+  const mesh = new THREE.Mesh(_shellGeo, mat);
+  mesh.position.copy(position);
+  const spd = 2.5 + Math.random() * 1.5;
+  game.scene.add(mesh);
+  _shells.push({
+    mesh, mat,
+    vx: rightVec.x * spd + (Math.random() - 0.5),
+    vy: 1.8 + Math.random() * 1.4,
+    vz: rightVec.z * spd + (Math.random() - 0.5),
+    rx: (Math.random() - 0.5) * 20,
+    rz: (Math.random() - 0.5) * 20,
+    bounced: false,
+    life: 2.2 + Math.random() * 0.6,
+    maxLife: 2.8,
+  });
+}
+
+export function updateShells() {
+  for (let i = _shells.length - 1; i >= 0; i--) {
+    const s = _shells[i];
+    s.vy -= 18 * game.dt;
+    s.mesh.position.x += s.vx * game.dt;
+    s.mesh.position.y += s.vy * game.dt;
+    s.mesh.position.z += s.vz * game.dt;
+    s.mesh.rotation.x += s.rx * game.dt;
+    s.mesh.rotation.z += s.rz * game.dt;
+
+    if (!s.bounced && s.mesh.position.y <= 0.02) {
+      s.mesh.position.y = 0.02;
+      s.vy = Math.abs(s.vy) * 0.35;
+      s.vx *= 0.55; s.vz *= 0.55;
+      s.bounced = true;
+    }
+
+    s.life -= game.dt;
+    if (s.life < 0.5) s.mat.opacity = s.life / 0.5;
+    if (s.life <= 0) {
+      game.scene.remove(s.mesh);
+      s.mat.dispose();
+      _shells.splice(i, 1);
+    }
+  }
+}
+
 const MAX_PARTICLES = 200;
 
-export function spawnParticles(position, count, color, speed, big = false) {
+export function spawnParticles(position, count, color, speed, big = false, gravity = 20) {
   if (!game.particlesEnabled) return; // graphics quality setting
   // Drop oldest particles if we're at the cap to prevent mass-death frame spikes.
   while (game.particles.length + count > MAX_PARTICLES && game.particles.length > 0) {
@@ -526,6 +622,32 @@ export function spawnParticles(position, count, color, speed, big = false) {
       maxLife: 0,
       rx: Math.random() * 6,
       rz: Math.random() * 6,
+      gravity,
+    };
+    particle.maxLife = particle.life;
+    game.particles.push(particle);
+  }
+}
+
+// Muzzle smoke: tiny particles, purely horizontal drift, no vertical movement.
+export function spawnSmoke(position, count) {
+  if (!game.particlesEnabled || !game.shared?.smokeGeo) return;
+  while (game.particles.length + count > MAX_PARTICLES && game.particles.length > 0) {
+    const old = game.particles.shift();
+    game.scene.remove(old.mesh);
+    old.mesh.geometry.dispose();
+    old.mesh.material.dispose();
+  }
+  for (let i = 0; i < count; i++) {
+    const mesh = new THREE.Mesh(game.shared.smokeGeo, new THREE.MeshBasicMaterial({ color: 0xbbbbbb, transparent: true }));
+    mesh.position.copy(position);
+    game.scene.add(mesh);
+    const spd = 0.4 + Math.random() * 0.5;
+    const angle = Math.random() * Math.PI * 2;
+    const particle = {
+      mesh, vx: Math.cos(angle) * spd, vy: 0, vz: Math.sin(angle) * spd,
+      life: 0.35 + Math.random() * 0.25, maxLife: 0.6,
+      rx: 0, rz: 0, gravity: 0,
     };
     particle.maxLife = particle.life;
     game.particles.push(particle);
@@ -535,14 +657,14 @@ export function spawnParticles(position, count, color, speed, big = false) {
 export function updateParticles() {
   for (let index = game.particles.length - 1; index >= 0; index -= 1) {
     const particle = game.particles[index];
-    particle.vy -= 20 * game.dt;
+    particle.vy -= (particle.gravity ?? 20) * game.dt;
     particle.mesh.position.x += particle.vx * game.dt;
     particle.mesh.position.y += particle.vy * game.dt;
     particle.mesh.position.z += particle.vz * game.dt;
     particle.mesh.rotation.x += particle.rx * game.dt;
     particle.mesh.rotation.z += particle.rz * game.dt;
 
-    if (particle.mesh.position.y < 0.06) {
+    if ((particle.gravity ?? 20) > 0 && particle.mesh.position.y < 0.06) {
       particle.mesh.position.y = 0.06;
       particle.vy *= -0.3;
       particle.vx *= 0.7;

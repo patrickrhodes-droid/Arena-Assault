@@ -22,6 +22,8 @@ import {
   processHit,
   spawnBullet,
   spawnParticles,
+  spawnShell,
+  spawnSmoke,
   startReload,
   usingFirstPersonView,
   usingScopedSniperView,
@@ -321,7 +323,7 @@ export function setupInput(actions) {
       actions.updateHUD();
     }
 
-    if (event.code === "KeyG" && game.state === "PLAYING") {
+    if (event.code === "KeyF" && game.state === "PLAYING") {
       actions.fireGrapple();
     }
   });
@@ -395,8 +397,10 @@ export function tryPointerLock() {
 
 export function tryJump() {
   if (!game.isGrounded && !game.isOnLadder && game.grappleState !== "hooked" && game.coyoteTmr <= 0) {
+    game.jumpBufferTmr = 0.12; // buffer the input for up to 120ms
     return;
   }
+  game.jumpBufferTmr = 0;
 
   game.coyoteTmr = 0; // consume coyote window
 
@@ -555,6 +559,15 @@ export function updatePlayer(actions) {
   }
   if (game.coyoteTmr > 0) game.coyoteTmr -= game.dt;
 
+  // Jump buffer: if player pressed jump in the air, fire it as soon as they land
+  if (game.jumpBufferTmr > 0) {
+    game.jumpBufferTmr = Math.max(0, game.jumpBufferTmr - game.dt);
+    if (!wasGrounded && game.isGrounded) {
+      game.jumpBufferTmr = 0;
+      tryJump();
+    }
+  }
+
   // ── Crouch visual: smoothly squish/unsquish the player model ──
   const crouchTargetScale = game.isCrouching ? PLAYER_MOVEMENT.crouchScale : 1.0;
   const pv = game.visuals.player;
@@ -569,7 +582,7 @@ export function updatePlayer(actions) {
     let kdz = game.knockbackZ * game.dt;
     // Cap per-frame displacement so large forces slide smoothly rather than teleport
     const kLen = Math.sqrt(kdx * kdx + kdz * kdz);
-    if (kLen > 0.6) { const s = 0.6 / kLen; kdx *= s; kdz *= s; }
+    if (kLen > 0.9) { const s = 0.9 / kLen; kdx *= s; kdz *= s; }
     game.visuals.player.playerGroup.position.x += kdx;
     game.visuals.player.playerGroup.position.z += kdz;
     const decay = Math.pow(0.04, game.dt);
@@ -773,10 +786,10 @@ function handleFiring(actions) {
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
-    // Lunge: propel player forward in facing direction for a 2-3 unit dash
-    if (game.isGrounded && !game.isCrouching) {
-      game.knockbackX += -Math.sin(game.camTheta) * 22;
-      game.knockbackZ += -Math.cos(game.camTheta) * 22;
+    // Lunge: only when pressing forward
+    if (!game.isCrouching && (game.keys.KeyW || game.gpForward)) {
+      game.knockbackX += -Math.sin(game.camTheta) * 45;
+      game.knockbackZ += -Math.cos(game.camTheta) * 45;
     }
     actions.handleSwordAttack();
   } else if (weapon.mode === "grapple") {
@@ -856,10 +869,6 @@ function handleFiring(actions) {
         shooterId: game.socket?.id,
         weapon: game.currentWeapon,
       });
-      // Muzzle smoke — small grey puff (skip bazooka/grapple/sword which have their own effects)
-      if (weapon.mode !== 'bazooka' && weapon.mode !== 'grapple' && weapon.mode !== 'sword') {
-        spawnParticles(muzzlePosition.clone(), 3, 0xbbbbbb, 1.4);
-      }
       // Broadcast for visibility on other clients (visual-only bullet there).
       game.socket?.emit("fireBullet", {
         x: bulletPosition.x,
@@ -872,6 +881,25 @@ function handleFiring(actions) {
         life: weapon.bulletLife,
         weapon: game.currentWeapon,
       });
+    }
+
+    // Muzzle effects — once per shot regardless of pellet count
+    if (weapon.mode !== 'bazooka' && weapon.mode !== 'grapple' && weapon.mode !== 'sword') {
+      const smokeCount = (weapon.mode === 'assault' || weapon.mode === 'shotgun') ? 1 : 3;
+      spawnSmoke(muzzlePosition.clone(), smokeCount);
+      // Shell ejection — eject to camera right
+      const rightVec = new THREE.Vector3(1, 0, 0).applyQuaternion(game.camera.quaternion);
+      spawnShell(muzzlePosition.clone().addScaledVector(rightVec, 0.15), rightVec);
+    }
+    if (weapon.mode !== 'sword' && weapon.mode !== 'grapple') {
+      const fl = game.visuals.weapon?.muzzleFlashLight;
+      if (fl) {
+        fl.position.copy(muzzlePosition);
+        fl.userData.peak = weapon.mode === 'bazooka' || weapon.mode === 'shotgun' ? 12 : 7;
+        fl.intensity = fl.userData.peak;
+        fl.visible = true;
+        game.muzzleFlashTmr = 0.055;
+      }
     }
   }
 
@@ -1006,6 +1034,21 @@ export function updateCamera() {
     game.shakeAmt *= Math.exp(-12 * game.dt);
   } else {
     game.shakeAmt = 0;
+  }
+
+  // Muzzle flash decay
+  if (game.muzzleFlashTmr > 0) {
+    game.muzzleFlashTmr -= game.dt;
+    const fl = game.visuals.weapon?.muzzleFlashLight;
+    if (fl) {
+      if (game.muzzleFlashTmr <= 0) {
+        game.muzzleFlashTmr = 0;
+        fl.intensity = 0;
+        fl.visible = false;
+      } else {
+        fl.intensity = (game.muzzleFlashTmr / 0.055) * (fl.userData.peak || 7);
+      }
+    }
   }
 
   // Decay camera recoil offset — recovers to zero in ~0.18 s

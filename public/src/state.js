@@ -92,6 +92,10 @@ export const game = {
   // 'playerLevels' broadcast; consumed by the lobby list and nameplate.
   playerLevels: {},
   coyoteTmr: 0,
+  jumpBufferTmr: 0,
+  hitStopTmr: 0,
+  killSlowTmr: 0,
+  displayHp: 0,
   lastDamageAngle: 0,
   lastDamageTmr: 0,
   waveSpawnedTotal: 0,
@@ -154,6 +158,10 @@ export function resetSessionState() {
   game.isSprinting = false;
   game.isAiming = false;
   game.shakeAmt = 0;
+  game.displayHp = P_MAX_HP;
+  game.hitStopTmr = 0;
+  game.killSlowTmr = 0;
+  game.jumpBufferTmr = 0;
   game.camTheta = 0;
   game.camPhi = 0.45;
   game.camDist = 8;

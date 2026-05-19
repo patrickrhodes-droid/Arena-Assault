@@ -32,7 +32,11 @@
       "Bash(dir /b \"c:\\\\Users\\\\prs16\\\\Documents\\\\Arena Assault\\\\public\\\\assets\\\\models\")",
       "Bash(grep -v \"//\")",
       "PowerShell(Rename-Item \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json\" \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json.bak\")",
-      "PowerShell(Rename-Item \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json.bak\" \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json\")"
+      "PowerShell(Rename-Item \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json.bak\" \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\leaderboard.json\")",
+      "Bash(dir /s \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\assets\\\\*bullet*\")",
+      "Bash(dir \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\assets\\\\Images\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\src\" -Recurse -Filter \"*.js\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

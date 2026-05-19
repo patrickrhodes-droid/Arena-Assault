@@ -1,17 +1,53 @@
 {
   "Patrick": {
-    "kills": 375,
+    "kills": 863,
     "bossKills": 8,
-    "matchesPlayed": 7,
+    "matchesPlayed": 11,
     "wins": 0,
     "pvpWins": 0,
     "ffaWins": 0,
     "bestWave": 8,
-    "bestScore": 2950,
-    "deaths": 7,
-    "xp": 4950
+    "bestScore": 5350,
+    "deaths": 11,
+    "xp": 8670
   },
   "Patrick1": {
+    "kills": 0,
+    "bossKills": 0,
+    "matchesPlayed": 0,
+    "wins": 0,
+    "pvpWins": 0,
+    "ffaWins": 0,
+    "bestWave": 0,
+    "bestScore": 0,
+    "deaths": 0,
+    "xp": 0
+  },
+  "Patrick2": {
+    "kills": 0,
+    "bossKills": 0,
+    "matchesPlayed": 0,
+    "wins": 0,
+    "pvpWins": 0,
+    "ffaWins": 0,
+    "bestWave": 0,
+    "bestScore": 0,
+    "deaths": 0,
+    "xp": 0
+  },
+  "Patrick23": {
+    "kills": 0,
+    "bossKills": 0,
+    "matchesPlayed": 0,
+    "wins": 0,
+    "pvpWins": 0,
+    "ffaWins": 0,
+    "bestWave": 0,
+    "bestScore": 0,
+    "deaths": 0,
+    "xp": 0
+  },
+  "Patricky": {
     "kills": 0,
     "bossKills": 0,
     "matchesPlayed": 0,

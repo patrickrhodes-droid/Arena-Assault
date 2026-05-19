@@ -191,9 +191,9 @@ export function initScene() {
   composer.addPass(new RenderPass(scene, camera));
   composer.addPass(new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.38,  // strength — noticeable but not overwhelming
+    0.18,  // strength — subtle glow for muzzle flashes and explosions
     0.55,  // radius
-    0.82,  // threshold — only very bright surfaces (muzzle flash, explosions) bloom
+    0.82,  // threshold — only very bright surfaces bloom
   ));
   game.composer = composer;
 
@@ -230,12 +230,26 @@ function buildGrappleVisuals() {
 
 const _rgbeLoader = new RGBELoader();
 
-function loadHDRSky(path) {
-  // Dispose previous texture background if any
+const HDR_ENV_INTENSITY = 0.38;
+
+function loadHDRSky(path, useAsEnv = false) {
   if (game.scene.background?.isTexture) game.scene.background.dispose();
+  game.scene.environment = null;
   _rgbeLoader.load(path, (tex) => {
     tex.mapping = THREE.EquirectangularReflectionMapping;
     game.scene.background = tex;
+    if (useAsEnv) {
+      const pmrem = new THREE.PMREMGenerator(game.renderer);
+      pmrem.compileEquirectangularShader();
+      game.scene.environment = pmrem.fromEquirectangular(tex).texture;
+      pmrem.dispose();
+      // Reduce IBL contribution on all currently-loaded materials
+      game.scene.traverse((node) => {
+        if (!node.isMesh) return;
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        for (const mat of mats) if (mat) mat.envMapIntensity = HDR_ENV_INTENSITY;
+      });
+    }
   });
 }
 
@@ -245,11 +259,12 @@ export async function rebuildArena(mapId) {
     game.scene.remove(game.arenaGroup);
     disposeObject3D(game.arenaGroup);
   }
-  // Dispose HDR sky texture if present
+  // Dispose HDR sky and environment textures if present
   if (game.scene.background?.isTexture) {
     game.scene.background.dispose();
     game.scene.background = null;
   }
+  game.scene.environment = null;
   for (const light of game.arenaLights) {
     game.scene.remove(light);
   }
@@ -269,12 +284,12 @@ export async function rebuildArena(mapId) {
     desert:  '/assets/Skies/desertsky.hdr',
     city:    '/assets/Skies/Citysky.hdr',
   };
-  if (HDR_SKIES[mapId]) loadHDRSky(HDR_SKIES[mapId]);
+  if (HDR_SKIES[mapId]) loadHDRSky(HDR_SKIES[mapId], true);
 }
 
 function addPermanentLighting() {
   // Hemisphere always present — per-map sun and accents are added in rebuildArena.
-  game.scene.add(new THREE.HemisphereLight(0x8fb7ff, 0x24303c, 0.55));
+  game.scene.add(new THREE.HemisphereLight(0x8fb7ff, 0x24303c, 0.28));
 }
 
 
@@ -435,6 +450,11 @@ function buildWeaponVisuals() {
     },
   };
 
+  const muzzleFlashLight = new THREE.PointLight(0xfffce8, 0, 12);
+  muzzleFlashLight.visible = false;
+  game.scene.add(muzzleFlashLight);
+  game.visuals.weapon.muzzleFlashLight = muzzleFlashLight;
+
   const weaponGlbDefs = {
     pistol:  { file: "/assets/models/Pistol.glb",        scale: 0.125, rotY: 0 },
     assault: { file: "/assets/models/Assault Rifle.glb", scale: 0.125, rotY: 0 },
@@ -586,6 +606,7 @@ function buildSharedRuntimeAssets() {
   game.shared.playerBulletMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
   game.shared.enemyBulletMat = new THREE.MeshBasicMaterial({ color: 0xff5533 });
   game.shared.partGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+  game.shared.smokeGeo = new THREE.BoxGeometry(0.03, 0.03, 0.03);
   game.shared.bigPartGeo = new THREE.BoxGeometry(0.38, 0.38, 0.38); // 3× size for explosions
   game.shared.hpBgGeo = new THREE.PlaneGeometry(1.2, 0.1);
   game.shared.hpFgGeo = new THREE.PlaneGeometry(1.2, 0.08);

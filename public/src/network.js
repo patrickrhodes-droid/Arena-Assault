@@ -5,7 +5,7 @@ import { game } from "./state.js";
 import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, spawnWeaponPickupVisual, triggerDestructible } from "./combat.js";
 import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
-import { setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
+import { applyMapScreenRole, setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 import { showCampaignCutscene, showPreGameCharSelect, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
 import { fireBanter } from "./banter.js";
 import { registerKillForCombo, resetComboState, bumpCareerStat, recordMatchResult } from "./features.js";
@@ -1016,16 +1016,14 @@ export function initNetworking(actions) {
   });
 
   game.socket.on("allPlayersReady", () => {
-    // Backup navigation: if somehow still on screen-player, switch to screen-map
-    if (document.getElementById('screen-player')?.classList.contains('active')) {
-      document.getElementById('screen-player').classList.remove('active');
-      const screenMap = document.getElementById('screen-map');
+    game.state = "MENU";
+    // Navigate to map screen if not already there
+    const screenPlayer = document.getElementById('screen-player');
+    const screenMap = document.getElementById('screen-map');
+    if (screenPlayer?.classList.contains('active')) {
+      screenPlayer.classList.remove('active');
       if (screenMap) screenMap.classList.add('active');
-      // Apply host/guest layout
-      const hostSection = document.getElementById('host-map-section');
-      const guestSection = document.getElementById('guest-map-section');
-      if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
-      if (guestSection) guestSection.style.display = game.isHost ? 'none' : 'block';
     }
+    applyMapScreenRole();
   });
 }

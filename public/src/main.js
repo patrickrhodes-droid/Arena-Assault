@@ -26,7 +26,7 @@ function tickPingDisplay() {
     game.socket.volatile.emit("clientPing", performance.now());
   }
 }
-import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, tickDamageNumbers, updateBullets, updateHealthPacks, updateParticles, updateWeaponPickups } from "./combat.js";
+import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, tickDamageNumbers, updateBullets, updateHealthPacks, updateParticles, updateShells, updateWeaponPickups } from "./combat.js";
 import { resetComboState } from "./features.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
@@ -40,6 +40,7 @@ import {
   bindMenuControls,
   drawMinimap,
   hideRankings,
+  hideXpScreen,
   initTutorial,
   pushKillFeed,
   renderJoinLinkControls,
@@ -50,6 +51,7 @@ import {
   showPvPRankings,
   showRankings,
   showWaveClear,
+  showXpResults,
   updateHUD,
   updateStatusIndicators,
 } from "./ui.js";
@@ -299,6 +301,10 @@ export function setActiveMatchFlag(payload) {
 }
 
 async function startGame() {
+  // Snapshot career before match XP accumulates so we can show the delta at end
+  game.careerSnapshot = game.career
+    ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
+    : null;
   game.mode = "COOP";
   game.state = "PLAYING";
   setActiveMatchFlag({
@@ -318,6 +324,7 @@ async function startGame() {
   game.dom.pause.style.display = "none";
   game.dom.hud.style.display = "block";
   game.dom.pvpScore.hidden = true;
+  hideXpScreen();
   await rebuildArena(game.selectedMap);
 
   const playerCount = 1 + Object.keys(game.remotePlayers).length;
@@ -352,6 +359,9 @@ async function startGame() {
 }
 
 async function startPvPGame() {
+  game.careerSnapshot = game.career
+    ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
+    : null;
   game.mode = "PVP";
   game.state = "PLAYING";
   setActiveMatchFlag({
@@ -374,7 +384,6 @@ async function startPvPGame() {
 
   game.effectiveMaxHP = P_MAX_HP;
   resetSessionState();
-  game.mode = "PVP";
   game.hp = game.effectiveMaxHP;
   cleanupGame();
 
@@ -413,6 +422,9 @@ async function startPvPGame() {
 }
 
 async function startFFAGame() {
+  game.careerSnapshot = game.career
+    ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
+    : null;
   game.mode = "FFA";
   game.state = "PLAYING";
   setActiveMatchFlag({
@@ -435,7 +447,6 @@ async function startFFAGame() {
 
   game.effectiveMaxHP = P_MAX_HP;
   resetSessionState();
-  game.mode = "FFA";
   game.hp = game.effectiveMaxHP;
   cleanupGame();
 
@@ -865,6 +876,10 @@ function gameOver(rankings = null) {
     hideRankings();
   }
 
+  // XP results — show after brief delay so the final careerStats socket event arrives
+  hideXpScreen();
+  setTimeout(() => showXpResults(game.careerSnapshot, game.career), 700);
+
   if (document.pointerLockElement === game.renderer.domElement) {
     document.exitPointerLock();
   }
@@ -887,16 +902,37 @@ function animate(time) {
     tickBanter(game.dt);
     tickBarrelWarning();
     tickPingDisplay();
+
+    // Player + grapple always run at real time
     updatePlayer(actions);
     updateGrapple();
     syncLocalPlayerState();
+
+    // World time-scale: hit-stop (freeze) and kill slow-mo
+    const _trueDt = game.dt;
+    if (game.hitStopTmr > 0) {
+      game.hitStopTmr = Math.max(0, game.hitStopTmr - _trueDt);
+      game.dt = 0;
+    } else if (game.killSlowTmr > 0) {
+      game.killSlowTmr = Math.max(0, game.killSlowTmr - _trueDt);
+      game.dt = _trueDt * 0.15;
+    }
+
     updateEnemies(actions);
     updateBullets({ ...actions, processHit });
     updateParticles();
+
+    updateShells();
     tickDamageNumbers(game.dt);
     updateHealthPacks(doHUD ? updateHUD : undefined);
     updateWeaponPickups(doHUD ? updateHUD : undefined);
     updateWaves();
+
+    game.dt = _trueDt; // restore before camera and HUD
+
+    // Health bar easing — lerp display value toward real hp
+    game.displayHp += (game.hp - game.displayHp) * Math.min(1, 10 * game.dt);
+
     updateRemotePlayerVisuals();
     updateCamera();
     if (doHUD) { updateHUD(); updateStatusIndicators(); }

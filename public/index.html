@@ -39,7 +39,7 @@
           <div class="tutorial-row"><span class="tkey">RMB</span><span>Aim</span></div>
           <div class="tutorial-row"><span class="tkey">R</span><span>Reload</span></div>
           <div class="tutorial-row"><span class="tkey">E</span><span>Pick up / Revive</span></div>
-          <div class="tutorial-row"><span class="tkey">G</span><span>Grapple</span></div>
+          <div class="tutorial-row"><span class="tkey">F</span><span>Grapple</span></div>
           <div class="tutorial-row"><span class="tkey">Q</span><span>Cycle weapon</span></div>
           <div class="tutorial-row"><span class="tkey">Esc</span><span>Pause</span></div>
         </div>
@@ -235,7 +235,7 @@
               <span class="key">CTRL</span><span>Crouch (toggle)</span>
               <span class="key">W / S on ladder</span><span>Climb up / down</span>
               <span class="key">1–7 / Q</span><span>Switch Weapon</span>
-              <span class="key">G</span><span>Grapple</span>
+              <span class="key">F</span><span>Grapple</span>
               <span class="key">E (hold)</span><span>Pick Up / Revive</span>
               <span class="key">LMB</span><span>Fire</span>
               <span class="key">RMB</span><span>Aim Down Sights</span>
@@ -469,7 +469,7 @@
                 <span class="key">SPACE</span><span>Jump</span>
                 <span class="key">E (hold)</span><span>Pick Up / Revive</span>
                 <span class="key">1–7 / Q</span><span>Switch Weapon</span>
-                <span class="key">G</span><span>Grapple</span>
+                <span class="key">F</span><span>Grapple</span>
                 <span class="key">R</span><span>Reload</span>
                 <span class="key">LMB</span><span>Fire</span>
                 <span class="key">RMB</span><span>Aim Down Sights</span>
@@ -566,6 +566,17 @@
         <h2>FINAL RANKINGS</h2>
         <div id="rankings-content"></div>
       </div>
+
+      <!-- XP results panel -->
+      <div id="xp-screen" style="display:none">
+        <div id="xp-divider"></div>
+        <div id="xp-gained-label"></div>
+        <div id="xp-level-row">LEVEL <span id="xp-level-num">1</span></div>
+        <div id="xp-bar-wrap"><div id="xp-bar-fill"></div></div>
+        <div id="xp-bar-nums"><span id="xp-into">0</span> / <span id="xp-for-next">100</span> XP</div>
+        <div id="xp-levelup-banner"></div>
+      </div>
+
       <button id="redeploy-btn">REDEPLOY</button>
       <button id="leaderboard-btn" style="margin-top:8px">ALL-TIME LEADERBOARD</button>
       <div id="leaderboard-section" hidden>

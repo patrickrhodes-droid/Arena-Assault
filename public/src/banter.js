@@ -262,8 +262,8 @@ let _showing   = false;
 let _dismissAt = 0;
 
 let _idleTimer  = 0;
-const IDLE_MIN  = 40;
-const IDLE_MAX  = 68;
+const IDLE_MIN  = 57;
+const IDLE_MAX  = 97;
 let _nextIdle   = IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
 
 let _seenTypes   = new Set();
@@ -277,6 +277,7 @@ function getText() { return getBox()?.querySelector(".banter-text"); }
 function showLine({ c, t }) {
   _showing   = true;
   _dismissAt = performance.now() + 5000;
+  game.audio?.banterBeep?.();
 
   // Face
   const faceEl = getFace();
@@ -324,6 +325,7 @@ function pickUnlocked(arr) {
 
 export function fireBanter(eventType, wave) {
   if (game.gameMode !== "campaign") return;
+  if (Math.random() > 0.7) return; // 30% less often
   let pool;
   if (eventType === "wave_start") pool = LINES.wave_start[wave] || LINES.wave_clear;
   else pool = LINES[eventType];

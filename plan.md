@@ -13,6 +13,7 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Sprint visual feedback** — subtle FOV increase (+8°) and head-bob when sprinting.
 - **Jump feel** — add a small squash-and-stretch animation to the player model on land impact.
 - ✅ **Coyote time** — 80 ms grace window after walking off a ledge before gravity locks in.
+- ✅ **Jump input buffering** — jump input queued for 120 ms while airborne; fires automatically on the next landing frame.
 - ✅ **Landing sound** — soft/hard landing variants (impactGeneric_light / impactMetal_heavy) based on fall velocity.
 - ✅ **Landing camera dip** — camera punches down on impact and springs back over ~0.4 s.
 - **Wall running / slide** — stretch goal; would add significant skill ceiling.
@@ -20,13 +21,16 @@ This document captures everything needed to take the project from its current pr
 ### 1.2 Weapons
 - ✅ **Weapon sway / bob** — movement bob (sin wave at 5.5 rad/s, ±0.004/0.006 u) layered on top of existing idle breathe and mouse sway.
 - ✅ **Reload animation** — gun dips down via a sin curve over the reload duration and returns when complete.
-- ✅ **Muzzle flash 3× bigger** — flash sphere radius 0.1 → 0.32, light range 5 → 9, duration 0.04 → 0.10 s.
+- ✅ **Muzzle flash** — pure PointLight burst (warm white, intensity 7–12, 55 ms). Shotgun/bazooka get higher intensity.
 - ✅ **Hit markers** — crosshair dot flashes white → orange when a shot connects.
-- ✅ **Empty mag feedback** — impactMetal_light dry-fire click when attempting to fire with 0 ammo.
+- ✅ **Empty mag feedback** — UI click sound on dry-fire.
+- ✅ **Ammo counter urgency** — ammo display pulses red when below 25% of magazine capacity.
 - ✅ **Weapon balancing pass** — shotgun 72 → 144 per pellet; bazooka 500 → 1000 direct, 400 → 800 splash.
-- ✅ **Crosshair / bullet alignment** — third-person bullets now raycast from camera through crosshair centre to find the real world hit point, eliminating close-range parallax offset.
+- ✅ **Crosshair / bullet alignment** — third-person bullets raycast from camera through crosshair centre, eliminating close-range parallax.
+- ✅ **Hit-stop** — world freezes for ~55 ms on every sword hit; kill slow-mo (0.15× speed, 120 ms) on every kill.
+- ✅ **Boss bazooka knockback** — bazooka now damages and applies a small knockback (0.4 u) to the boss.
 - **Ammo pickups** — add ammo crates to maps so players can resupply mid-wave.
-- ✅ **Sword lunge** — forward knockback impulse (22 u/s) when swinging while grounded, dashing the player ~2–3 u in the facing direction.
+- ✅ **Sword lunge** — forward knockback impulse (45 u) when swinging while pressing W, usable in air.
 
 ### 1.3 Enemy AI
 - **Enemy pathfinding fix** — the detour system still relies on 4 fixed corner waypoints and breaks in complex geometry (Blacksite). Replace with a simple grid/navmesh approach.
@@ -60,8 +64,13 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Bullet-hole decals** — DecalGeometry with bullet-holes.png projects onto walls, floors, and static GLB props. Pool of 60; oldest disposed when exceeded.
 - ✅ **Explosive barrel pre-warning** — proximity warning banner appears when player enters blast radius.
 - ✅ **Post-processing bloom** — EffectComposer + UnrealBloomPass (strength 0.38, radius 0.55, threshold 0.82). Muzzle flashes and explosions glow; normal geometry unaffected.
-- ✅ **Muzzle smoke** — 3 small grey particles spawned at the barrel on every non-bazooka/grapple shot.
-- ✅ **Boss slam shockwave** — burst of orange particles + large embers at ground level when boss swing fires.
+- ✅ **Muzzle smoke** — 1–3 grey particles (no gravity) at barrel on every shot; rifle/shotgun get 1, others get 3.
+- ✅ **Boss slam shockwave** — burst of orange particles + large embers at ground level when boss lands after a jump.
+- ✅ **Bullet tracers** — short yellow-white Line geometry from muzzle in bullet direction, fades over 60 ms.
+- ✅ **Shell ejection** — brass-coloured box mesh ejects right from muzzle, bounces once off the floor with a metallic clink.
+- ✅ **Surface-specific impact VFX** — warm/sandy materials spawn sand-coloured dust; dark materials spawn blue-grey haze; default spawns grey sparks.
+- **Squash & stretch on heavy landing** — scale player group Y axis briefly on hard impact and spring back. Needs animation pass.
+- **Contextual wall material VFX pass** — currently uses material colour heuristic. A tagged `surfaceType` field per mesh would allow exact material matching (metal sparks, concrete dust, sand puff, etc.).
 
 ---
 
@@ -80,6 +89,11 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Landing sound** — soft/hard variant based on fall speed.
 - ✅ **Empty mag click** — impactMetal_light on dry-fire, throttled at 0.3 s.
 - ✅ **UI audio** — click1–5 (buttons), rollover1–6 (hover), switch1–10 (toggles/sliders), mouseclick1 (Ready Up confirm).
+- ✅ **Pitch randomisation on gunshots** — ±8% frequency variation per shot on all procedural weapon sounds. Eliminates machine-gun sample repetition.
+- ✅ **Audio ducking on explosions** — shotgun, sniper, and bazooka temporarily duck all other SFX by ~70% for 800 ms via `effectiveVol` multiplier.
+- ✅ **Shell clink** — synthesised metallic triangle-wave ping plays when ejected shell bounces off the floor.
+- ✅ **Banter radio beep** — three-dot morse-style square-wave burst plays whenever a banter line appears.
+- **Distance-based reverb zones** — requires AudioContext `ConvolverNode` with per-zone impulse response buffers. Currently all SFX are dry. Needs: IR sample library, zone tagging on map objects, and a routing graph that blends dry/wet by zone. Significant audio architecture change.
 - **Weapon fire sounds** — each weapon needs a real fire/reload sample. Currently all use synthesised tones.
 - **Enemy audio** — dog growl on aggro; skeleton rattle on attack; soldier "contact!" on seeing player.
 - **Boss audio** — charge roar, swing whoosh, phase-2 snarl, death explosion.
@@ -92,20 +106,17 @@ This document captures everything needed to take the project from its current pr
 
 ### 4.1 HUD
 - ✅ **Damage direction indicator** — red arc at the edge of the screen pointing toward the damage source.
-- **Enemy distance labels** — small dot with distance to nearest enemy on the minimap.
 - ✅ **Wave progression bar** — thin bar + "N LEFT" count below the wave number.
 - ✅ **Score pop-ups** — "+100" floats up from the crosshair on each kill.
 - ✅ **Boss phase indicator** — "PHASE 1" / "PHASE 2 — ENRAGED" label beneath the boss HP bar.
 - ✅ **Crosshair hit flash** — dot flashes white → orange when a bullet connects.
 
 ### 4.2 Menus & Flow
-- **Map preview thumbnails** — replace gradient lobby cards with actual screenshot thumbnails.
-- **Post-game vote** — "Play again?" / "Change map?" vote panel before redeploying.
+- ✅**Map preview thumbnails** — replace gradient lobby cards with actual screenshot thumbnails.
 - ✅ **Settings screen** — Master/Music/SFX sliders, Shadows toggle, Particles toggle. All persist via localStorage.
 - ✅ **Tutorial popup** — full keyboard + controller control reference shown on first launch (localStorage flag). Dismissed by clicking GOT IT or pressing Esc.
 - ✅ **Lobby chat** — text chat in lobby broadcast to all players via Socket.IO.
 - ✅ **Ping display** — live ms counter in top-right of HUD; colour-coded green/amber/red.
-- **PvP weapon progression display** — weapon strip with current weapon highlighted and kill count to next unlock.
 - ✅ **Lobby background** — arenabackground.jpg shown behind lobby panels.
 - ✅ **Duplicate name check** — server rejects playerReady if another player already has that name; client re-enables the button with a red error message.
 
@@ -137,8 +148,7 @@ This document captures everything needed to take the project from its current pr
 - ✅ **Child process isolation** — server.js runs in a `utilityProcess.fork()` subprocess. Server crashes no longer kill the Electron window; user sees an error dialog and can restart.
 - ✅ **Writable data path** — leaderboard and career stats redirect to `userData` folder to avoid Program Files ACL issues.
 - **Auto-update** — version check against GitHub releases; prompt to pull latest.
-- **Firewall rule** — NSIS installer script registers exceptions for UDP 45678 and TCP (dynamic port) so Windows Firewall doesn't block LAN discovery on first run.
-- **Accessibility** — colour-blind mode; adjustable HUD text size.
+
 
 ---
 
@@ -159,11 +169,11 @@ This document captures everything needed to take the project from its current pr
 ## Priority Order (if shipping soon)
 
 1. ✅ Hit markers
-2. Enemy pathfinding fix (2 h, gameplay critical)
+2. ✅Enemy pathfinding fix (2 h, gameplay critical)
 3. ✅ Weapon audio assets — real fire/reload sounds still needed
 4. ✅ Damage direction indicator
-5. Post-processing bloom (2 h)
-6. Map thumbnails for lobby (1 h)
+5. ✅Post-processing bloom (2 h)
+6. ✅Map thumbnails for lobby (1 h)
 7. ✅ Wave progress bar
 8. ✅ Settings screen
 9. Instanced mesh for props (4 h, performance)

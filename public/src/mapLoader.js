@@ -16,6 +16,15 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { game } from "./state.js";
 
+const HDR_ENV_INTENSITY = 0.38;
+function _applyEnvIntensity(root) {
+  root.traverse((node) => {
+    if (!node.isMesh) return;
+    const mats = Array.isArray(node.material) ? node.material : [node.material];
+    for (const mat of mats) if (mat) mat.envMapIntensity = HDR_ENV_INTENSITY;
+  });
+}
+
 export async function loadMapDefinition(mapId) {
   try {
     // cache: 'no-cache' — always revalidate with the server so edits made in the
@@ -28,8 +37,6 @@ export async function loadMapDefinition(mapId) {
   }
 }
 
-/** No-op kept for call-site compatibility. */
-export function invalidateMapCache(_mapId) {}
 
 // ── Per-theme material factories ──────────────────────────────────────────────
 // These replicate the same solid-colour values used by the legacy builders so
@@ -179,11 +186,31 @@ function applyMapLighting(mapDef, scene, arenaLights) {
 
   // Extra hemisphere for city/blacksite themes
   if (mapDef.theme === 'city') {
-    const h = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 1.1);
+    const h = new THREE.HemisphereLight(0xbfe2ff, 0x8f785f, 0.4);
     scene.add(h); arenaLights.push(h);
   } else if (mapDef.theme === 'blacksite') {
     const h = new THREE.HemisphereLight(0x44ff88, 0x1a4030, 2.2);
     scene.add(h); arenaLights.push(h);
+    // Point lights scattered around the compound for moody industrial feel
+    for (const [x, y, z, color, intensity, dist] of [
+      [-35, 4, -35, 0x44ff88, 1.8, 20],
+      [ 35, 4, -35, 0x00aaff, 1.6, 18],
+      [ 35, 4,  35, 0x44ff88, 1.8, 20],
+      [-35, 4,  35, 0xff4400, 1.4, 16],
+      [  0, 4,   0, 0x88ffcc, 2.2, 24],
+      [-55, 4,   0, 0x44ff88, 1.6, 18],
+      [ 55, 4,   0, 0x00aaff, 1.6, 18],
+      [  0, 4, -55, 0xff5500, 1.4, 16],
+      [  0, 4,  55, 0x44ff88, 1.8, 20],
+      [-20, 4,   0, 0x88ffcc, 1.4, 14],
+      [ 20, 4,   0, 0x44ff88, 1.4, 14],
+      [  0, 4, -20, 0x00ccff, 1.4, 14],
+      [  0, 4,  20, 0xff6600, 1.2, 14],
+    ]) {
+      const pl = new THREE.PointLight(color, intensity, dist);
+      pl.position.set(x, y, z);
+      scene.add(pl); arenaLights.push(pl);
+    }
   }
 
   // Suns
@@ -202,10 +229,10 @@ function applyMapLighting(mapDef, scene, arenaLights) {
 }
 
 function defaultSuns(theme) {
-  if (theme === 'desert')    return [{ color: '#fffef0', intensity: 2.5,  position: [50, 80, 10] }];
-  if (theme === 'city')      return [{ color: '#fff4d6', intensity: 2.85, position: [34, 78, -24] }, { color: '#ffd1a8', intensity: 0.8, position: [-18, 36, 30] }];
+  if (theme === 'desert')    return [{ color: '#fffef0', intensity: 0.9,  position: [50, 80, 10] }];
+  if (theme === 'city')      return [{ color: '#fff4d6', intensity: 1.0,  position: [34, 78, -24] }, { color: '#ffd1a8', intensity: 0.3, position: [-18, 36, 30] }];
   if (theme === 'blacksite') return [{ color: '#33ff77', intensity: 1.6,  position: [0, -10, 0] }];
-  return [{ color: '#dff7ff', intensity: 1.8, position: [36, 64, 18] }]; // arena
+  return [{ color: '#dff7ff', intensity: 0.65, position: [36, 64, 18] }]; // arena
 }
 
 // ── Object builders ───────────────────────────────────────────────────────────
@@ -294,8 +321,12 @@ function loadPropJson(obj, arenaGroup) {
     }
   }
 
-  if (cachedGltf) { instantiate(cachedGltf); return; }
-  _gltfLoader.load(obj.model, (gltf) => { _glbCache.set(obj.model, gltf); instantiate(gltf); });
+  function instantiateAndApplyEnv(gltf) {
+    instantiate(gltf);
+    if (game.scene?.environment) _applyEnvIntensity(game.scene);
+  }
+  if (cachedGltf) { instantiateAndApplyEnv(cachedGltf); return; }
+  _gltfLoader.load(obj.model, (gltf) => { _glbCache.set(obj.model, gltf); instantiateAndApplyEnv(gltf); });
 }
 
 function loadDestructibleJson(obj, arenaGroup) {
@@ -330,8 +361,12 @@ function loadDestructibleJson(obj, arenaGroup) {
     });
   }
 
-  if (cachedGltf) { instantiate(cachedGltf); return; }
-  _gltfLoader.load(obj.model, (gltf) => { _glbCache.set(obj.model, gltf); instantiate(gltf); });
+  function instantiateAndApplyEnv(gltf) {
+    instantiate(gltf);
+    if (game.scene?.environment) _applyEnvIntensity(game.scene);
+  }
+  if (cachedGltf) { instantiateAndApplyEnv(cachedGltf); return; }
+  _gltfLoader.load(obj.model, (gltf) => { _glbCache.set(obj.model, gltf); instantiateAndApplyEnv(gltf); });
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────

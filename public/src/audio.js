@@ -57,9 +57,19 @@ export function createAudioController() {
     musicResumeTarget = null;
   }
 
-  function effectiveVol(base) {
-    return Math.max(0, Math.min(1, base * masterVolume));
+  let _duckUntil = 0;
+  let _duckDuration = 800;
+  function getDuck() {
+    const now = performance.now();
+    if (now >= _duckUntil) return 1;
+    return 0.28 + 0.72 * (1 - (_duckUntil - now) / _duckDuration);
   }
+
+  function effectiveVol(base) {
+    return Math.max(0, Math.min(1, base * masterVolume * getDuck()));
+  }
+
+  function duckAudio(ms = 800) { _duckDuration = ms; _duckUntil = performance.now() + ms; }
 
   function createMusicElement(src, loop = false) {
     const audio = new window.Audio(src);
@@ -188,18 +198,72 @@ export function createAudioController() {
   }
 
   function gunshot() {
-    playNoise(0.07, 0.015, 0.3);
-    playSweep(90, 20, 0.08, 0.35);
+    const p = 0.92 + Math.random() * 0.16;
+    playNoise(0.07 * p, 0.015, 0.3);
+    playSweep(90 * p, 20 * p, 0.08, 0.35);
   }
 
   function shotgun() {
-    playNoise(0.11, 0.02, 0.45);
-    playSweep(120, 35, 0.12, 0.5, "triangle");
+    const p = 0.90 + Math.random() * 0.20;
+    playNoise(0.11 * p, 0.02, 0.45);
+    playSweep(120 * p, 35 * p, 0.12, 0.5, "triangle");
+    duckAudio(1000);
   }
 
   function sniper() {
-    playNoise(0.16, 0.03, 0.32);
-    playSweep(240, 45, 0.18, 0.55, "sawtooth");
+    const p = 0.92 + Math.random() * 0.16;
+    playNoise(0.16 * p, 0.03, 0.32);
+    playSweep(240 * p, 45 * p, 0.18, 0.55, "sawtooth");
+    duckAudio(1000);
+  }
+
+  function xpTick() {
+    if (!context) return;
+    const v = effectiveVol(0.07 * sfxVolume);
+    if (v < 0.001) return;
+    const t = context.currentTime;
+    const osc = context.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1100 + Math.random() * 200, t);
+    const g = context.createGain();
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    osc.connect(g).connect(context.destination);
+    osc.start(t); osc.stop(t + 0.045);
+  }
+
+  function levelUpSound() {
+    if (!context) return;
+    const v = effectiveVol(0.22 * sfxVolume);
+    if (v < 0.001) return;
+    const t = context.currentTime;
+    for (const [d, freq] of [[0, 523], [0.11, 659], [0.22, 784], [0.35, 1047]]) {
+      const osc = context.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + d);
+      const g = context.createGain();
+      g.gain.setValueAtTime(v, t + d);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.22);
+      osc.connect(g).connect(context.destination);
+      osc.start(t + d); osc.stop(t + d + 0.22);
+    }
+  }
+
+  function shellClink() {
+    if (!context) return;
+    const v = effectiveVol(0.06 * sfxVolume);
+    if (v < 0.001) return;
+    const t = context.currentTime;
+    const freq = 2000 + Math.random() * 1000;
+    const osc = context.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.35, t + 0.1);
+    const g = context.createGain();
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    osc.connect(g).connect(context.destination);
+    osc.start(t); osc.stop(t + 0.13);
   }
 
   function hit() {
@@ -251,16 +315,9 @@ export function createAudioController() {
   }
 
   function playWeapon(definition) {
-    if (definition.mode === "sniper") {
-      sniper();
-      return;
-    }
-
-    if (definition.mode === "shotgun") {
-      shotgun();
-      return;
-    }
-
+    if (definition.mode === "sniper") { sniper(); return; }
+    if (definition.mode === "shotgun") { shotgun(); return; }
+    if (definition.mode === "bazooka") { gunshot(); duckAudio(); return; }
     gunshot();
   }
 
@@ -301,7 +358,7 @@ export function createAudioController() {
   }
 
   function footstep(surface = 'concrete') { _sfx(`footstep_${surface}`, 5, 0.22); }
-  function wallImpact()  { _sfx('impactMetal_medium', 5, 0.30); }
+  function wallImpact()  { }
   function enemyHit(type) {
     if (type === 'boss' || type === 'miniboss') _sfx('impactPlate_heavy', 5, 0.38);
     else _sfx('impactSoft_medium', 5, 0.32);
@@ -310,12 +367,10 @@ export function createAudioController() {
     _sfx(light ? 'impactPunch_medium' : 'impactPunch_heavy', 5, 0.55);
   }
   function propBreak()   { _sfx('impactWood_heavy',  5, 0.55); }
-  function killBell()    { _sfx('impactBell_heavy',  5, 0.55); }
+
   function grappleHit()  { _sfx('impactMetal_heavy', 5, 0.40); }
-  function land(hard = false) {
-    hard ? _sfx('impactMetal_heavy', 5, 0.45) : _sfx('impactGeneric_light', 5, 0.35);
-  }
-  function emptyMag()    { _sfx('impactMetal_light',  5, 0.40); }
+  function land(_hard = false) { }
+  function emptyMag()    { _playFile(`${UI}click${1 + _rnd(5)}.ogg`, 0.55); }
   function weaponPickup(){ _sfx('impactTin_medium',   5, 0.45); }
   function healthPickup(){ _sfx('impactGeneric_light', 5, 0.40); }
   function swordHit()    { _sfx('impactPlank_medium', 5, 0.50); }
@@ -343,6 +398,27 @@ export function createAudioController() {
       osc.start(t + d);
       osc.stop(t + d + 0.2);
     });
+  }
+
+  function banterBeep() {
+    if (!context) return;
+    const v = effectiveVol(0.10 * sfxVolume);
+    if (v < 0.001) return;
+    const t = context.currentTime;
+    // Short morse-style radio burst: dot dot dot
+    for (const d of [0, 0.09, 0.18]) {
+      const osc = context.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1100, t + d);
+      const g = context.createGain();
+      g.gain.setValueAtTime(0, t + d);
+      g.gain.linearRampToValueAtTime(v, t + d + 0.006);
+      g.gain.setValueAtTime(v, t + d + 0.042);
+      g.gain.linearRampToValueAtTime(0, t + d + 0.058);
+      osc.connect(g).connect(context.destination);
+      osc.start(t + d);
+      osc.stop(t + d + 0.06);
+    }
   }
 
   function dialogueTick() {
@@ -385,7 +461,6 @@ export function createAudioController() {
     enemyHit,
     meleeDamage,
     propBreak,
-    killBell,
     grappleHit,
     land,
     emptyMag,
@@ -394,6 +469,11 @@ export function createAudioController() {
     swordHit,
     bossStep,
     heartbeat,
+    banterBeep,
+    shellClink,
+    duckAudio,
+    xpTick,
+    levelUpSound,
     uiClick,
     uiHover,
     uiConfirm,

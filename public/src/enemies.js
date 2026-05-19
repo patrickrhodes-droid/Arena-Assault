@@ -1193,6 +1193,12 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     if (pos.y <= 0) {
       pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false;
       enemy.bossBumpFired = false;
+      // Shockwave on landing
+      const lp = new THREE.Vector3(pos.x, 0.1, pos.z);
+      spawnParticles(lp, 30, 0xff6600, 8, false);
+      spawnParticles(lp.clone(), 12, 0xffcc44, 5, true);
+      spawnParticles(lp.clone(), 20, 0x884400, 6, false);
+      game.shakeAmt = Math.max(game.shakeAmt || 0, 0.18);
       // Play landing animation on touchdown
       if (enemy.landingAction) {
         enemy.landingAction.reset();
@@ -1432,13 +1438,18 @@ export function trySwordHit() {
   for (const enemy of game.enemies) {
     if (enemy.hp <= 0) continue;
 
-    const distance = playerPos.distanceTo(enemy.group.position);
-    if (distance >= 6.5) continue;
+    const dx = enemy.group.position.x - playerPos.x;
+    const dz = enemy.group.position.z - playerPos.z;
+    const planarDist = Math.sqrt(dx * dx + dz * dz);
+    if (planarDist >= 6.5) continue;
 
-    const toEnemy = enemy.group.position.clone().sub(playerPos).normalize();
-    if (toEnemy.dot(cameraDirection) > 0.5) {
+    // Use horizontal-only dot so vertical aim doesn't shrink the hit arc
+    const toEnemyFlat = new THREE.Vector3(dx, 0, dz);
+    if (planarDist > 0) toEnemyFlat.divideScalar(planarDist);
+    if (toEnemyFlat.dot(camFlat) > 0.35) {
       const swordDmg = enemy.type === "boss" ? 250 : 500;
       game.audio?.swordHit?.();
+      game.hitStopTmr = 0.055;
       processHit(enemy, swordDmg, enemy.group.position.clone().setY(1.5));
     }
   }

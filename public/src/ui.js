@@ -164,7 +164,7 @@ function showScreen(id) {
   });
 }
 
-function applyMapScreenRole() {
+export function applyMapScreenRole() {
   const hostSection = document.getElementById('host-map-section');
   const guestSection = document.getElementById('guest-map-section');
   if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
@@ -406,6 +406,8 @@ export function bindMenuControls(actions) {
     game.dom.deployBtn.disabled = true;
     game.dom.deployBtn.style.opacity = "0.5";
     game.dom.deployBtn.textContent = "READY ✓";
+    game.state = "MENU";
+    game.audio?.stopBackgroundMusic?.();
     showScreen("screen-map");
     applyMapScreenRole();
   });
@@ -816,7 +818,12 @@ export function updateLobbyUI(players) {
     list.appendChild(row);
 
     if (player.playerId === game.socket?.id) {
+      const wasHost = game.isHost;
       game.isHost = player.isHost;
+      // Re-apply host/guest layout if already on the map screen and host status changed
+      if (wasHost !== game.isHost && game.dom.screenMap?.classList.contains("active")) {
+        applyMapScreenRole();
+      }
     }
   });
 
@@ -870,10 +877,13 @@ export function renderJoinLinkControls() {
   game.dom.copyJoinLinkStatus.textContent = game.copyJoinLinkMessage || "";
 }
 
+let _prevScore = -1;
+
 export function updateHUD() {
   const weapon = getWeapon();
   const bosses = getBossEnemies();
-  const percent = Math.max(0, game.hp / game.effectiveMaxHP);
+  const displayHp = game.displayHp;
+  const percent = Math.max(0, displayHp / game.effectiveMaxHP);
   game.dom.hpFill.style.width = `${percent * 100}%`;
   game.dom.hpText.textContent = Math.ceil(game.hp);
 
@@ -936,6 +946,17 @@ export function updateHUD() {
     ? (game.ammo <= lowAmmoThreshold(weapon) && !game.isReloading ? "#ff4444" : "#00ffcc")
     : (game.localPlayerIsSpectating ? "#9aa7b5" : "#ffbb55");
   game.dom.reloadText.style.display = game.isReloading ? "block" : "none";
+  // Ammo urgency — pulse red below 25%
+  const ammoFrac = weapon.mag > 0 ? game.ammo / weapon.mag : 1;
+  game.dom.ammoCurrent?.classList.toggle("ammo-critical", ammoFrac <= 0.25 && game.localPlayerIsAlive && !game.isReloading);
+
+  // Score pop on change
+  if (game.score !== _prevScore) {
+    _prevScore = game.score;
+    game.dom.scoreValue?.classList.remove("score-pop");
+    void game.dom.scoreValue?.offsetWidth;
+    game.dom.scoreValue?.classList.add("score-pop");
+  }
   game.dom.scoreValue.textContent = game.score;
   game.dom.waveValue.textContent = game.wave || "-";
   game.dom.bossWrap.style.display = bosses.length > 0 ? "block" : "none";
@@ -1035,6 +1056,124 @@ export function pushKillFeed(text, type = "") {
     entry.remove();
   }, 4000);
   killFeedTimers.push(t);
+}
+
+// ── XP results panel ───────────────────────────────────────────────────────────
+let _xpTickInterval = null;
+
+function _stopXpTick() {
+  if (_xpTickInterval) { clearInterval(_xpTickInterval); _xpTickInterval = null; }
+}
+
+function _startXpTick() {
+  _stopXpTick();
+  _xpTickInterval = setInterval(() => game.audio?.xpTick?.(), 80);
+}
+
+export function hideXpScreen() {
+  _stopXpTick();
+  const el = document.getElementById('xp-screen');
+  if (el) el.style.display = 'none';
+}
+
+export function showXpResults(snapshot, current) {
+  const el = document.getElementById('xp-screen');
+  if (!el || !current?.level) { hideXpScreen(); return; }
+
+  const oldLevel    = snapshot?.level ?? current.level;
+  const newLevel    = current.level;
+  const oldXpInto   = snapshot?.xpIntoLevel ?? 0;
+  const oldXpNext   = snapshot?.xpForNextLevel ?? 100;
+  const newXpInto   = current.xpIntoLevel ?? 0;
+  const newXpNext   = current.xpForNextLevel ?? 100;
+  const totalXpNow  = current.stats?.xp ?? 0;
+  const totalXpThen = snapshot?.totalXp ?? totalXpNow;
+  const xpGained    = Math.max(0, totalXpNow - totalXpThen);
+
+  const gainedLabel   = document.getElementById('xp-gained-label');
+  const levelNum      = document.getElementById('xp-level-num');
+  const barFill       = document.getElementById('xp-bar-fill');
+  const xpIntoEl      = document.getElementById('xp-into');
+  const xpForNextEl   = document.getElementById('xp-for-next');
+  const levelUpBanner = document.getElementById('xp-levelup-banner');
+
+  gainedLabel.textContent   = xpGained > 0 ? `+${xpGained} XP EARNED` : 'MATCH COMPLETE';
+  levelNum.textContent      = oldLevel;
+  xpForNextEl.textContent   = oldXpNext;
+  xpIntoEl.textContent      = oldXpInto;
+  levelUpBanner.textContent = '';
+  levelUpBanner.className   = '';
+
+  // Set bar to starting position without transition
+  barFill.style.transition = 'none';
+  barFill.style.width      = `${Math.min(100, (oldXpInto / oldXpNext) * 100)}%`;
+  el.style.display = 'block';
+
+  if (xpGained <= 0) return;
+
+  const leveled       = newLevel > oldLevel;
+  const fillDuration  = Math.min(2200, Math.max(700, xpGained * 10));
+
+  // Animate a running XP counter between two values over a duration
+  function animateCounter(el, from, to, duration) {
+    const start = performance.now();
+    function step() {
+      const t = Math.min(1, (performance.now() - start) / duration);
+      el.textContent = Math.round(from + (to - from) * t);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Short delay so socket `careerStats` event settles before we read `current`
+  setTimeout(() => {
+    if (!leveled) {
+      // Simple: fill from old position to new position
+      _startXpTick();
+      requestAnimationFrame(() => {
+        barFill.style.transition = `width ${fillDuration}ms linear`;
+        barFill.style.width      = `${Math.min(100, (newXpInto / newXpNext) * 100)}%`;
+      });
+      animateCounter(xpIntoEl, oldXpInto, newXpInto, fillDuration);
+      setTimeout(_stopXpTick, fillDuration);
+    } else {
+      // Phase 1: fill current level bar to 100%
+      const phase1 = fillDuration * 0.55;
+      _startXpTick();
+      requestAnimationFrame(() => {
+        barFill.style.transition = `width ${phase1}ms linear`;
+        barFill.style.width = '100%';
+      });
+      animateCounter(xpIntoEl, oldXpInto, oldXpNext, phase1);
+
+      setTimeout(() => {
+        _stopXpTick();
+        game.audio?.levelUpSound?.();
+
+        // Show LEVEL UP banner
+        levelUpBanner.textContent = 'LEVEL UP!';
+        levelUpBanner.classList.add('xp-levelup-show');
+        levelNum.textContent = newLevel;
+        xpForNextEl.textContent  = newXpNext;
+
+        setTimeout(() => {
+          // Phase 2: reset bar and fill to new level position
+          barFill.style.transition = 'none';
+          barFill.style.width      = '0%';
+          xpIntoEl.textContent     = 0;
+
+          const phase2 = fillDuration * 0.45;
+          _startXpTick();
+          requestAnimationFrame(() => {
+            barFill.style.transition = `width ${phase2}ms linear`;
+            barFill.style.width = `${Math.min(100, (newXpInto / newXpNext) * 100)}%`;
+          });
+          animateCounter(xpIntoEl, 0, newXpInto, phase2);
+          setTimeout(_stopXpTick, phase2);
+        }, 900);
+      }, phase1);
+    }
+  }, 600);
 }
 
 // ── Score pop-ups ──────────────────────────────────────────────────────────────
