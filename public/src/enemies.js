@@ -1269,7 +1269,7 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     if (enemy.atkTmr <= 0 && inAttackRange) { enemy.atkTmr = atkFrequency; enemy.windupTmr = 0.2; }
   }
 
-  if (!inAttackRange && movedDistSq < 0.04) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
+  if (!inAttackRange && movedDistSq < 0.08) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
   else enemy.stuckTmr = 0;
 
   // Frustration: boss is horizontally close but player is elevated out of melee reach
@@ -1279,8 +1279,8 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     enemy.bossFrustrationTmr = Math.max(0, (enemy.bossFrustrationTmr || 0) - game.dt * 2);
   }
 
-  const stuckJump = !inAttackRange && (enemy.stuckTmr || 0) >= 0.9;
-  const frustrationJump = inAttackRange && playerElevated && (enemy.bossFrustrationTmr || 0) >= 1.5;
+  const stuckJump = !inAttackRange && (enemy.stuckTmr || 0) >= 0.25;
+  const frustrationJump = inAttackRange && playerElevated && (enemy.bossFrustrationTmr || 0) >= 1.0;
   if (!enemy.escaping && pos.y <= getFloorYAtPos(pos.x, pos.z) + 0.1 && (stuckJump || frustrationJump)) {
     enemy.bossEfx = ndx; enemy.bossEfz = ndz;
     enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
