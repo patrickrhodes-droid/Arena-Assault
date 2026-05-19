@@ -395,13 +395,9 @@ export function initNetworking(actions) {
         if (sw === 1) {
           await showCampaignCutscene(mapId);
         } else {
-          // Mid-campaign start: still let players pick their operator
-          rebuildArena(game.selectedMap).catch(() => {});
           await showPreGameCharSelect();
         }
       } else {
-        // Endless mode — rebuild the match map so the background is correct
-        rebuildArena(game.selectedMap).catch(() => {});
         await showPreGameCharSelect();
       }
       actions.startGame();

@@ -265,9 +265,6 @@ window.addEventListener("load", () => {
 
   // Show the floating chat panel in the lobby
   if (game.dom?.lobbyChatPanel) game.dom.lobbyChatPanel.classList.remove("hidden-chat");
-
-  // Pre-load the default arena so the 3-D world shows behind the lobby immediately
-  rebuildArena("arena").catch(() => {});
 });
 
 requestAnimationFrame((time) => {
@@ -300,188 +297,81 @@ export function setActiveMatchFlag(payload) {
   } catch { /* localStorage unavailable — refresh-rejoin simply won't work */ }
 }
 
-async function startGame() {
-  // Snapshot career before match XP accumulates so we can show the delta at end
+// ── Shared match-start setup (all modes) ─────────────────────────────────────
+async function startMatchCommon(mode) {
   game.careerSnapshot = game.career
     ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
     : null;
-  game.mode = "COOP";
+  game.mode  = mode;
   game.state = "PLAYING";
-  setActiveMatchFlag({
-    mode: "COOP",
-    map: game.selectedMap,
-    gameMode: game.gameMode || "endless",
-    character: game.myCharacter,
-    savedAt: Date.now(),
-  });
+  setActiveMatchFlag({ mode, map: game.selectedMap, gameMode: game.gameMode || "endless", character: game.myCharacter, savedAt: Date.now() });
   game.audio.stopBackgroundMusic();
   resetComboState();
   hideAllLobbyScreens();
-  if (game.dom.lobbyBg)      game.dom.lobbyBg.style.display      = "none";
-  if (game.dom.lobbyCanvas)  game.dom.lobbyCanvas.style.display   = "none";
+  if (game.dom.lobbyBg)     game.dom.lobbyBg.style.display     = "none";
+  if (game.dom.lobbyCanvas) game.dom.lobbyCanvas.style.display  = "none";
   syncChatVisibility();
-  game.dom.gameOver.style.display = "none";
-  game.dom.pause.style.display = "none";
-  game.dom.hud.style.display = "block";
-  game.dom.pvpScore.hidden = true;
+  game.dom.gameOver.style.display          = "none";
+  game.dom.pause.style.display             = "none";
+  game.dom.hud.style.display               = "block";
+  game.dom.pvpScore.hidden                 = mode !== "PVP";
+  if (game.dom.ffaScore) game.dom.ffaScore.hidden = mode !== "FFA";
   hideXpScreen();
   await rebuildArena(game.selectedMap);
-
-  const playerCount = 1 + Object.keys(game.remotePlayers).length;
-  game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
   resetSessionState();
-  game.hp = game.effectiveMaxHP; // override resetSessionState's P_MAX_HP default
+  game.hp = game.effectiveMaxHP;
   cleanupGame();
-
   hideRankings();
   resetCombatState();
-  // collectedWeapons is set synchronously in network.js when matchStarted fires,
-  // before this async function is called — nothing to do here.
   resetViewState();
   if (game.visuals.player.headGroup && game.myCharacter) {
     applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });
   }
-  game.visuals.player.playerGroup.position.set(0, 0, 0);
-  game.visuals.player.playerGroup.rotation.set(0, 0, 0);
-  game.visuals.player.playerGroup.visible = !game.isFPS;
+  game.visuals.player.playerGroup.visible    = !game.isFPS;
   game.visuals.weapon.firstPersonGun.visible = game.isFPS;
-  game.dom.reviveOverlay.style.display = "none";
-  game.dom.spectatorOverlay.style.display = "none";
-  game.dom.revivePromptHud.style.display = "none";
-  game.dom.reviveProgressBg.style.display = "none";
-  game.dom.reviveProgressFill.style.width = "0%";
+  game.dom.reviveOverlay.style.display       = "none";
+  game.dom.spectatorOverlay.style.display    = "none";
+  game.dom.revivePromptHud.style.display     = "none";
+  game.dom.reviveProgressBg.style.display    = "none";
+  game.dom.reviveProgressFill.style.width    = "0%";
   game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
   renderJoinLinkControls();
   updateHUD();
   drawMinimap();
-  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
+  game.audio.startBackgroundMusic(game.selectedMap, mode);
   game.lastTime = performance.now();
+}
+
+function _spawnAtCorner() {
+  const cornerIdx = game.pvpSpawnAssignments?.[game.socket?.id] ?? 0;
+  const [cx, cz] = PVP_CORNERS[cornerIdx % PVP_CORNERS.length];
+  game.visuals.player.playerGroup.position.set(cx, 0, cz);
+  game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
+  game.camTheta = Math.atan2(-cx, -cz);
+}
+
+async function startGame() {
+  const playerCount = 1 + Object.keys(game.remotePlayers).length;
+  game.effectiveMaxHP = Math.max(1, Math.round(P_MAX_HP / playerCount));
+  await startMatchCommon("COOP");
+  game.visuals.player.playerGroup.position.set(0, 0, 0);
+  game.visuals.player.playerGroup.rotation.set(0, 0, 0);
 }
 
 async function startPvPGame() {
-  game.careerSnapshot = game.career
-    ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
-    : null;
-  game.mode = "PVP";
-  game.state = "PLAYING";
-  setActiveMatchFlag({
-    mode: "PVP",
-    map: game.selectedMap,
-    gameMode: "endless",
-    character: game.myCharacter,
-    savedAt: Date.now(),
-  });
-  game.audio.stopBackgroundMusic();
-  resetComboState();
-  hideAllLobbyScreens();
-  if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
-  if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  syncChatVisibility();
-  await rebuildArena(game.selectedMap);
-  game.dom.gameOver.style.display = "none";
-  game.dom.pause.style.display = "none";
-  game.dom.hud.style.display = "block";
-
   game.effectiveMaxHP = P_MAX_HP;
-  resetSessionState();
-  game.hp = game.effectiveMaxHP;
-  cleanupGame();
-
-  hideRankings();
-  resetCombatState();
-  // Override starting weapon: PvP always begins with pistol.
+  game.pvpKills = 0; game.pvpSwordKills = 0; game.pvpWeaponIdx = 0;
+  await startMatchCommon("PVP");
   setWeapon("pistol");
-  game.pvpKills = 0;
-  game.pvpSwordKills = 0;
-  game.pvpWeaponIdx = 0;
-
-  resetViewState();
-  if (game.visuals.player.headGroup && game.myCharacter) {
-    applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });
-  }
-
-  const cornerIdx = game.pvpSpawnAssignments?.[game.socket?.id] ?? 0;
-  const [cx, cz] = PVP_CORNERS[cornerIdx % PVP_CORNERS.length];
-  game.visuals.player.playerGroup.position.set(cx, 0, cz);
-  game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
-  game.camTheta = Math.atan2(-cx, -cz);
-  game.visuals.player.playerGroup.visible = !game.isFPS;
-  game.visuals.weapon.firstPersonGun.visible = game.isFPS;
-
-  game.dom.reviveOverlay.style.display = "none";
-  game.dom.spectatorOverlay.style.display = "none";
-  game.dom.revivePromptHud.style.display = "none";
-  game.dom.reviveProgressBg.style.display = "none";
-  game.dom.reviveProgressFill.style.width = "0%";
-  game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
-  renderJoinLinkControls();
-  updateHUD();
-  drawMinimap();
-  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
-  game.lastTime = performance.now();
+  _spawnAtCorner();
 }
 
 async function startFFAGame() {
-  game.careerSnapshot = game.career
-    ? { level: game.career.level, xpIntoLevel: game.career.xpIntoLevel, xpForNextLevel: game.career.xpForNextLevel, totalXp: game.career.stats?.xp ?? 0 }
-    : null;
-  game.mode = "FFA";
-  game.state = "PLAYING";
-  setActiveMatchFlag({
-    mode: "FFA",
-    map: game.selectedMap,
-    gameMode: "endless",
-    character: game.myCharacter,
-    savedAt: Date.now(),
-  });
-  game.audio.stopBackgroundMusic();
-  resetComboState();
-  hideAllLobbyScreens();
-  if (game.dom.lobbyBg)       game.dom.lobbyBg.style.display       = "none";
-  if (game.dom.lobbyCanvas)   game.dom.lobbyCanvas.style.display    = "none";
-  syncChatVisibility();
-  await rebuildArena(game.selectedMap);
-  game.dom.gameOver.style.display = "none";
-  game.dom.pause.style.display = "none";
-  game.dom.hud.style.display = "block";
-
   game.effectiveMaxHP = P_MAX_HP;
-  resetSessionState();
-  game.hp = game.effectiveMaxHP;
-  cleanupGame();
-
-  hideRankings();
-  resetCombatState();
+  game.pvpKills = 0; game.pvpSwordKills = 0; game.pvpWeaponIdx = 0; game.ffaKills = 0;
+  await startMatchCommon("FFA");
   setWeapon("pistol");
-  game.pvpKills = 0;
-  game.pvpSwordKills = 0;
-  game.pvpWeaponIdx = 0;
-  game.ffaKills = 0;
-
-  resetViewState();
-  if (game.visuals.player.headGroup && game.myCharacter) {
-    applyCharacterHead(game.visuals.player.headGroup, game.myCharacter, { visor: game.visuals.player.visor });
-  }
-
-  const cornerIdx = game.pvpSpawnAssignments?.[game.socket?.id] ?? 0;
-  const [cx, cz] = PVP_CORNERS[cornerIdx % PVP_CORNERS.length];
-  game.visuals.player.playerGroup.position.set(cx, 0, cz);
-  game.visuals.player.playerGroup.rotation.set(0, Math.atan2(-cx, -cz), 0);
-  game.camTheta = Math.atan2(-cx, -cz);
-  game.visuals.player.playerGroup.visible = !game.isFPS;
-  game.visuals.weapon.firstPersonGun.visible = game.isFPS;
-
-  game.dom.reviveOverlay.style.display = "none";
-  game.dom.spectatorOverlay.style.display = "none";
-  game.dom.revivePromptHud.style.display = "none";
-  game.dom.reviveProgressBg.style.display = "none";
-  game.dom.reviveProgressFill.style.width = "0%";
-  game.dom.viewBtn.textContent = game.isFPS ? "VIEW: THIRD PERSON" : "VIEW: FIRST PERSON";
-  renderJoinLinkControls();
-  updateHUD();
-  drawMinimap();
-  game.audio.startBackgroundMusic(game.selectedMap, game.mode);
-  game.lastTime = performance.now();
+  _spawnAtCorner();
 }
 
 function pickFurthestCorner() {
