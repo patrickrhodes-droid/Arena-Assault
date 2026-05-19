@@ -36,7 +36,9 @@
       "Bash(dir /s \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\assets\\\\*bullet*\")",
       "Bash(dir \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\assets\\\\Images\")",
       "Bash(Get-ChildItem -Path \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\src\" -Recurse -Filter \"*.js\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(dir \"d:\\\\Vibe coding projects\\\\Arena-Assault\\\\public\\\\assets\\\\models\" /b)",
+      "Bash(findstr /i \"gun\\\\|mini\\\\|gatling\\\\|chain\\\\|cannon\\\\|heavy\")"
     ]
   }
 }

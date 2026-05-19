@@ -1190,8 +1190,17 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
       }
     }
 
-    if (pos.y <= 0) {
-      pos.y = 0; enemy.bossVelY = 0; enemy.escaping = false;
+    // Check obstacle surfaces below the boss so it can land on tall structures
+    let floorY = 0;
+    for (const ob of game.oBs) {
+      if (pos.x >= ob.min.x && pos.x <= ob.max.x && pos.z >= ob.min.z && pos.z <= ob.max.z) {
+        const top = ob.h ?? 0;
+        if (top > floorY && top <= pos.y + 0.5) floorY = top;
+      }
+    }
+
+    if (pos.y <= floorY) {
+      pos.y = floorY; enemy.bossVelY = 0; enemy.escaping = false;
       enemy.bossBumpFired = false;
       // Shockwave on landing
       const lp = new THREE.Vector3(pos.x, 0.1, pos.z);

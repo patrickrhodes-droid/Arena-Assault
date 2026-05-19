@@ -16,7 +16,7 @@ export const EYE_H = 2.15;
 export const LAND_SNAP = 0.18;
 export const EPS = 1e-6;
 
-export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "bazooka", "grapple"];
+export const WEAPON_ORDER = ["pistol", "assault", "shotgun", "sniper", "sword", "bazooka", "grapple", "minigun"];
 
 // Gun game: 1 kill per weapon, last weapon is grapple, 1 grapple kill wins
 export const PVP_WIN_KILLS = 7; // 6 weapons × 1 kill + 1 grapple kill

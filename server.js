@@ -817,7 +817,7 @@ function baseEnemy(type, x, z) {
 }
 
 function makeSoldier(x, z) {
-    const hp = Math.round((58 + gameState.wave * 12) * Math.pow(1.1, gameState.wave));
+    const hp = Math.round((58 + gameState.wave * 12) * Math.pow(1.049, gameState.wave));
     const spd = 3.5 + Math.random() * 1.5 + gameState.wave * 0.2;
     const fireInt = Math.max(0.8, 2.2 - gameState.wave * 0.1) + Math.random() * 0.4;
     return Object.assign(baseEnemy('soldier', x, z), {
@@ -827,7 +827,7 @@ function makeSoldier(x, z) {
 }
 
 function makeDog(x, z) {
-    const hp = Math.round((46 + gameState.wave * 10) * Math.pow(1.1, gameState.wave));
+    const hp = Math.round((46 + gameState.wave * 10) * Math.pow(1.049, gameState.wave));
     return Object.assign(baseEnemy('dog', x, z), {
         hp, maxHp: hp,
         spd: 8 + Math.random() * 2 + gameState.wave * 0.3,
@@ -846,7 +846,7 @@ function makeSkeleton(x, z) {
 }
 
 function makeBoss(x, z, hpMult) {
-    const hp = Math.round(3600 * Math.pow(1.1, gameState.wave) * hpMult);
+    const hp = Math.round(3600 * Math.pow(1.049, gameState.wave) * hpMult);
     return Object.assign(baseEnemy('boss', x, z), {
         hp, maxHp: hp, spd: 12,
         atkDmg: 100 + gameState.wave * 10,
@@ -1210,6 +1210,11 @@ function killEnemy(enemy, killerId) {
 
     // 10% health pack drop
     if (Math.random() < 0.1) spawnHealthPack(enemy.x, enemy.z);
+
+    // Boss kill: drop the minigun at the boss's location
+    if (enemy.type === 'boss') {
+        spawnWeaponDrop(enemy.x, enemy.z, 'minigun');
+    }
 
     // Tell all clients the enemy is gone (visual death)
     io.emit('enemyKilled', { id: enemy.id, type: enemy.type, x: enemy.x, z: enemy.z });

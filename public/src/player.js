@@ -786,10 +786,16 @@ function handleFiring(actions) {
   if (weapon.mode === "sword") {
     game.audio.sword();
     game.swordSwingProgress = 0.001;
-    // Lunge in the direction the camera is facing
-    if (!game.isCrouching) {
-      game.knockbackX += -Math.sin(game.camTheta) * 45;
-      game.knockbackZ += -Math.cos(game.camTheta) * 45;
+    // Lunge in the full 3D direction the camera faces, W required to trigger
+    if (!game.isCrouching && (game.keys.KeyW || game.gpForward)) {
+      const phi   = game.camPhi;
+      const horiz = Math.cos(phi);
+      game.knockbackX  += -Math.sin(game.camTheta) * 45 * horiz;
+      game.knockbackZ  += -Math.cos(game.camTheta) * 45 * horiz;
+      if (Math.abs(phi) > 0.08) {
+        game.playerVelY  = Math.max(game.playerVelY, Math.sin(phi) * 16);
+        game.isGrounded  = false;
+      }
     }
     actions.handleSwordAttack();
   } else if (weapon.mode === "grapple") {
@@ -885,7 +891,7 @@ function handleFiring(actions) {
 
     // Muzzle effects — once per shot regardless of pellet count
     if (weapon.mode !== 'bazooka' && weapon.mode !== 'grapple' && weapon.mode !== 'sword') {
-      const smokeCount = (weapon.mode === 'assault' || weapon.mode === 'shotgun') ? 1 : 3;
+      const smokeCount = (weapon.mode === 'assault' || weapon.mode === 'shotgun' || weapon.mode === 'minigun') ? 1 : 3;
       spawnSmoke(muzzlePosition.clone(), smokeCount);
       // Shell ejection — eject to camera right
       const rightVec = new THREE.Vector3(1, 0, 0).applyQuaternion(game.camera.quaternion);

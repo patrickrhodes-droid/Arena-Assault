@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Multikill announcer ──────────────────────────────────────────────────────
-const COMBO_WINDOW_MS = 4000; // kills within this gap chain together
+const COMBO_WINDOW_MS = 2000; // kills within this gap chain together
 const COMBO_TIERS = [
   { count: 2, label: "DOUBLE KILL",   rampage: false },
   { count: 3, label: "TRIPLE KILL",   rampage: false },

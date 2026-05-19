@@ -74,14 +74,6 @@ export function applyCharacterHead(headGroup, characterId, options = {}) {
     headGroup.add(softBounce);
 
     usedGlb = true;
-  } else {
-    const color = character ? character.headColor : 0x3a4a30;
-    const boxScale = character ? character.headScale : 1.0;
-    const size = 0.35 * boxScale;
-    const headMat = new THREE.MeshStandardMaterial({ color, roughness: 0.78 });
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), headMat);
-    mesh.castShadow = true;
-    headGroup.add(mesh);
   }
 
   headGroup.userData.characterId = characterId || null;
@@ -447,6 +439,15 @@ function buildWeaponVisuals() {
         fpScale: [1, 1, 1],
         fpMuzzleZ: -0.75,
       },
+      minigun: {
+        tpPos: [0.5, 1.3, -0.28],
+        tpScale: [1.1, 1.1, 1.1],
+        tpMuzzleZ: -0.7,
+        fpPos: [0.26, -0.22, -0.52],
+        fpAdsPos: [0.02, -0.10, -0.38],
+        fpScale: [1.1, 1.1, 1.1],
+        fpMuzzleZ: -0.7,
+      },
     },
   };
 
@@ -463,6 +464,7 @@ function buildWeaponVisuals() {
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
     grapple: { file: "/assets/models/Lure.glb",           scale: 0.375, rotY: Math.PI / 2 },
     bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.38,  rotY: 0 },
+    minigun: { file: "/assets/models/gatling_gun.glb",   scale: 0.18,  rotY: 0 },
   };
 
   const glbGroups = {};
@@ -583,8 +585,9 @@ function buildSharedRuntimeAssets() {
   game.shared.characterHeadGltfs = {};
   const characterHeadDefs = {
     patrick: { file: "/assets/models/PatrickHead.glb" },
-    iestyn: { file: "/assets/models/iestynhead.glb" }, // Assuming IestynHead.glb exists
-    will: { file: "/assets/models/WillHead.glb" },     // Assuming WillHead.glb exists
+    iestyn:  { file: "/assets/models/iestynhead.glb" },
+    will:    { file: "/assets/models/WillHead.glb" },
+    matt:    { file: "/assets/models/MattHead.glb" },
   };
   for (const [characterId, def] of Object.entries(characterHeadDefs)) {
     new GLTFLoader().load(def.file, (gltf) => {

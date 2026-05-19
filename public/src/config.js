@@ -237,6 +237,24 @@ export const WEAPON_DEFS = {
     shake: 0.18,
     mode: "bazooka",
   },
+  minigun: {
+    label: "MINIGUN",
+    mag: 150,
+    fireRate: 0.025,   // 2× faster than assault (0.05)
+    reload: 3.8,
+    pellets: 1,
+    damage: 90,        // 3× assault damage (30)
+    spreadHip: 0.038,
+    spreadAim: 0.016,
+    bulletSpeed: 90,
+    bulletLife: 3,
+    aimFov: 34,
+    aimCamDist: 6.5,
+    recoilZ: 0.32,     // 4× assault recoil (0.08)
+    recoilRX: 0.20,    // 4× assault recoil (0.05)
+    shake: 0.24,       // 4× assault shake (0.06)
+    mode: "minigun",
+  },
 };
 
 export const CHARACTERS = {
