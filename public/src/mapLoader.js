@@ -130,7 +130,7 @@ function buildGround(mapDef, arenaGroup, ARENA_SIZE) {
     mat = buildArenaGroundMat();
   }
 
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE), mat);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), mat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   arenaGroup.add(ground);
