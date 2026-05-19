@@ -1,5 +1,8 @@
 # Arena Assault — Claude Instructions
 
+## Questions 
+Try to always ask questions if a promt is very ambiguous and your not sure what to do
+
 ## Git workflow
 
 After completing any set of changes, always commit and push to the remote repository (GitHub). Do not wait to be asked.

@@ -798,10 +798,21 @@ function getTargets() {
   return targets;
 }
 
+function getFloorYAtPos(x, z) {
+  let floor = 0;
+  for (const ob of game.oBs) {
+    if (x >= ob.min.x && x <= ob.max.x && z >= ob.min.z && z <= ob.max.z) {
+      floor = Math.max(floor, ob.h ?? 0);
+    }
+  }
+  return floor;
+}
+
 function moveEnemyWithCollision(pos, ndx, ndz, spd) {
   pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + ndx * spd * game.dt));
   pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + ndz * spd * game.dt));
-  for (const obs of game.oBs) resolveCircleBox(pos, 0.7, obs, 0);
+  // Pass actual pos.y so the resolver skips obstacles the enemy is standing on top of
+  for (const obs of game.oBs) resolveCircleBox(pos, 0.7, obs, pos.y);
 }
 
 function segmentIntersectsExpandedBox(startX, startZ, endX, endZ, obs, pad = 0) {
@@ -1270,7 +1281,7 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
 
   const stuckJump = !inAttackRange && (enemy.stuckTmr || 0) >= 0.9;
   const frustrationJump = inAttackRange && playerElevated && (enemy.bossFrustrationTmr || 0) >= 1.5;
-  if (!enemy.escaping && pos.y === 0 && (stuckJump || frustrationJump)) {
+  if (!enemy.escaping && pos.y <= getFloorYAtPos(pos.x, pos.z) + 0.1 && (stuckJump || frustrationJump)) {
     enemy.bossEfx = ndx; enemy.bossEfz = ndz;
     enemy.bossVelY = BOSS_ESCAPE_JUMP_VELOCITY; enemy.escaping = true;
     enemy.stuckTmr = 0;
@@ -1291,6 +1302,20 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
       }
     } else if (!swinging && enemy.walkAction && enemy.currentAction !== enemy.walkAction) {
       crossfadeToAction(enemy, enemy.walkAction, 0.15);
+    }
+  }
+
+  // ── Universal gravity ─────────────────────────────────────────────────────
+  // Pulls every enemy down to the highest floor surface under it (ground or
+  // obstacle top). Handles boss on a roof, grappled enemies, etc.
+  if (!enemy.escaping) {
+    const floorY = getFloorYAtPos(pos.x, pos.z);
+    if (pos.y > floorY + 0.02) {
+      enemy.velY = (enemy.velY || 0) - 25 * game.dt;
+      pos.y = Math.max(floorY, pos.y + enemy.velY * game.dt);
+    } else {
+      pos.y = floorY;
+      enemy.velY = 0;
     }
   }
 }
