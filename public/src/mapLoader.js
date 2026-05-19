@@ -196,29 +196,33 @@ function buildSandGroundMat() {
 function buildGrassMuddyMat() {
   const c = document.createElement("canvas"); c.width = 512; c.height = 512;
   const ctx = c.getContext("2d");
-  // Base muddy green
-  ctx.fillStyle = "#5a6b3a"; ctx.fillRect(0, 0, 512, 512);
-  // Mud patches — darker irregular blobs
-  for (let i = 0; i < 60; i++) {
-    const px = Math.random() * 512, py = Math.random() * 512;
-    const rx = 14 + Math.random() * 30, ry = 8 + Math.random() * 18;
-    ctx.fillStyle = `rgba(${50 + Math.random()*20|0},${38 + Math.random()*12|0},${18 + Math.random()*10|0},${0.45 + Math.random()*0.35})`;
-    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2); ctx.fill();
-  }
-  // Grass tufts — lighter streaks
+  // Vivid green base
+  ctx.fillStyle = "#3a7a1a"; ctx.fillRect(0, 0, 512, 512);
+  // Heavy mud patches — rich brown, opaque, larger
   for (let i = 0; i < 80; i++) {
     const px = Math.random() * 512, py = Math.random() * 512;
-    ctx.strokeStyle = `rgba(${100 + Math.random()*40|0},${120 + Math.random()*40|0},${40 + Math.random()*20|0},0.5)`;
-    ctx.lineWidth = 1 + Math.random() * 1.5;
-    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + (Math.random()-0.5)*8, py - 6 - Math.random()*8); ctx.stroke();
+    const rx = 18 + Math.random() * 40, ry = 10 + Math.random() * 24;
+    const r = 72  + Math.random() * 28 | 0;
+    const g = 44  + Math.random() * 18 | 0;
+    const b = 12  + Math.random() * 12 | 0;
+    ctx.fillStyle = `rgba(${r},${g},${b},${0.75 + Math.random() * 0.22})`;
+    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2); ctx.fill();
   }
-  // Pixel noise for texture
+  // Bright grass tufts over the mud
+  for (let i = 0; i < 160; i++) {
+    const px = Math.random() * 512, py = Math.random() * 512;
+    const g = 140 + Math.random() * 60 | 0;
+    ctx.strokeStyle = `rgba(${30 + Math.random()*30|0},${g},${15 + Math.random()*20|0},0.75)`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + (Math.random()-0.5)*10, py - 7 - Math.random()*10); ctx.stroke();
+  }
+  // Pixel noise
   const d = ctx.getImageData(0, 0, 512, 512);
   for (let i = 0; i < d.data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 24;
-    d.data[i]   = Math.max(0, Math.min(255, d.data[i]   + n));
-    d.data[i+1] = Math.max(0, Math.min(255, d.data[i+1] + n * 0.9));
-    d.data[i+2] = Math.max(0, Math.min(255, d.data[i+2] + n * 0.5));
+    const n = (Math.random() - 0.5) * 20;
+    d.data[i]   = Math.max(0, Math.min(255, d.data[i]   + n * 0.6));
+    d.data[i+1] = Math.max(0, Math.min(255, d.data[i+1] + n));
+    d.data[i+2] = Math.max(0, Math.min(255, d.data[i+2] + n * 0.3));
   }
   ctx.putImageData(d, 0, 0);
   const tex = new THREE.CanvasTexture(c); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(12, 12);
