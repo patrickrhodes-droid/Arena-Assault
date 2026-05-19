@@ -12,7 +12,7 @@
   "background": "#87b8e8",
   "ground": {
     "type": "procedural",
-    "material": "asphaltGround"
+    "material": "grassMuddyGround"
   },
   "objects": [
     {
@@ -255,7 +255,7 @@
         16
       ],
       "collidable": true,
-      "material": "concrete"
+      "material": "redbrick"
     },
     {
       "id": "con_012",
@@ -299,7 +299,7 @@
         16
       ],
       "collidable": true,
-      "material": "concrete"
+      "material": "redbrick"
     },
     {
       "id": "con_014",
@@ -343,7 +343,7 @@
         16
       ],
       "collidable": true,
-      "material": "concrete"
+      "material": "redbrick"
     },
     {
       "id": "con_016",
@@ -387,7 +387,7 @@
         16
       ],
       "collidable": true,
-      "material": "concrete"
+      "material": "redbrick"
     },
     {
       "id": "con_018",

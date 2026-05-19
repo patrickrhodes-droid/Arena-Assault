@@ -56,6 +56,7 @@ function materials(theme) {
     concrete:  getMat('concrete',  () => new THREE.MeshStandardMaterial({ color: 0xa39a8b, roughness: 0.84 })),
     sandstone: getMat('sandstone', () => new THREE.MeshStandardMaterial({ color: 0xc2906a, roughness: 0.9 })),
     blacksite: getMat('blacksite', () => new THREE.MeshStandardMaterial({ color: 0x22343d, roughness: 0.56, metalness: 0.24 })),
+    redbrick:  getMat('redbrick',  () => makeRedBrickMat()),
   };
   // Theme-specific wall material override for the outer walls
   const wallOverrides = {
@@ -113,6 +114,40 @@ function makeBrickMat() {
   return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, map: tex });
 }
 
+function makeRedBrickMat() {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 256;
+  const ctx = c.getContext("2d");
+  // Mortar base
+  ctx.fillStyle = "#b09080"; ctx.fillRect(0, 0, 256, 256);
+  // Brick rows
+  const BH = 28, BW = 64;
+  for (let row = 0; row * BH <= 256 + BH; row++) {
+    const y = row * BH;
+    const off = (row % 2) * (BW / 2);
+    for (let col = -1; col * BW <= 256 + BW; col++) {
+      const x = col * BW + off;
+      // Vary the red brick colour slightly per brick
+      const r = 160 + Math.floor(Math.random() * 30);
+      const g = 55  + Math.floor(Math.random() * 20);
+      const b = 40  + Math.floor(Math.random() * 15);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(x + 2, y + 2, BW - 4, BH - 4);
+    }
+  }
+  // Subtle noise
+  const d = ctx.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 18;
+    d.data[i]   = Math.max(0, Math.min(255, d.data[i]   + n));
+    d.data[i+1] = Math.max(0, Math.min(255, d.data[i+1] + n * 0.5));
+    d.data[i+2] = Math.max(0, Math.min(255, d.data[i+2] + n * 0.4));
+  }
+  ctx.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 5);
+  return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, map: tex });
+}
+
 // ── Ground builders ───────────────────────────────────────────────────────────
 
 function buildGround(mapDef, arenaGroup, ARENA_SIZE) {
@@ -126,6 +161,8 @@ function buildGround(mapDef, arenaGroup, ARENA_SIZE) {
     mat = buildAsphaltMat();
   } else if (material === 'blacksiteFloor') {
     mat = buildBlacksiteFloorMat();
+  } else if (material === 'grassMuddyGround') {
+    mat = buildGrassMuddyMat();
   } else {
     mat = buildArenaGroundMat();
   }
@@ -154,6 +191,38 @@ function buildSandGroundMat() {
   const d = ctx.getImageData(0,0,512,512); for (let i=0;i<d.data.length;i+=4){const n=(Math.random()-0.5)*30;d.data[i]=Math.max(0,Math.min(255,d.data[i]+n));d.data[i+1]=Math.max(0,Math.min(255,d.data[i+1]+n*0.88));d.data[i+2]=Math.max(0,Math.min(255,d.data[i+2]+n*0.62));} ctx.putImageData(d,0,0);
   const tex = new THREE.CanvasTexture(c); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(10,10);
   return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, map: tex });
+}
+
+function buildGrassMuddyMat() {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  // Base muddy green
+  ctx.fillStyle = "#5a6b3a"; ctx.fillRect(0, 0, 512, 512);
+  // Mud patches — darker irregular blobs
+  for (let i = 0; i < 60; i++) {
+    const px = Math.random() * 512, py = Math.random() * 512;
+    const rx = 14 + Math.random() * 30, ry = 8 + Math.random() * 18;
+    ctx.fillStyle = `rgba(${50 + Math.random()*20|0},${38 + Math.random()*12|0},${18 + Math.random()*10|0},${0.45 + Math.random()*0.35})`;
+    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2); ctx.fill();
+  }
+  // Grass tufts — lighter streaks
+  for (let i = 0; i < 80; i++) {
+    const px = Math.random() * 512, py = Math.random() * 512;
+    ctx.strokeStyle = `rgba(${100 + Math.random()*40|0},${120 + Math.random()*40|0},${40 + Math.random()*20|0},0.5)`;
+    ctx.lineWidth = 1 + Math.random() * 1.5;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + (Math.random()-0.5)*8, py - 6 - Math.random()*8); ctx.stroke();
+  }
+  // Pixel noise for texture
+  const d = ctx.getImageData(0, 0, 512, 512);
+  for (let i = 0; i < d.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 24;
+    d.data[i]   = Math.max(0, Math.min(255, d.data[i]   + n));
+    d.data[i+1] = Math.max(0, Math.min(255, d.data[i+1] + n * 0.9));
+    d.data[i+2] = Math.max(0, Math.min(255, d.data[i+2] + n * 0.5));
+  }
+  ctx.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(12, 12);
+  return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.97, map: tex });
 }
 
 function buildAsphaltMat() {
