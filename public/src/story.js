@@ -150,7 +150,9 @@ function applyGlbToGroup(group, characterId) {
   const gltf = game.shared?.characterHeadGltfs?.[characterId];
   if (!gltf) return false;
   const model = gltf.scene.clone(true);
-  model.rotation.y = 0;
+  // Card camera is at +Z; main scene uses rotY facing -Z.
+  // Card rotation = mainRotY - PI converts between the two conventions.
+  model.rotation.y = (gltf.userData.rotY ?? Math.PI) - Math.PI;
   const bbox = new THREE.Box3().setFromObject(model);
   const dims = new THREE.Vector3(); bbox.getSize(dims);
   const s = 1.55 / (Math.max(dims.x, dims.y, dims.z) || 1);
@@ -571,6 +573,13 @@ export function showPreGameCharSelect() {
     ];
     let selected = game.myCharacter || 'iestyn';
 
+    function applyLobbyHead(id) {
+      const hg = game.visuals?.player?.headGroup;
+      const visor = game.visuals?.player?.visor;
+      if (hg) applyCharacterHead(hg, id, { visor });
+    }
+    applyLobbyHead(selected);
+
     grid.innerHTML = '';
     ALL_CHARS.forEach(({ id, name, color }) => {
       const card = document.createElement('div');
@@ -588,6 +597,7 @@ export function showPreGameCharSelect() {
         selected = id;
         grid.querySelectorAll('.cs-char-card').forEach(c => c.classList.toggle('selected', c.dataset.char === id));
         setCsCharSelectedAnim(id);
+        applyLobbyHead(id);
       };
       card.addEventListener('click', sel);
       card.addEventListener('focus', sel);

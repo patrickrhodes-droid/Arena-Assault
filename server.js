@@ -1788,6 +1788,24 @@ io.on('connection', (socket) => {
             p.hp = effectiveMaxHP;
         });
         resetGameState('COOP', startingWave, gameMode, gameState.campaignMapIndex);
+        // Pre-populate weapons for all players based on skip point so they
+        // have everything they'd have earned playing from the beginning.
+        {
+            const WAVE_WEAPON = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka' };
+            Object.values(players).forEach(p => {
+                p.collectedWeapons = ['pistol'];
+                if (gameState.campaignMapIndex > 0) {
+                    // Started from a later campaign map — all weapons from completed maps
+                    WEAPON_ORDER.forEach(id => { if (!p.collectedWeapons.includes(id)) p.collectedWeapons.push(id); });
+                } else {
+                    for (let w = 1; w < startingWave && w <= 6; w++) {
+                        const drop = WAVE_WEAPON[w];
+                        if (drop && !p.collectedWeapons.includes(drop)) p.collectedWeapons.push(drop);
+                    }
+                    if (startingWave > 7) WEAPON_ORDER.forEach(id => { if (!p.collectedWeapons.includes(id)) p.collectedWeapons.push(id); });
+                }
+            });
+        }
         // Pre-load map JSON so obstacle lookups during tickEnemies are synchronous.
         loadMapJson(selectedMap).catch(() => {});
         startGameLoop();

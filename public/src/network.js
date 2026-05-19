@@ -365,14 +365,20 @@ export function initNetworking(actions) {
       actions.startPvPGame();
     } else {
       // COOP (both campaign and endless)
-      const WAVE_DROPS = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka', 7:'pistol' };
+      const WAVE_DROPS = { 1:'assault', 2:'shotgun', 3:'sniper', 4:'sword', 5:'grapple', 6:'bazooka' };
       const sw = game.startingWave || 1;
+      const campaignMapIdx = payload?.campaignMapIndex ?? 0;
       game.collectedWeapons = new Set(['pistol']);
-      for (let w = 1; w < sw && w <= 7; w++) {
-        const drop = WAVE_DROPS[w];
-        if (drop) game.collectedWeapons.add(drop);
+      if (campaignMapIdx > 0) {
+        // Started from a later campaign map — all previous-map weapons are available
+        WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
+      } else {
+        for (let w = 1; w < sw && w <= 6; w++) {
+          const drop = WAVE_DROPS[w];
+          if (drop) game.collectedWeapons.add(drop);
+        }
+        if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
       }
-      if (sw > 7) WEAPON_ORDER.forEach(id => game.collectedWeapons.add(id));
 
       if (game.gameMode === "campaign") {
         const mapId = game.selectedMap || "arena";
@@ -390,10 +396,12 @@ export function initNetworking(actions) {
           await showCampaignCutscene(mapId);
         } else {
           // Mid-campaign start: still let players pick their operator
+          rebuildArena(game.selectedMap).catch(() => {});
           await showPreGameCharSelect();
         }
       } else {
-        // Endless mode
+        // Endless mode — rebuild the match map so the background is correct
+        rebuildArena(game.selectedMap).catch(() => {});
         await showPreGameCharSelect();
       }
       actions.startGame();
