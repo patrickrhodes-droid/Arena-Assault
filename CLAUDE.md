@@ -11,6 +11,12 @@ After completing any set of changes, always commit and push to the remote reposi
 
 If a push fails (e.g. remote has diverged), pull with rebase first, resolve any conflicts, then push.
 
+##Things to update
+
+- If it makes sense, update the 'README.md'
+- If it makes sense, update the 'plan.md'
+- If you think theres something that would help for many future changes update 'CLAUDE.md'
+
 ## Project overview
 
 Arena Assault is a multiplayer 3D browser shooter built with Three.js on the client and Node.js + Socket.IO on the server. Key files:
