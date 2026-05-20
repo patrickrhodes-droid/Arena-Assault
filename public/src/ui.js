@@ -85,6 +85,7 @@ export function cacheDom() {
     inventoryBar: document.getElementById("inventory-bar"),
     pvpMatchBtn: document.getElementById("pvp-match-btn"),
     ffaMatchBtn: document.getElementById("ffa-match-btn"),
+    survivalMatchBtn: document.getElementById("survival-match-btn"),
     ffaTimeWrap: document.getElementById("ffa-time-wrap"),
     ffaDurationSelect: document.getElementById("ffa-duration-select"),
     ffaScore: document.getElementById("ffa-score"),
@@ -183,6 +184,7 @@ export function applyMapScreenRole() {
     if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = true;
     if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = true;
     if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = true;
+    if (game.dom.survivalMatchBtn) game.dom.survivalMatchBtn.hidden = true;
     // Re-sync visual state if a mode was already selected (e.g. navigating back)
     if (game.selectedGameMode) applyModeSelection(game.selectedGameMode);
     // PvP modes only available with 2+ players
@@ -202,16 +204,21 @@ function applyModeSelection(mode) {
   const isCampaign = mode === 'campaign';
   const isPvP = mode === 'pvp';
   const isFFA = mode === 'ffa';
+  const isSurvival = mode === 'survival';
   const mapWrap = document.getElementById('map-grid-wrap');
-  if (mapWrap) mapWrap.style.display = isCampaign ? 'none' : 'block';
-  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP || isFFA;
+  if (mapWrap) mapWrap.style.display = (isCampaign || isSurvival) ? 'none' : 'block';
+  if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = isPvP || isFFA || isSurvival;
   if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
   if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = !isFFA;
+  if (game.dom.survivalMatchBtn) game.dom.survivalMatchBtn.hidden = !isSurvival;
   if (game.dom.ffaTimeWrap) game.dom.ffaTimeWrap.style.display = isFFA ? 'block' : 'none';
-  // START AT WAVE only applies to COOP modes; hide it for PvP/FFA so the host
-  // doesn't waste time tweaking a value the server will ignore.
+  // START AT WAVE only applies to COOP modes; hide it for PvP/FFA/Survival
+  // so the host doesn't waste time tweaking a value the server will ignore.
   const skipWaveRow = document.getElementById('skip-wave-row');
-  if (skipWaveRow) skipWaveRow.style.display = (isPvP || isFFA) ? 'none' : '';
+  if (skipWaveRow) skipWaveRow.style.display = (isPvP || isFFA || isSurvival) ? 'none' : '';
+  // Survival start-money cheat row only visible when Survival is selected
+  const startMoneyRow = document.getElementById('survival-start-money-row');
+  if (startMoneyRow) startMoneyRow.style.display = isSurvival ? '' : 'none';
   updateLobbyCharacterLocks(mode);
   // Refresh the host's "Start At Wave" dropdown to match the chosen mode.
   populateWaveSelect(mode);
@@ -468,6 +475,7 @@ export function bindMenuControls(actions) {
     game.dom.startMissionBtn,
     game.dom.pvpMatchBtn,
     game.dom.ffaMatchBtn,
+    game.dom.survivalMatchBtn,
   ].filter(Boolean);
   const beginMatchStart = (run) => {
     if (!game.isHost || game.matchStarting) return;
@@ -494,6 +502,14 @@ export function bindMenuControls(actions) {
     game.dom.ffaMatchBtn.addEventListener("click", () => {
       const duration = parseInt(game.dom.ffaDurationSelect?.value || "300", 10);
       beginMatchStart(() => game.socket?.emit("startFFAMatch", { duration }));
+    });
+  }
+
+  if (game.dom.survivalMatchBtn) {
+    game.dom.survivalMatchBtn.addEventListener("click", () => {
+      const moneySel = document.getElementById('survival-start-money');
+      const startMoney = Number(moneySel?.value) || 50;
+      beginMatchStart(() => game.socket?.emit("startSurvivalMatch", { startMoney }));
     });
   }
 
@@ -927,6 +943,7 @@ export function updateHUD() {
 
   const isPvP = game.mode === "PVP";
   const isFFA = game.mode === "FFA";
+  const isSurvival = game.mode === "SURVIVAL";
   const isCompetitive = isPvP || isFFA;
   game.dom.pvpScore.hidden = !isPvP;
   if (game.dom.ffaScore) game.dom.ffaScore.hidden = !isFFA;
@@ -936,7 +953,8 @@ export function updateHUD() {
     game.dom.ffaHud.hidden = !isFFA;
     game.dom.ffaHud.style.display = isFFA ? "flex" : "none";
   }
-  game.dom.waveDisplay.style.display = isCompetitive ? "none" : "";
+  // Wave counter only makes sense in wave-based modes (Endless / Campaign).
+  game.dom.waveDisplay.style.display = (isCompetitive || isSurvival) ? "none" : "";
   game.dom.inventoryBar.style.display = isPvP ? "none" : "";
   if (isPvP) {
     game.dom.pvpKills.textContent = game.pvpKills;

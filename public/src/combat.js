@@ -698,6 +698,36 @@ export function triggerDestructible(propId, origin, processHit) {
   const d = game.destructibles.find((p) => p.id === propId && p.alive);
   if (!d) return;
   d.alive = false;
+  const kind = d.kind || 'barrel';
+  // Survival trees/rocks: gentle particle effects + a money pickup. Barrels
+  // and other COOP destructibles keep the dramatic explosion + AOE damage.
+  if (kind === 'tree' || kind === 'rock') {
+    if (d.mesh?.parent) {
+      // Brief fall-over for trees, instant remove for rocks
+      if (kind === 'tree') {
+        const mesh = d.mesh;
+        const startTime = performance.now();
+        const dropY = mesh.position.y;
+        const tickFall = () => {
+          const t = Math.min(1, (performance.now() - startTime) / 600);
+          mesh.rotation.z = -t * Math.PI / 2.2;
+          mesh.position.y = dropY - t * 0.4;
+          if (t < 1) requestAnimationFrame(tickFall);
+          else mesh.parent?.remove(mesh);
+        };
+        requestAnimationFrame(tickFall);
+      } else {
+        d.mesh.parent.remove(d.mesh);
+      }
+    }
+    if (d.obsEntry) d.obsEntry.h = -9999;
+    spawnParticles(origin, kind === 'tree' ? 10 : 16, kind === 'tree' ? 0x6b3a18 : 0x8a8a82, 5);
+    if (game.socket) {
+      // Server picks the money value; client emits a request
+      game.socket.emit('propBroken', { propId, kind, x: origin.x, y: origin.y, z: origin.z });
+    }
+    return;
+  }
   // Remove mesh from scene
   if (d.mesh?.parent) d.mesh.parent.remove(d.mesh);
   // Deactivate collision entry (push it out of reach)

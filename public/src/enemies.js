@@ -12,6 +12,7 @@ import {
 } from "./config.js";
 import { game } from "./state.js";
 import { resolveCircleBox } from "./collision.js";
+import { sampleHeight } from "./shared/noise.js";
 import { processHit, spawnBullet, spawnParticles } from "./combat.js";
 import { disposeObject3D } from "./utils.js";
 
@@ -750,6 +751,15 @@ export function updateEnemies() {
     }
     if (runAI) {
       runOwnedEnemyAI(enemy);
+      // Survival: every frame, snap the enemy's feet to the procedural terrain
+      // so they don't sink into hills or float over valleys. Skip bosses/escape
+      // states where vertical motion is intentional.
+      if (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number' && !enemy.escaping) {
+        const p = enemy.group.position;
+        const targetY = sampleHeight(p.x, p.z, game.terrainSeed);
+        // Smoothly track to terrain rather than teleport (helps animation)
+        p.y += (targetY - p.y) * Math.min(1, 18 * game.dt);
+      }
       if (doSync) {
         const p = enemy.group.position;
         syncBatch.push({ id: enemy.id, x: p.x, y: p.y, z: p.z, rot: enemy.group.rotation.y, walkT: enemy.walkT || 0 });
@@ -809,8 +819,13 @@ function getFloorYAtPos(x, z) {
 }
 
 function moveEnemyWithCollision(pos, ndx, ndz, spd) {
-  pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + ndx * spd * game.dt));
-  pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + ndz * spd * game.dt));
+  if (game.mode === 'SURVIVAL') {
+    pos.x += ndx * spd * game.dt;
+    pos.z += ndz * spd * game.dt;
+  } else {
+    pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + ndx * spd * game.dt));
+    pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + ndz * spd * game.dt));
+  }
   // Pass actual pos.y so the resolver skips obstacles the enemy is standing on top of
   for (const obs of game.oBs) resolveCircleBox(pos, 0.7, obs, pos.y);
 }

@@ -355,7 +355,26 @@ export function initNetworking(actions) {
     // Reset wave tracking so a fresh match never inherits state from the previous one
     game.campaignMapStartWave = 0;
 
-    if (mode === "FFA") {
+    if (mode === "SURVIVAL") {
+      // Reset survival state from server payload
+      game.mode = "SURVIVAL";
+      game.selectedMap = "survival";
+      game.terrainSeed = payload?.terrainSeed | 0;
+      game.dayTimeSec = payload?.dayTimeSec || 0;
+      game.dayTimeSyncedAt = performance.now();
+      game.bloodMoon = false;
+      game.money = 50;
+      game.inventory = new Array(9).fill(null);
+      game.inventory[0] = { itemId: 'pistol', qty: 1 };
+      game.activeSlot = 0;
+      game.backpackTier = 0;
+      game.effects = {};
+      game.hasJetpack = false;
+      game.jetpackFuel = 100;
+      game.collectedWeapons = new Set(['pistol']);
+      await showPreGameCharSelect();
+      actions.startSurvivalGame();
+    } else if (mode === "FFA") {
       game.collectedWeapons = new Set(WEAPON_ORDER);
       game.pvpSpawnAssignments = payload?.spawnAssignments || {};
       game.ffaDuration = payload?.ffaDuration || 300;
@@ -413,6 +432,64 @@ export function initNetworking(actions) {
 
   game.socket.on("newPlayer", (playerInfo) => {
     createRemotePlayer(playerInfo.playerId, playerInfo);
+  });
+
+  // ── Survival-only events ────────────────────────────────────────────────
+  game.socket.on("worldTime", (data) => {
+    if (typeof data?.dayTimeSec === 'number') {
+      game.dayTimeSec = data.dayTimeSec;
+      game.dayTimeSyncedAt = performance.now();
+    }
+    if (typeof data?.bloodMoon === 'boolean') game.bloodMoon = data.bloodMoon;
+  });
+
+  game.socket.on("moneyUpdated", (data) => {
+    if (data?.playerId !== game.socket.id) return;
+    game.money = data.money;
+    if (typeof window !== 'undefined' && window.spawnMoneyToast && data.delta) {
+      window.spawnMoneyToast(data.delta);
+    }
+  });
+
+  game.socket.on("shopCatalog", (data) => {
+    game.shopCatalog = Array.isArray(data?.items) ? data.items : [];
+    if (typeof window !== 'undefined' && window.renderShopCatalog) window.renderShopCatalog();
+  });
+
+  game.socket.on("shopPurchased", (data) => {
+    game.money = data?.money ?? game.money;
+    if (typeof window !== 'undefined' && window.flashShopPurchase) window.flashShopPurchase(data?.itemId);
+  });
+
+  game.socket.on("shopRejected", (data) => {
+    if (typeof window !== 'undefined' && window.flashShopRejected) window.flashShopRejected(data?.reason);
+  });
+
+  game.socket.on("inventorySynced", (data) => {
+    game.inventory = Array.isArray(data?.inventory) ? data.inventory : game.inventory;
+    if (typeof data?.activeSlot === 'number') game.activeSlot = data.activeSlot;
+    if (typeof data?.backpackTier === 'number') game.backpackTier = data.backpackTier;
+    if (data?.effects) game.effects = data.effects;
+    if (typeof data?.hasJetpack === 'boolean') game.hasJetpack = data.hasJetpack;
+    if (typeof data?.jetpackFuel === 'number') game.jetpackFuel = data.jetpackFuel;
+    if (typeof data?.money === 'number') game.money = data.money;
+    if (typeof window !== 'undefined' && window.refreshInventoryUI) window.refreshInventoryUI();
+  });
+
+  game.socket.on("torchPlaced", (data) => {
+    if (typeof window !== 'undefined' && window.addPlacedTorch) window.addPlacedTorch(data);
+  });
+
+  game.socket.on("survivalEvent", (data) => {
+    if (data?.type === 'bloodMoon') game.bloodMoon = !!data.active;
+  });
+
+  game.socket.on("survivalRunEnded", () => {
+    if (typeof window !== 'undefined' && window.showSurvivalEndScreen) window.showSurvivalEndScreen();
+  });
+
+  game.socket.on("effectExpired", (data) => {
+    if (data?.kind && game.effects) delete game.effects[data.kind];
   });
 
   game.socket.on("newHost", (id) => {

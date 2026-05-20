@@ -1,15 +1,15 @@
 {
   "Patrick": {
-    "kills": 1224,
+    "kills": 1251,
     "bossKills": 11,
-    "matchesPlayed": 17,
+    "matchesPlayed": 19,
     "wins": 0,
     "pvpWins": 0,
     "ffaWins": 0,
     "bestWave": 12,
     "bestScore": 5550,
-    "deaths": 17,
-    "xp": 15270
+    "deaths": 18,
+    "xp": 15665
   },
   "Patrick1": {
     "kills": 0,
@@ -58,5 +58,17 @@
     "bestScore": 0,
     "deaths": 0,
     "xp": 0
+  },
+  "Beast": {
+    "kills": 0,
+    "bossKills": 0,
+    "matchesPlayed": 1,
+    "wins": 1,
+    "pvpWins": 0,
+    "ffaWins": 1,
+    "bestWave": 0,
+    "bestScore": 7,
+    "deaths": 0,
+    "xp": 75
   }
 }

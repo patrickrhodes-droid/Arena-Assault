@@ -151,6 +151,10 @@ function makeRedBrickMat() {
 // ── Ground builders ───────────────────────────────────────────────────────────
 
 function buildGround(mapDef, arenaGroup, ARENA_SIZE) {
+  // Maps can opt out of the giant flat plane by setting `ground: null` or
+  // `ground.skip: true` (used by survival_outpost which lives on procedural
+  // chunked terrain).
+  if (mapDef.ground === null || mapDef.ground?.skip) return;
   const material = mapDef.ground?.material || 'arenaGround';
   const bg = mapDef.background ? parseInt(mapDef.background.replace('#',''), 16) : 0x1b2734;
 

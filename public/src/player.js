@@ -302,11 +302,68 @@ export function setupInput(actions) {
         event.preventDefault();
       }
       if (game.state === "PLAYING") {
+        // Survival: double-tap-space toggles jetpack
+        if (game.mode === 'SURVIVAL' && game.hasJetpack && !event.repeat) {
+          const now = performance.now();
+          if (now - game.spaceLastTapTime < 280) {
+            game.jetpackActive = !game.jetpackActive;
+          }
+          game.spaceLastTapTime = now;
+        }
         tryJump();
       }
     }
 
-    if (game.mode !== "PVP") {
+    if (game.mode === 'SURVIVAL') {
+      // Survival hotbar: number keys pick the active slot, not a fixed weapon.
+      const digitMatch = event.code.match(/^Digit([1-9])$/);
+      if (digitMatch) {
+        const slot = Number(digitMatch[1]) - 1;
+        game.activeSlot = slot;
+        game.socket?.emit('inventorySetActive', { slot });
+        const entry = game.inventory?.[slot];
+        if (entry && entry.itemId) {
+          // If it's a known weapon, equip it client-side
+          if (WEAPON_ORDER.includes(entry.itemId)) actions.setWeapon(entry.itemId);
+        }
+      }
+      // G: place torch if active slot is one
+      if (event.code === 'KeyG' && game.state === 'PLAYING') {
+        const active = game.inventory?.[game.activeSlot];
+        if (active && active.itemId === 'torch_placeable') {
+          const pp = game.visuals.player.playerGroup.position;
+          // Place ~2 units in front of the player
+          const fx = -Math.sin(game.camTheta);
+          const fz = -Math.cos(game.camTheta);
+          game.socket?.emit('placeTorch', { x: pp.x + fx * 2, z: pp.z + fz * 2 });
+        }
+      }
+      // Q: use active consumable slot
+      if (event.code === 'KeyQ' && game.state === 'PLAYING') {
+        const active = game.inventory?.[game.activeSlot];
+        if (active && active.itemId && active.itemId.startsWith('potion_')) {
+          game.socket?.emit('inventoryUseSlot', { slot: game.activeSlot });
+        } else if (active && (active.itemId === 'medkit' || active.itemId === 'pistol_ammo')) {
+          game.socket?.emit('inventoryUseSlot', { slot: game.activeSlot });
+        }
+      }
+      // Tab: toggle inventory panel (handled by ui)
+      if (event.code === 'Tab' && game.state === 'PLAYING') {
+        event.preventDefault();
+        if (typeof window !== 'undefined' && window.toggleInventoryPanel) {
+          window.toggleInventoryPanel();
+        }
+      }
+      // E: open shop if near vendor (uses VENDOR_POS / VENDOR_REACH from
+      // survivalConfig so client + server agree on the radius check).
+      if (event.code === 'KeyE' && game.state === 'PLAYING' && !event.repeat) {
+        const pp = game.visuals.player.playerGroup.position;
+        const dx = pp.x - 0, dz = pp.z - (-6);
+        if (dx * dx + dz * dz < 36) { // 6u radius — matches VENDOR_REACH
+          if (typeof window !== 'undefined' && window.toggleShopUI) window.toggleShopUI();
+        }
+      }
+    } else if (game.mode !== "PVP") {
       // Digit1..DigitN map to WEAPON_ORDER[0..N-1]. Adding a new weapon to
       // WEAPON_ORDER automatically wires up its number key.
       const digitMatch = event.code.match(/^Digit([1-9])$/);
@@ -338,6 +395,9 @@ export function setupInput(actions) {
   });
 
   document.addEventListener("mousedown", (event) => {
+    // While a Survival modal (shop / inventory) is open, the cursor is in DOM
+    // mode — don't fire / aim from clicks on the UI.
+    if (game.modalOpen) return;
     if (event.button === 0) {
       game.mouseDown = true;
       game.mouseClicked = true;
@@ -389,7 +449,7 @@ export function tryPointerLock() {
   if (!game.renderer.domElement.requestPointerLock) {
     return;
   }
-
+  if (game.modalOpen) return; // Survival shop / inventory open — leave cursor free
   const result = game.renderer.domElement.requestPointerLock();
   if (result && typeof result.catch === "function") {
     result.catch(() => {});
@@ -527,6 +587,20 @@ export function updatePlayer(actions) {
   }
 
   if (!game.isOnLadder) {
+    // Jetpack thrust (Survival): while toggled active and Space held, lift +
+    // drain fuel. Refills on ground.
+    if (game.mode === 'SURVIVAL' && game.hasJetpack) {
+      if (game.jetpackActive && game.keys.Space && game.jetpackFuel > 0) {
+        game.playerVelY = Math.min(game.playerVelY + 70 * game.dt, 14);
+        game.jetpackFuel = Math.max(0, game.jetpackFuel - 24 * game.dt);
+        if (game.jetpackFuel <= 0) game.jetpackActive = false;
+      } else if (!game.keys.Space) {
+        game.jetpackActive = false;
+      }
+      if (game.isGrounded) {
+        game.jetpackFuel = Math.min(100, game.jetpackFuel + 22 * game.dt);
+      }
+    }
     game.playerVelY -= GRAV * game.dt;
     game.visuals.player.playerGroup.position.y += game.playerVelY * game.dt;
 
@@ -537,12 +611,20 @@ export function updatePlayer(actions) {
       game.visuals.player.playerGroup.position.z,
     );
 
-    if (game.playerVelY <= 0 && supportY > 0 && game.visuals.player.playerGroup.position.y <= supportY + LAND_SNAP) {
+    // In Survival, supportY tracks the procedural heightfield (can be negative).
+    // Snap whenever we're within reach of the support height, regardless of sign,
+    // and skip the legacy "snap to y=0" fallback so the player doesn't float
+    // above valleys.
+    const isSurvival = game.mode === 'SURVIVAL';
+    const snapEligible = game.playerVelY <= 0 &&
+      (isSurvival ? true : supportY > 0) &&
+      game.visuals.player.playerGroup.position.y <= supportY + LAND_SNAP;
+    if (snapEligible) {
       game.visuals.player.playerGroup.position.y = supportY;
       if (_prevVelY < -4) game.audio?.land?.(_prevVelY < -10);
       game.playerVelY = 0;
       game.isGrounded = true;
-    } else if (game.visuals.player.playerGroup.position.y <= 0) {
+    } else if (!isSurvival && game.visuals.player.playerGroup.position.y <= 0) {
       game.visuals.player.playerGroup.position.y = 0;
       if (_prevVelY < -4) game.audio?.land?.(_prevVelY < -10);
       game.playerVelY = 0;
@@ -595,8 +677,11 @@ export function updatePlayer(actions) {
     }
   }
 
-  game.visuals.player.playerGroup.position.x = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.x));
-  game.visuals.player.playerGroup.position.z = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.z));
+  // Skip the arena bound in Survival — the world is procedurally infinite.
+  if (game.mode !== 'SURVIVAL') {
+    game.visuals.player.playerGroup.position.x = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.x));
+    game.visuals.player.playerGroup.position.z = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.z));
+  }
 
   // ── Landing impact ──────────────────────────────────────────────────────
   const justLanded = !wasGrounded && game.isGrounded && _prevVelY < -7;
@@ -1016,8 +1101,10 @@ export function updateCamera() {
     const targetDistance = game.isAiming ? weapon.aimCamDist : game.camDist;
     target = pivot.clone().sub(aimDirection.clone().multiplyScalar(targetDistance)).add(shoulder);
     target.y += game.isAiming ? 0.2 : 0.45;
-    target.x = Math.max(-HALF + 1, Math.min(HALF - 1, target.x));
-    target.z = Math.max(-HALF + 1, Math.min(HALF - 1, target.z));
+    if (game.mode !== 'SURVIVAL') {
+      target.x = Math.max(-HALF + 1, Math.min(HALF - 1, target.x));
+      target.z = Math.max(-HALF + 1, Math.min(HALF - 1, target.z));
+    }
     target.y = Math.max(1.6, target.y);
   }
 

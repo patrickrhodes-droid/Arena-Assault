@@ -302,13 +302,80 @@ export async function rebuildArena(mapId) {
   game.oBs.length = 0;
   game.ladders.length = 0;
   game.destructibles.length = 0;
+  if (game.chunks) game.chunks.clear();
 
   game.arenaGroup = new THREE.Group();
   game.scene.add(game.arenaGroup);
 
+  if (mapId === 'survival') {
+    buildSurvivalSceneChrome();
+    // Outpost JSON loaded on top of the procedural world
+    try { await buildMapFromJson('survival_outpost'); } catch { /* missing JSON is OK */ }
+    return;
+  }
+
   await buildMapFromJson(mapId);
 
   if (HDR_SKY_PATHS[mapId]) loadHDRSky(HDR_SKY_PATHS[mapId], true);
+}
+
+const _placedTorches = new Map();
+let _sharedTorchGeo = null;
+let _sharedTorchMat = null;
+
+if (typeof window !== 'undefined') {
+  window.__addPlacedTorchMesh = function (data) {
+    if (!game.scene || _placedTorches.has(data.id)) return;
+    if (!_sharedTorchGeo) {
+      _sharedTorchGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.7, 6);
+      _sharedTorchGeo.translate(0, 0.35, 0);
+      _sharedTorchMat = new THREE.MeshStandardMaterial({ color: 0x3a2210, roughness: 0.9 });
+    }
+    const torch = new THREE.Group();
+    const stick = new THREE.Mesh(_sharedTorchGeo, _sharedTorchMat);
+    torch.add(stick);
+    const flame = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 6, 5),
+      new THREE.MeshBasicMaterial({ color: 0xff7a20 }),
+    );
+    flame.position.y = 0.78;
+    torch.add(flame);
+    const light = new THREE.PointLight(0xffaa55, 1.4, 12);
+    light.position.y = 0.85;
+    torch.add(light);
+    torch.position.set(data.x, data.y, data.z);
+    game.scene.add(torch);
+    _placedTorches.set(data.id, torch);
+  };
+}
+
+// Wires the dynamic sun + hemisphere light that dayNight.js animates, and sets
+// scene background/fog defaults. Stores refs in game.shared for tickDayNight.
+function buildSurvivalSceneChrome() {
+  game.scene.background = new THREE.Color(0x8ac0e4);
+  game.scene.fog = new THREE.FogExp2(0xcde0ea, 0.012);
+
+  const hemi = new THREE.HemisphereLight(0xb8d6f0, 0x3a4030, 1.2);
+  game.scene.add(hemi);
+  game.arenaLights.push(hemi);
+
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+  sun.position.set(120, 180, 60);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -60;
+  sun.shadow.camera.right = 60;
+  sun.shadow.camera.top = 60;
+  sun.shadow.camera.bottom = -60;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 400;
+  sun.target = new THREE.Object3D();
+  game.scene.add(sun.target);
+  game.scene.add(sun);
+  game.arenaLights.push(sun);
+
+  game.shared.sunLight = sun;
+  game.shared.hemiLight = hemi;
 }
 
 function addPermanentLighting() {

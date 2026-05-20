@@ -34,6 +34,9 @@ import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryJump, 
 import { pollGamepad } from "./gamepad.js";
 import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, updateRemotePlayerVisuals } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
+import { updateChunkStreaming, disposeAllChunks } from "./chunkManager.js";
+import { tickDayNight } from "./dayNight.js";
+import { refreshInventoryUI } from "./ui/inventoryUI.js";
 import {
   cacheDom,
   bindConnectScreen,
@@ -117,6 +120,7 @@ const actions = {
   startGame,
   startPvPGame,
   startFFAGame,
+  startSurvivalGame,
   pvpMatchOver,
   ffaMatchOver,
   enterCutsceneMode,
@@ -214,6 +218,13 @@ const actions = {
     // Controller players play without pointer lock — don't pause on lock loss
     const gpActive = navigator.getGamepads && Array.from(navigator.getGamepads()).some((p) => p?.connected);
     if (gpActive && game.state === "PLAYING") {
+      game.dom.clickPrompt.style.display = "none";
+      return;
+    }
+
+    // Survival shop / inventory was opened — we intentionally released the
+    // pointer lock to expose the cursor. Don't treat this as a focus-loss pause.
+    if (game.modalOpen) {
       game.dom.clickPrompt.style.display = "none";
       return;
     }
@@ -378,6 +389,21 @@ async function startGame() {
   await startMatchCommon("COOP");
   game.visuals.player.playerGroup.position.set(0, 0, 0);
   game.visuals.player.playerGroup.rotation.set(0, 0, 0);
+}
+
+async function startSurvivalGame() {
+  game.effectiveMaxHP = P_MAX_HP;
+  await startMatchCommon("SURVIVAL");
+  // Spawn just above the outpost vendor (vendor is at z=-6, so face north to see it)
+  game.visuals.player.playerGroup.position.set(0, 1.2, 4);
+  game.visuals.player.playerGroup.rotation.set(0, 0, 0);
+  game.camTheta = 0;
+  // Force an immediate chunk-streaming pass so the world isn't visibly empty
+  // for the first frame.
+  try {
+    const { updateChunkStreaming } = await import("./chunkManager.js");
+    updateChunkStreaming(game.visuals.player.playerGroup.position);
+  } catch { /* fallback to per-frame streaming */ }
 }
 
 async function startPvPGame() {
@@ -819,6 +845,14 @@ function animate(time) {
     updatePlayer(actions);
     updateGrapple();
     syncLocalPlayerState();
+
+    // Survival: stream chunks around the player + advance day/night clock.
+    if (game.mode === 'SURVIVAL') {
+      const pp = game.visuals.player.playerGroup.position;
+      updateChunkStreaming(pp);
+      tickDayNight(game.dt);
+      if (game.frameIndex % 6 === 0) refreshInventoryUI();
+    }
 
     // World time-scale: hit-stop (freeze) and kill slow-mo
     const _trueDt = game.dt;

@@ -1,5 +1,7 @@
 import { HALF, LEDGE_GRACE, P_RAD, EPS, EYE_H } from "./config.js";
 import { game } from "./state.js";
+import { sampleHeight } from "./shared/noise.js";
+import { SOFT_WORLD_BOUND } from "./shared/survivalConfig.js";
 
 export function closestOnBox(cx, cz, obstacle) {
   return {
@@ -53,7 +55,12 @@ export function circleOverBoxTop(px, pz, radius, obstacle) {
 }
 
 export function getSupportHeight(prevY, nextY, px, pz) {
+  // Survival mode: start at the procedural terrain height so the player and
+  // any obstacles stack on top of the heightfield. Other modes keep flat y=0.
   let support = 0;
+  if (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number') {
+    support = sampleHeight(px, pz, game.terrainSeed);
+  }
 
   for (const obstacle of game.oBs) {
     if (!circleOverBoxTop(px, pz, P_RAD * 0.75, obstacle)) {
@@ -83,6 +90,15 @@ export function bulletHitObstacle(x, y, z) {
     if (x >= obstacle.min.x && x <= obstacle.max.x && y >= (obstacle.yMin ?? 0) && y < obstacle.h && z >= obstacle.min.z && z <= obstacle.max.z) {
       return true;
     }
+  }
+
+  if (game.mode === 'SURVIVAL') {
+    // Heightfield "ground" + soft sanity bound. Bullets going below terrain
+    // or beyond the soft bound are absorbed.
+    if (y < 0) return true;
+    if (typeof game.terrainSeed === 'number' && y < sampleHeight(x, z, game.terrainSeed) - 0.5) return true;
+    if (Math.abs(x) > SOFT_WORLD_BOUND || Math.abs(z) > SOFT_WORLD_BOUND) return true;
+    return false;
   }
 
   if (Math.abs(x) > HALF || Math.abs(z) > HALF || y > HALF || y < 0) {

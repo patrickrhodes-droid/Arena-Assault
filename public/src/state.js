@@ -123,6 +123,24 @@ export const game = {
   ffaTimeLeft: 0,          // seconds remaining in an FFA match
   ffaDuration: 300,        // chosen FFA duration in seconds
   ffaKills: 0,             // local player's kill count in FFA
+  // ── Survival mode ──
+  terrainSeed: 0,          // shared with server; drives all heights / props / biomes
+  dayTimeSec: 0,           // seconds into the current 180s day-night cycle
+  dayTimeSyncedAt: 0,      // performance.now() at last `worldTime` sync
+  bloodMoon: false,        // server-flagged blood moon active
+  money: 0,                // current run currency
+  bestMoney: 0,            // career best (mirrored from server)
+  inventory: [],           // Survival hotbar+stash; null or { itemId, qty }
+  activeSlot: 0,           // 0-8 hotbar slot active
+  backpackTier: 0,         // 0|1|2 → 9|18|27 inventory length
+  effects: {},             // active potion timers (speed/jump/damage)
+  hasJetpack: false,
+  jetpackActive: false,
+  jetpackFuel: 100,
+  spaceLastTapTime: 0,
+  chunks: new Map(),       // chunkKey -> client chunk record
+  shopOpen: false,
+  shopCatalog: [],
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"

@@ -12,6 +12,14 @@ import {
   PVP_WIN_KILLS, PVP_KILLS_PER_WEAPON, PVP_CORNERS,
   BOSS_ESCAPE_GRAVITY, BOSS_ESCAPE_HEIGHT, BOSS_ESCAPE_JUMP_VELOCITY, BOSS_ESCAPE_FORWARD_SPEED,
 } from './public/src/gameConstants.js';
+import {
+  sampleHeight, sampleBiome, hash2, mulberry32,
+  BIOME_MEADOW, BIOME_FROSTPINE, BIOME_ASHFEN, BIOME_CRIMSON,
+} from './public/src/shared/noise.js';
+import {
+  CHUNK_SIZE, OUTPOST_RADIUS, VENDOR_REACH, VENDOR_POS, FULL_CYCLE, DAY_DURATION,
+  difficultyAt, biomeBonus, worldToChunk, chunkKey,
+} from './public/src/shared/survivalConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -729,6 +737,22 @@ const gameState = {
     // Map currently being played — needed by the rejoin handler so the
     // returning client can rebuild the correct arena.
     map: 'arena',
+    // ── Survival mode state ──
+    terrainSeed: 0,
+    dayTimeSec: 0,
+    bloodMoon: false,
+    nextBloodMoonDay: 5,
+    partyDownTmr: 0,
+    worldTimeBroadcastTmr: 0,
+    survivalEnemySpawnTmr: 0,
+    nextSurvivalEnemyId: 1,
+    placedTorches: [],     // { id, ownerId, x, y, z }
+    nextTorchId: 1,
+    supplyPods: [],        // { id, x, z, openedBy, dayIndex }
+    nextSupplyPodId: 1,
+    caravan: null,         // { x, z, expiresAt } | null
+    nextChampionDay: 4,
+    champion: null,        // { id, x, z, dayIndex } | null
 };
 
 // Wipe all saved player states tied to a finished match. Called when a
@@ -1206,6 +1230,10 @@ function killEnemy(enemy, killerId) {
             awardKillXp(killerName, type);
             emitCareerToSocket(killerId, killerName);
         }
+        // Survival: award per-kill bounty scaled by distance + biome.
+        if (gameState.mode === 'SURVIVAL') {
+            awardSurvivalMoney(killerId, enemy);
+        }
     }
 
     // 10% health pack drop
@@ -1416,6 +1444,279 @@ function tickEnemies(dt) {
     }
 }
 
+// ── Survival mode helpers ─────────────────────────────────────────────────────
+
+const SURVIVAL_SHOP_CATALOG = [
+    { id: 'pistol_ammo',  name: 'Pistol Ammo',    price: 20,  kind: 'consumable', stackSize: 8 },
+    { id: 'shotgun',      name: 'Shotgun',        price: 150, kind: 'weapon',     stackSize: 1 },
+    { id: 'assault',      name: 'Assault Rifle',  price: 250, kind: 'weapon',     stackSize: 1 },
+    { id: 'sniper',       name: 'Sniper Rifle',   price: 400, kind: 'weapon',     stackSize: 1 },
+    { id: 'bazooka',      name: 'Bazooka',        price: 700, kind: 'weapon',     stackSize: 1 },
+    { id: 'minigun',      name: 'Minigun',        price: 950, kind: 'weapon',     stackSize: 1 },
+    { id: 'jetpack',      name: 'Jetpack',        price: 500, kind: 'gear',       stackSize: 1 },
+    { id: 'torch_placeable', name: 'Torch',       price: 30,  kind: 'placeable',  stackSize: 8 },
+    { id: 'medkit',       name: 'Medkit',         price: 80,  kind: 'consumable', stackSize: 4 },
+    { id: 'potion_health', name: 'Health Potion', price: 60,  kind: 'consumable', stackSize: 8 },
+    { id: 'potion_speed',  name: 'Speed Potion',  price: 90,  kind: 'consumable', stackSize: 8 },
+    { id: 'potion_jump',   name: 'Jump Potion',   price: 70,  kind: 'consumable', stackSize: 8 },
+    { id: 'potion_fuel',   name: 'Fuel Potion',   price: 120, kind: 'consumable', stackSize: 8 },
+    { id: 'potion_damage', name: 'Damage Potion', price: 150, kind: 'consumable', stackSize: 8 },
+    { id: 'backpack_small', name: 'Small Backpack', price: 300, kind: 'gear', stackSize: 1 },
+    { id: 'backpack_large', name: 'Large Backpack', price: 800, kind: 'gear', stackSize: 1 },
+];
+
+function makeDefaultSurvivalInventory() {
+    const inv = new Array(9).fill(null);
+    inv[0] = { itemId: 'pistol', qty: 1 };
+    return inv;
+}
+
+function inventoryCapacityFor(p) {
+    return 9 + (p.backpackTier || 0) * 9;
+}
+
+function tryAddToInventory(p, itemId, qty) {
+    const item = SURVIVAL_SHOP_CATALOG.find(i => i.id === itemId);
+    if (!item) return false;
+    const cap = inventoryCapacityFor(p);
+    while (p.inventory.length < cap) p.inventory.push(null);
+    // Try stack first
+    if (item.stackSize > 1) {
+        for (let i = 0; i < p.inventory.length; i++) {
+            const s = p.inventory[i];
+            if (s && s.itemId === itemId && s.qty < item.stackSize) {
+                const room = item.stackSize - s.qty;
+                const give = Math.min(qty, room);
+                s.qty += give;
+                qty -= give;
+                if (qty <= 0) return true;
+            }
+        }
+    }
+    // Then empty slots
+    while (qty > 0) {
+        const idx = p.inventory.indexOf(null);
+        if (idx < 0) return false;
+        const give = item.stackSize > 1 ? Math.min(qty, item.stackSize) : 1;
+        p.inventory[idx] = { itemId, qty: give };
+        qty -= give;
+    }
+    return true;
+}
+
+function applyConsumable(p, itemId) {
+    const now = Date.now();
+    switch (itemId) {
+        case 'medkit':         p.hp = Math.min(P_MAX_HP, p.hp + 60); break;
+        case 'potion_health':  p.hp = Math.min(P_MAX_HP, p.hp + 60); break;
+        case 'potion_speed':   p.effects.speed  = { until: now + 12000 }; break;
+        case 'potion_jump':    p.effects.jump   = { until: now + 12000 }; break;
+        case 'potion_damage':  p.effects.damage = { until: now + 20000 }; break;
+        case 'potion_fuel':    p.jetpackFuel = 100; break;
+        case 'pistol_ammo':    /* refill handled client-side */ break;
+        default: break;
+    }
+}
+
+function survivalSnapshotFor(p) {
+    return {
+        inventory: p.inventory.map(s => s ? { itemId: s.itemId, qty: s.qty } : null),
+        activeSlot: p.activeSlot,
+        backpackTier: p.backpackTier,
+        effects: p.effects,
+        hasJetpack: !!p.hasJetpack,
+        jetpackFuel: p.jetpackFuel,
+        money: p.money,
+    };
+}
+
+function emitMoneyUpdate(playerId, p, delta, reason) {
+    const sock = io.sockets.sockets.get(playerId);
+    if (sock) sock.emit('moneyUpdated', { playerId, money: p.money, delta, reason });
+}
+
+// Bounty for killing an enemy, scaled by distance from origin + biome.
+function bountyFor(enemy) {
+    const base = { skeleton: 5, soldier: 18, dog: 22, miniboss: 140, boss: 600 }[enemy.type] || 10;
+    const dist = difficultyAt(enemy.x || 0, enemy.z || 0);
+    const biome = enemy.biome ?? BIOME_MEADOW;
+    const bonus = biomeBonus(biome);
+    const moonMult = gameState.bloodMoon ? 2.0 : 1.0;
+    return Math.round(base * dist * bonus * moonMult);
+}
+
+function awardSurvivalMoney(killerId, enemy) {
+    const p = players[killerId];
+    if (!p) return;
+    const dollars = bountyFor(enemy);
+    p.money = Math.max(0, p.money + dollars);
+    p.bestMoney = Math.max(p.bestMoney || 0, p.money);
+    emitMoneyUpdate(killerId, p, dollars, 'kill');
+}
+
+// Pick a spawn position ringed around a player and in a loaded chunk-ish
+// region. Avoids the outpost.
+function pickSurvivalSpawnPos(player) {
+    for (let tries = 0; tries < 12; tries++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 40 + Math.random() * 50;
+        const x = player.x + Math.cos(angle) * radius;
+        const z = player.z + Math.sin(angle) * radius;
+        if (Math.hypot(x, z) < OUTPOST_RADIUS + 5) continue;
+        return { x, z };
+    }
+    return { x: player.x + 60, z: player.z + 60 };
+}
+
+function spawnSurvivalEnemy(player) {
+    const pos = pickSurvivalSpawnPos(player);
+    const { id: biomeId } = sampleBiome(pos.x, pos.z, gameState.terrainSeed);
+    // Biome enemy weight tables
+    const weights = {
+        [BIOME_MEADOW]:    [70, 25, 5,  0],
+        [BIOME_FROSTPINE]: [40, 30, 25, 5],
+        [BIOME_ASHFEN]:    [30, 20, 40, 10],
+        [BIOME_CRIMSON]:   [10, 30, 40, 20],
+    }[biomeId] || [70, 25, 5, 0];
+    const roll = Math.random() * (weights[0] + weights[1] + weights[2] + weights[3]);
+    let kind = 'skeleton', cum = weights[0];
+    if (roll > cum) { kind = 'soldier'; cum += weights[1]; }
+    if (roll > cum) { kind = 'dog'; cum += weights[2]; }
+    if (roll > cum) { kind = 'miniboss'; }
+
+    const mult = difficultyAt(pos.x, pos.z);
+    let e;
+    if (kind === 'soldier')        e = makeSoldier(pos.x, pos.z);
+    else if (kind === 'dog')       e = makeDog(pos.x, pos.z);
+    else if (kind === 'miniboss')  e = makeMiniBoss(pos.x, pos.z);
+    else                           e = makeSkeleton(pos.x, pos.z);
+
+    // Distance scaling on top of base factories
+    e.hp = Math.round(e.hp * mult);
+    e.maxHp = e.hp;
+    if (e.atkDmg) e.atkDmg = Math.round(e.atkDmg * mult);
+    if (e.spd) e.spd = Math.min(e.spd * Math.min(mult, 1.8), 18);
+    e.y = sampleHeight(pos.x, pos.z, gameState.terrainSeed);
+    e.biome = biomeId;
+    // Night-time spawn aggression
+    if (gameState.dayTimeSec > DAY_DURATION) {
+        e.hp = Math.round(e.hp * 1.15);
+        e.maxHp = e.hp;
+    }
+    gameState.enemies.push(e);
+    e.ownerId = player.playerId;
+    io.emit('enemySpawned', {
+        id: e.id, type: e.type, x: e.x, y: e.y, z: e.z,
+        hp: e.hp, maxHp: e.maxHp, ownerId: e.ownerId,
+    });
+    return e;
+}
+
+function isInsideOutpost(p) {
+    return Math.hypot(p.x || 0, p.z || 0) < OUTPOST_RADIUS;
+}
+
+function tickSurvival(dt) {
+    gameState.dayTimeSec += dt;
+    if (gameState.dayTimeSec >= FULL_CYCLE) {
+        gameState.dayTimeSec -= FULL_CYCLE;
+        // Day rollover — blood moon roll
+        const dayIndex = Math.floor((Date.now() - gameState.matchEpoch * 1000) / (FULL_CYCLE * 1000)) | 0;
+        if (dayIndex >= gameState.nextBloodMoonDay) {
+            gameState.bloodMoon = true;
+            gameState.nextBloodMoonDay = dayIndex + 5 + Math.floor(Math.random() * 2);
+            io.emit('survivalEvent', { type: 'bloodMoon', active: true });
+        } else if (gameState.bloodMoon) {
+            gameState.bloodMoon = false;
+            io.emit('survivalEvent', { type: 'bloodMoon', active: false });
+        }
+    }
+
+    // Broadcast worldTime every 10s for drift correction
+    gameState.worldTimeBroadcastTmr -= dt;
+    if (gameState.worldTimeBroadcastTmr <= 0) {
+        gameState.worldTimeBroadcastTmr = 10;
+        io.emit('worldTime', {
+            dayTimeSec: gameState.dayTimeSec,
+            serverNow: Date.now(),
+            bloodMoon: !!gameState.bloodMoon,
+        });
+    }
+
+    const alive = getAlivePlayers();
+    if (alive.length === 0) {
+        // Party wipe — count down 3s, then end the run
+        gameState.partyDownTmr += dt;
+        if (gameState.partyDownTmr > 3) {
+            io.emit('survivalRunEnded', { reason: 'partyWipe' });
+            // Persist best stats per player into career
+            for (const p of Object.values(players)) {
+                if (p?.playerName) {
+                    const careerName = p.playerName.trim();
+                    if (careerName) {
+                        const c = ensureCareerEntry(careerName);
+                        c.survivalBestMoney = Math.max(c.survivalBestMoney || 0, p.bestMoney || 0);
+                        c.survivalDeepestDistance = Math.max(c.survivalDeepestDistance || 0, p.deepestDistance || 0);
+                        c.survivalDeathCount = (c.survivalDeathCount || 0) + 1;
+                        _careerDirty = true;
+                    }
+                }
+            }
+            stopGameLoop();
+            clearMatchState();
+            currentMode = null;
+        }
+        return;
+    } else {
+        gameState.partyDownTmr = 0;
+    }
+
+    // Track deepest distance
+    for (const p of alive) {
+        const d = Math.hypot(p.x, p.z);
+        if (d > (p.deepestDistance || 0)) p.deepestDistance = d;
+    }
+
+    // Spawn enemies — global budget proportional to alive players
+    const budget = Math.min(35, alive.length * 8);
+    gameState.survivalEnemySpawnTmr -= dt;
+    if (gameState.enemies.length < budget && gameState.survivalEnemySpawnTmr <= 0) {
+        // Pick a random alive player and spawn near them
+        const target = alive[Math.floor(Math.random() * alive.length)];
+        if (!isInsideOutpost(target)) {
+            spawnSurvivalEnemy(target);
+        }
+        gameState.survivalEnemySpawnTmr = 0.6 + Math.random() * 0.6;
+    }
+
+    // GC enemies far from every player
+    gameState.enemies = gameState.enemies.filter(e => {
+        let near = false;
+        for (const p of alive) {
+            const dx = (e.x || 0) - p.x;
+            const dz = (e.z || 0) - p.z;
+            if (dx * dx + dz * dz < 220 * 220) { near = true; break; }
+        }
+        if (!near) {
+            io.emit('enemyDespawned', { id: e.id });
+            return false;
+        }
+        return true;
+    });
+
+    // Expire effects
+    const now = Date.now();
+    for (const p of Object.values(players)) {
+        if (!p.effects) continue;
+        for (const k of Object.keys(p.effects)) {
+            if (p.effects[k].until <= now) {
+                delete p.effects[k];
+                io.to(p.playerId || '').emit('effectExpired', { kind: k });
+            }
+        }
+    }
+}
+
 // ── Game loop ─────────────────────────────────────────────────────────────────
 
 function startGameLoop() {
@@ -1430,7 +1731,11 @@ function startGameLoop() {
         // Wave management stays server-side; AI is now client-side (owned enemies).
         const isPaused = isGamePausedForAlivePlayers();
         if (!isPaused) {
-            tickWave(dt);
+            if (gameState.mode === 'SURVIVAL') {
+                tickSurvival(dt);
+            } else {
+                tickWave(dt);
+            }
         }
 
         // Periodically reassign enemy ownership to the closest alive player.
@@ -1920,6 +2225,199 @@ io.on('connection', (socket) => {
         }, 1000);
     });
 
+    // ── Survival ─────────────────────────────────────────────────────────────
+    socket.on('startSurvivalMatch', (data) => {
+        if (!players[socket.id]?.isHost) {
+            socket.emit('matchStartError', { reason: 'Only the host can start the match.' });
+            return;
+        }
+        if (!checkRateLimit(socket.id, 'startMatch', 750)) return;
+
+        currentMode = 'SURVIVAL';
+        const seed = (Math.random() * 1e9) | 0;
+        const startMoney = Math.max(0, Math.min(1e7, Number(data?.startMoney) || 50));
+        gameState.terrainSeed = seed;
+        gameState.dayTimeSec = 0;
+        gameState.bloodMoon = false;
+        gameState.nextBloodMoonDay = 5;
+        gameState.partyDownTmr = 0;
+        gameState.worldTimeBroadcastTmr = 0;
+        gameState.survivalEnemySpawnTmr = 0;
+        gameState.placedTorches = [];
+        gameState.nextTorchId = 1;
+        gameState.supplyPods = [];
+        gameState.caravan = null;
+        gameState.champion = null;
+        gameState.nextChampionDay = 4;
+
+        Object.values(players).forEach(p => {
+            p.isAlive = true;
+            p.isDowned = false;
+            p.isSpectating = false;
+            p.isPaused = false;
+            p.mode = 'COOP';
+            p.hp = P_MAX_HP;
+            p.money = startMoney;
+            p.bestMoney = Math.max(p.bestMoney || 0, startMoney);
+            p.hasJetpack = false;
+            p.jetpackFuel = 100;
+            p.backpackTier = 0;
+            p.effects = {};
+            p.inventory = makeDefaultSurvivalInventory();
+            p.activeSlot = 0;
+            p.x = 0; p.z = 4;
+            p.y = sampleHeight(0, 4, seed);
+            p.deepestDistance = 0;
+        });
+        selectedMap = 'survival';
+        resetGameState('SURVIVAL', 1);
+        gameState.mode = 'SURVIVAL';
+
+        startGameLoop();
+        io.emit('matchStarted', {
+            mode: 'SURVIVAL',
+            map: 'survival',
+            terrainSeed: seed,
+            dayTimeSec: 0,
+        });
+        broadcastPauseState();
+    });
+
+    socket.on('shopOpen', () => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        socket.emit('shopCatalog', { items: SURVIVAL_SHOP_CATALOG });
+    });
+
+    socket.on('shopPurchase', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'shopPurchase', 250)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const itemId = data?.itemId;
+        const qty = Math.max(1, Math.min(8, Number(data?.qty) || 1));
+        const item = SURVIVAL_SHOP_CATALOG.find(i => i.id === itemId);
+        if (!item) { socket.emit('shopRejected', { reason: 'unknown' }); return; }
+        // Distance check — measure against the actual vendor stall, not origin.
+        const dvx = p.x - VENDOR_POS.x;
+        const dvz = p.z - VENDOR_POS.z;
+        if (dvx * dvx + dvz * dvz > VENDOR_REACH * VENDOR_REACH) {
+            socket.emit('shopRejected', { reason: 'distance' });
+            return;
+        }
+        const cost = item.price * qty;
+        if (p.money < cost) { socket.emit('shopRejected', { reason: 'broke' }); return; }
+        // Backpack gating
+        if (item.id === 'backpack_large' && p.backpackTier < 1) { socket.emit('shopRejected', { reason: 'requires_small' }); return; }
+
+        // Apply purchase
+        let granted = false;
+        if (item.id === 'backpack_small') {
+            if (p.backpackTier < 1) { p.backpackTier = 1; granted = true; }
+        } else if (item.id === 'backpack_large') {
+            if (p.backpackTier < 2) { p.backpackTier = 2; granted = true; }
+        } else if (item.id === 'jetpack') {
+            p.hasJetpack = true; granted = true;
+        } else {
+            // Inventory items
+            granted = tryAddToInventory(p, item.id, qty);
+        }
+        if (!granted) { socket.emit('shopRejected', { reason: 'inventory_full' }); return; }
+        p.money -= cost;
+        p.bestMoney = Math.max(p.bestMoney || 0, p.money);
+        socket.emit('shopPurchased', { itemId: item.id, qty, money: p.money });
+        socket.emit('inventorySynced', survivalSnapshotFor(p));
+        emitMoneyUpdate(socket.id, p, -cost, 'shop');
+    });
+
+    socket.on('inventoryReorder', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'inventoryReorder', 100)) return;
+        const p = players[socket.id];
+        if (!p) return;
+        const from = Number(data?.from);
+        const to = Number(data?.to);
+        const len = p.inventory.length;
+        if (!Number.isInteger(from) || !Number.isInteger(to)) return;
+        if (from < 0 || to < 0 || from >= len || to >= len) return;
+        const tmp = p.inventory[from];
+        p.inventory[from] = p.inventory[to];
+        p.inventory[to] = tmp;
+        socket.emit('inventorySynced', survivalSnapshotFor(p));
+    });
+
+    socket.on('inventorySetActive', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        const p = players[socket.id];
+        if (!p) return;
+        const slot = Number(data?.slot);
+        if (!Number.isInteger(slot) || slot < 0 || slot > 8) return;
+        p.activeSlot = slot;
+        // Broadcast so other players' visuals can swap held item
+        io.emit('playerActiveSlot', { playerId: socket.id, slot });
+    });
+
+    socket.on('inventoryUseSlot', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'inventoryUse', 250)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const slot = Number(data?.slot);
+        if (!Number.isInteger(slot) || slot < 0 || slot > 8) return;
+        const entry = p.inventory[slot];
+        if (!entry) return;
+        const item = SURVIVAL_SHOP_CATALOG.find(i => i.id === entry.itemId);
+        if (!item || item.kind !== 'consumable') return;
+        // Apply effect
+        applyConsumable(p, item.id);
+        entry.qty -= 1;
+        if (entry.qty <= 0) p.inventory[slot] = null;
+        socket.emit('inventorySynced', survivalSnapshotFor(p));
+    });
+
+    socket.on('propBroken', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'propBroken', 60)) return;
+        const p = players[socket.id];
+        if (!p) return;
+        const kind = data?.kind;
+        if (kind !== 'tree' && kind !== 'rock') return;
+        const x = Number(data?.x), z = Number(data?.z);
+        if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+        // Cap reach: must be within 200 units of player to claim
+        if (Math.hypot(x - p.x, z - p.z) > 200) return;
+        const dollars = kind === 'tree' ? 8 : 14;
+        p.money = Math.max(0, p.money + dollars);
+        p.bestMoney = Math.max(p.bestMoney || 0, p.money);
+        emitMoneyUpdate(socket.id, p, dollars, kind);
+        io.emit('propDestroyed', { propId: data.propId, x, y: 0, z });
+    });
+
+    socket.on('placeTorch', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'placeTorch', 250)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const slot = p.inventory.findIndex(s => s && s.itemId === 'torch_placeable');
+        if (slot < 0) return;
+        const x = Number(data?.x);
+        const z = Number(data?.z);
+        if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+        const dx = x - p.x, dz = z - p.z;
+        if (dx * dx + dz * dz > 25) return; // must be near player
+        const y = sampleHeight(x, z, gameState.terrainSeed);
+        const torchId = `torch${gameState.nextTorchId++}`;
+        const torch = { id: torchId, ownerId: socket.id, x, y, z };
+        gameState.placedTorches.push(torch);
+        if (gameState.placedTorches.length > 80) {
+            // Hard cap to prevent unbounded scene growth
+            gameState.placedTorches.shift();
+        }
+        p.inventory[slot].qty -= 1;
+        if (p.inventory[slot].qty <= 0) p.inventory[slot] = null;
+        io.emit('torchPlaced', torch);
+        socket.emit('inventorySynced', survivalSnapshotFor(p));
+    });
+
     // ── Ping / chat ───────────────────────────────────────────────────────────
     socket.on('clientPing', (sentAt) => {
         socket.emit('serverPong', sentAt);
@@ -1938,7 +2436,7 @@ io.on('connection', (socket) => {
     // Client reports their bullet hit an enemy — server is now authoritative
     socket.on('bulletHit', (data) => {
         if (!checkRateLimit(socket.id, 'bulletHit', 40)) return; // max ~25/s
-        if (gameState.mode !== 'COOP') return;
+        if (gameState.mode !== 'COOP' && gameState.mode !== 'SURVIVAL') return;
         const { enemyId, weapon } = data;
         let { damage } = data;
         if (!enemyId || typeof damage !== 'number' || damage <= 0) return;
@@ -1959,7 +2457,7 @@ io.on('connection', (socket) => {
     // Bazooka splash: all nearby enemies hit in one atomic event to bypass per-bullet rate limit
     socket.on('splashHit', (data) => {
         if (!checkRateLimit(socket.id, 'splashHit', 1500)) return; // max 1 blast per 1.5 s
-        if (gameState.mode !== 'COOP') return;
+        if (gameState.mode !== 'COOP' && gameState.mode !== 'SURVIVAL') return;
         const { hits, weapon } = data;
         if (!Array.isArray(hits) || !WEAPON_ORDER.includes(weapon)) return;
         for (const hit of hits.slice(0, 20)) {
@@ -1975,7 +2473,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('grappleEnemy', (data) => {
-        if (gameState.mode !== 'COOP') return;
+        if (gameState.mode !== 'COOP' && gameState.mode !== 'SURVIVAL') return;
         const { enemyId, x, y, z, weapon } = data || {};
         if (!enemyId || typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') return;
         if (!WEAPON_ORDER.includes(weapon)) return;

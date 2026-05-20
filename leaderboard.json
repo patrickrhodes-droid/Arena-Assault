@@ -134,6 +134,18 @@
   ],
   "pvp": [
     {
+      "playerName": "Beast",
+      "kills": 7,
+      "date": "2026-05-20",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
+      "kills": 5,
+      "date": "2026-05-20",
+      "token": null
+    },
+    {
       "playerName": "Patrick",
       "kills": 1,
       "date": "2026-05-08"
