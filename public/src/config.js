@@ -240,10 +240,10 @@ export const WEAPON_DEFS = {
   minigun: {
     label: "MINIGUN",
     mag: 150,
-    fireRate: 0.025,   // 2× faster than assault (0.05)
-    reload: 3.8,
+    fireRate: 0.05,    // 50% slower than before (was 0.025)
+    reload: 11.4,
     pellets: 1,
-    damage: 90,        // 3× assault damage (30)
+    damage: 162,       // +80% (was 90)
     spreadHip: 0.038,
     spreadAim: 0.016,
     bulletSpeed: 90,

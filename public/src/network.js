@@ -168,6 +168,11 @@ export function initNetworking(actions) {
   game.socket.on("matchStartError", (data) => {
     // Re-show host controls so the host can try again
     game.matchStarting = false;
+    [game.dom?.startMissionBtn, game.dom?.pvpMatchBtn, game.dom?.ffaMatchBtn].forEach((b) => {
+      if (!b) return;
+      b.disabled = false;
+      b.style.opacity = "";
+    });
     const el = document.getElementById("match-start-error");
     if (!el) return;
     el.textContent = data?.reason || "Could not start match.";

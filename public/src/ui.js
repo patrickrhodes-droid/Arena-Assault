@@ -169,6 +169,15 @@ export function applyMapScreenRole() {
   const guestSection = document.getElementById('guest-map-section');
   if (hostSection) hostSection.style.display = game.isHost ? 'block' : 'none';
   if (guestSection) guestSection.style.display = game.isHost ? 'none' : 'block';
+  // Returning to the map screen means any half-finished start attempt is over.
+  // Clear matchStarting and re-enable the start buttons so they're not stuck
+  // disabled from a previous click that never resolved into a matchStarted.
+  game.matchStarting = false;
+  [game.dom.startMissionBtn, game.dom.pvpMatchBtn, game.dom.ffaMatchBtn].forEach((b) => {
+    if (!b) return;
+    b.disabled = false;
+    b.style.opacity = "";
+  });
   if (game.isHost) {
     // Always keep start buttons hidden until a mode card is explicitly clicked
     if (game.dom.startMissionBtn) game.dom.startMissionBtn.hidden = true;
@@ -199,6 +208,10 @@ function applyModeSelection(mode) {
   if (game.dom.pvpMatchBtn) game.dom.pvpMatchBtn.hidden = !isPvP;
   if (game.dom.ffaMatchBtn) game.dom.ffaMatchBtn.hidden = !isFFA;
   if (game.dom.ffaTimeWrap) game.dom.ffaTimeWrap.style.display = isFFA ? 'block' : 'none';
+  // START AT WAVE only applies to COOP modes; hide it for PvP/FFA so the host
+  // doesn't waste time tweaking a value the server will ignore.
+  const skipWaveRow = document.getElementById('skip-wave-row');
+  if (skipWaveRow) skipWaveRow.style.display = (isPvP || isFFA) ? 'none' : '';
   updateLobbyCharacterLocks(mode);
   // Refresh the host's "Start At Wave" dropdown to match the chosen mode.
   populateWaveSelect(mode);
@@ -207,9 +220,14 @@ function applyModeSelection(mode) {
 // Rebuilds the #skip-wave-select dropdown contents for the current game mode.
 // Campaign mode lists "Arena W1..W7, Desert W1..W7, City W1..W7, Blacksite W1..W7";
 // other modes list plain wave numbers 1-30.
+let lastPopulatedWaveMode = null;
 function populateWaveSelect(mode) {
   const sel = game.dom?.skipWaveSelect;
   if (!sel) return;
+  // Preserve the host's current pick when the mode hasn't changed — avoids
+  // wiping the selection on re-renders (e.g. navigating back to the map screen).
+  if (mode === lastPopulatedWaveMode && sel.options.length > 0) return;
+  lastPopulatedWaveMode = mode;
   sel.innerHTML = "";
   if (mode === "campaign") {
     const MAPS = [
@@ -442,39 +460,45 @@ export function bindMenuControls(actions) {
   });
 
   // ── Start Mission button (screen-map, host only) ──
+  // beginMatchStart wraps the emit-then-wait pattern: marks the match as
+  // starting, disables every Start button until either matchStarted fires
+  // (lobby teardown re-shows them on the next match) or matchStartError
+  // unsticks them via resetStartButtons() in network.js.
+  const startButtons = [
+    game.dom.startMissionBtn,
+    game.dom.pvpMatchBtn,
+    game.dom.ffaMatchBtn,
+  ].filter(Boolean);
+  const beginMatchStart = (run) => {
+    if (!game.isHost || game.matchStarting) return;
+    game.matchStarting = true;
+    startButtons.forEach((b) => { b.disabled = true; b.style.opacity = "0.5"; });
+    audioInit();
+    renderJoinLinkControls();
+    run();
+  };
+
   if (game.dom.startMissionBtn) {
     game.dom.startMissionBtn.addEventListener("click", () => {
-      if (!game.isHost) return;
-      audioInit();
-      game.matchStarting = true;
-      renderJoinLinkControls();
-      startMatch();
+      beginMatchStart(() => startMatch());
     });
   }
 
   if (game.dom.pvpMatchBtn) {
     game.dom.pvpMatchBtn.addEventListener("click", () => {
-      if (!game.isHost) return;
-      audioInit();
-      game.matchStarting = true;
-      renderJoinLinkControls();
-      game.socket?.emit("startPvPMatch");
+      beginMatchStart(() => game.socket?.emit("startPvPMatch"));
     });
   }
 
   if (game.dom.ffaMatchBtn) {
     game.dom.ffaMatchBtn.addEventListener("click", () => {
-      if (!game.isHost) return;
-      audioInit();
       const duration = parseInt(game.dom.ffaDurationSelect?.value || "300", 10);
-      game.matchStarting = true;
-      renderJoinLinkControls();
-      game.socket?.emit("startFFAMatch", { duration });
+      beginMatchStart(() => game.socket?.emit("startFFAMatch", { duration }));
     });
   }
 
   game.dom.resumeBtn.addEventListener("click", actions.resumeGame);
-  game.dom.exitBtn.addEventListener("click", reloadPage);
+  game.dom.exitBtn?.addEventListener("click", reloadPage);
   game.dom.redeployBtn.addEventListener("click", reloadPage);
   if (game.dom.giveUpBtn) {
     game.dom.giveUpBtn.addEventListener("click", () => {

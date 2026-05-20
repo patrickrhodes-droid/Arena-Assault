@@ -1744,7 +1744,7 @@ io.on('connection', (socket) => {
 
     socket.on('hostSelectMap', (data) => {
         if (!players[socket.id]?.isHost) return;
-        if (typeof data.map === 'string') {
+        if (typeof data?.map === 'string' && CAMPAIGN_MAP_ORDER.includes(data.map)) {
             selectedMap = data.map;
             io.emit('mapSelected', { map: selectedMap, hostId: socket.id });
         }
@@ -1758,12 +1758,23 @@ io.on('connection', (socket) => {
 
     socket.on('startMatch', (data) => {
         if (!players[socket.id]?.isHost) return;
+        // Backstop against rapid duplicate start emits — the client debounces
+        // already, but a hostile/buggy client could fire repeatedly and reset
+        // the running game state out from under everyone.
+        if (!checkRateLimit(socket.id, 'startMatch', 750)) return;
         const startingWave = (typeof data?.startingWave === 'number' && data.startingWave > 1)
             ? Math.min(data.startingWave, CAMPAIGN_MAX_WAVE)
             : 1;
         const gameMode = (data?.gameMode === 'campaign') ? 'campaign' : 'endless';
         gameState.invincibility = !!data?.invincibility;
         currentMode = 'COOP';
+        // Trust the host-provided map in the start payload over the module-level
+        // selectedMap, which can lag behind if hostSelectMap arrived out-of-order
+        // or never fired (e.g. host clicked Start without re-selecting). Reject
+        // anything not in the known map list so a typo can't crash mapload.
+        if (typeof data?.map === 'string' && CAMPAIGN_MAP_ORDER.includes(data.map)) {
+            selectedMap = data.map;
+        }
         // Campaign: the host can pick any map+wave combo. Clamp the map index
         // into the valid range, then pin selectedMap to it.
         if (gameMode === 'campaign') {
@@ -1830,6 +1841,7 @@ io.on('connection', (socket) => {
             socket.emit('matchStartError', { reason: 'Only the host can start the match.' });
             return;
         }
+        if (!checkRateLimit(socket.id, 'startMatch', 750)) return;
         const eligible = Object.values(players).filter(p => p.playerName && p.character);
         if (eligible.length < 2) {
             socket.emit('matchStartError', { reason: `Need at least 2 players with name and character selected (${eligible.length}/2 ready).` });
@@ -1866,6 +1878,7 @@ io.on('connection', (socket) => {
             socket.emit('matchStartError', { reason: 'Only the host can start the match.' });
             return;
         }
+        if (!checkRateLimit(socket.id, 'startMatch', 750)) return;
         if (Object.keys(players).length < 2) {
             socket.emit('matchStartError', { reason: 'Need at least 2 players to start Free For All.' });
             return;
@@ -1934,7 +1947,7 @@ io.on('connection', (socket) => {
         const enemy = gameState.enemies.find(e => e.id === enemyId);
         if (!enemy || enemy.hp <= 0) return;
         if (enemy.type === 'boss') {
-            const m = { sword: 1.5, assault: 0.25, shotgun: 0.5, sniper: 0.7 }[weapon] ?? 1.0;
+            const m = { sword: 1.5, assault: 0.25, shotgun: 0.5, sniper: 0.7, minigun: 0.3 }[weapon] ?? 1.0;
             damage = Math.round(damage * m);
             if (damage <= 0) return;
         }

@@ -31,6 +31,7 @@ const DEFAULT_WEAPONS = {
   sword:   { fpPos:[0.40,-0.40,-0.60], fpAdsPos:[0.10,-0.20,-0.50], fpScale:[1,1,1],          tpPos:[0.50,1.20,-0.20], tpScale:[1,1,1],         tpMuzzleZ:-0.20, fpMuzzleZ:0,     glbScale:0.16,  glbRotY:3.14159,     glbPosY:-0.6, glbPosZ:0   },
   bazooka: { fpPos:[0.18,-0.16,-0.38], fpAdsPos:[0.00,-0.08,-0.30], fpScale:[1,1,1],          tpPos:[0.55,1.32,-0.32], tpScale:[1,1,1],         tpMuzzleZ:-0.75, fpMuzzleZ:-0.75, glbScale:0.38,  glbRotY:0,           glbPosY:0,    glbPosZ:0   },
   grapple: { fpPos:[0.22,-0.24,-0.42], fpAdsPos:[0.01,-0.12,-0.34], fpScale:[0.8,0.8,0.72],  tpPos:[0.48,1.30,-0.22], tpScale:[0.8,0.8,0.7],  tpMuzzleZ:-0.38, fpMuzzleZ:-0.38, glbScale:0.375, glbRotY:1.5708,      glbPosY:0,    glbPosZ:0   },
+  minigun: { fpPos:[0.25,-0.20,-0.50], fpAdsPos:[0.02,-0.10,-0.36], fpScale:[1,1,1],          tpPos:[0.50,1.35,-0.30], tpScale:[1,1,1],         tpMuzzleZ:-0.70, fpMuzzleZ:-0.70, glbScale:0.28,  glbRotY:3.14159,     glbPosY:0,    glbPosZ:0   },
 };
 
 const WEAPON_GLB_FILES = {
@@ -41,6 +42,7 @@ const WEAPON_GLB_FILES = {
   sword:   '/assets/models/Katana.glb',
   bazooka: '/assets/models/Bazooka.glb',
   grapple: '/assets/models/Lure.glb',
+  minigun: '/assets/models/gatling_gun.glb',
 };
 
 const HEAD_GLB_FILES = {
@@ -76,11 +78,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.8;
 
 const scene  = new THREE.Scene();
-scene.background = new THREE.Color(0x10141a);
-scene.fog = new THREE.FogExp2(0x10141a, 0.018);
+scene.background = new THREE.Color(0x3a4554);
+scene.fog = new THREE.FogExp2(0x3a4554, 0.008);
 
 const camera = new THREE.PerspectiveCamera(58, 1, 0.05, 120);
 camera.position.set(0, 2.2, 5);
@@ -100,15 +102,19 @@ scene.add(transform);
 const gltfLoader = new GLTFLoader();
 
 // Lighting
-scene.add(new THREE.HemisphereLight(0xb0c8ff, 0x28322a, 0.85));
-const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+scene.add(new THREE.HemisphereLight(0xd8e4ff, 0x55624c, 1.8));
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const sun = new THREE.DirectionalLight(0xffffff, 3.2);
 sun.position.set(3, 8, 4);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
-const fillLight = new THREE.DirectionalLight(0x88aaff, 0.55);
+const fillLight = new THREE.DirectionalLight(0xaac6ff, 1.4);
 fillLight.position.set(-3, 2, -3);
 scene.add(fillLight);
+const backLight = new THREE.DirectionalLight(0xffffff, 1.0);
+backLight.position.set(0, 4, -6);
+scene.add(backLight);
 
 // Floor grid
 const grid = new THREE.GridHelper(10, 20, 0x2a3444, 0x1e2830);
@@ -605,7 +611,17 @@ function handleCharFieldChange(field, val) {
       const newGeo = new THREE.BoxGeometry(sz[0], sz[1], sz[2]);
       mesh.geometry.dispose();
       mesh.geometry = newGeo;
+    } else if (st.tab === 'weapon') {
+      // Weapon parts are Groups (no geometry) — scale the group itself.
+      const axis = field[1]; // 'x' | 'y' | 'z'
+      mesh.scale[axis] = Math.max(0.001, val);
     }
+  }
+  // The Selected: Position/Scale inputs only touch the mesh by default. For
+  // weapon parts the underlying data lives in st.weapons[id], so push the
+  // change there too — otherwise saving and toggling Idle/ADS reverts it.
+  if (st.tab === 'weapon' && key) {
+    syncWeaponFromMesh(key, mesh);
   }
   transform.detach();
   transform.attach(mesh);
@@ -617,7 +633,16 @@ function handleWeaponFieldChange(wfield, val) {
   const [prop, idx] = wfield.split('.');
   if (idx !== undefined) {
     wd[prop] ||= [0,0,0];
-    wd[prop][parseInt(idx)] = val;
+    // Uniform-scale checkbox: when ticked, editing any axis of fpScale/tpScale
+    // mirrors the value across all three axes.
+    const uniformCb = document.querySelector(`input[data-uniform="${prop}"]`);
+    if (uniformCb?.checked && (prop === 'fpScale' || prop === 'tpScale')) {
+      wd[prop][0] = val;
+      wd[prop][1] = val;
+      wd[prop][2] = val;
+    } else {
+      wd[prop][parseInt(idx)] = val;
+    }
   } else {
     if (prop === 'glbRotY') val = THREE.MathUtils.degToRad(val);
     wd[prop] = val;

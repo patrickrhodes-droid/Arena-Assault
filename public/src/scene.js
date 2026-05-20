@@ -154,6 +154,12 @@ export function applyCharConfig() {
     }
     if (pb.visor && pv.visor) applyPart(pv.visor, pb.visor);
   }
+  // The weapon model's fpPos/tpPos/muzzleZ values were just rewritten above,
+  // but the live scene objects still hold positions baked in at boot. Re-run
+  // applyWeaponModel so the saved editor positions actually take effect.
+  if (game.visuals?.weapon?.weaponModels?.[game.currentWeapon]) {
+    applyWeaponModel();
+  }
 }
 
 export function initScene() {
@@ -490,7 +496,7 @@ function buildWeaponVisuals() {
     sword:   { file: "/assets/models/Katana.glb",        scale: 0.16,  rotY: Math.PI, posY: -0.6 },
     grapple: { file: "/assets/models/Lure.glb",           scale: 0.375, rotY: Math.PI / 2 },
     bazooka: { file: "/assets/models/Bazooka.glb",       scale: 0.38,  rotY: 0 },
-    minigun: { file: "/assets/models/gatling_gun.glb",   scale: 0.18,  rotY: 0 },
+    minigun: { file: "/assets/models/gatling_gun.glb",   scale: 0.28,  rotY: Math.PI },
   };
 
   const glbGroups = {};

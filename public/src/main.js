@@ -122,15 +122,37 @@ const actions = {
   enterCutsceneMode,
   syncChatVisibility,
   startMatch: () => {
-    if (game.isHost) {
-      game.audio.init();
-      game.socket?.emit("startMatch", {
-        startingWave: game.startingWave || 1,
-        startingMapIndex: game.startingMapIndex || 0,
-        invincibility: Boolean(game.invincibilityMode),
-        gameMode: game.selectedGameMode || 'endless',
-      });
+    if (!game.isHost) return;
+    game.audio.init();
+    // Re-read the wave dropdown and selected map card directly from the DOM so
+    // any stale game.startingWave / game.selectedMap can't override what the
+    // host is actually looking at on the lobby screen.
+    const raw = game.dom.skipWaveSelect?.value ?? "";
+    let startingWave = game.startingWave || 1;
+    let startingMapIndex = game.startingMapIndex || 0;
+    if (raw.includes(":")) {
+      const [mi, w] = raw.split(":").map(Number);
+      if (Number.isInteger(mi)) startingMapIndex = mi;
+      if (Number.isInteger(w)) startingWave = w;
+    } else if (raw) {
+      startingWave = Number(raw) || 1;
+      startingMapIndex = 0;
     }
+    const selectedCard = document.querySelector('.map-card.selected');
+    const map = selectedCard?.dataset.map || game.selectedMap || 'arena';
+    game.startingWave = startingWave;
+    game.startingMapIndex = startingMapIndex;
+    game.selectedMap = map;
+    // Re-emit the host's map selection so the server can't be running on a
+    // stale `selectedMap` from a previous match.
+    game.socket?.emit("hostSelectMap", { map });
+    game.socket?.emit("startMatch", {
+      startingWave,
+      startingMapIndex,
+      map,
+      invincibility: Boolean(game.invincibilityMode),
+      gameMode: game.selectedGameMode || 'endless',
+    });
   },
   toggleView: () => {
     game.isFPS = !game.isFPS;

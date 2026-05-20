@@ -11,6 +11,7 @@ import {
   PLAYER_MOVEMENT,
   P_RAD,
   REVIVE_TUNING,
+  WEAPON_ORDER,
 } from "./config.js";
 import { game } from "./state.js";
 import { addShake } from "./state.js";
@@ -306,13 +307,13 @@ export function setupInput(actions) {
     }
 
     if (game.mode !== "PVP") {
-      if (event.code === "Digit1") actions.setWeapon("pistol");
-      if (event.code === "Digit2") actions.setWeapon("assault");
-      if (event.code === "Digit3") actions.setWeapon("shotgun");
-      if (event.code === "Digit4") actions.setWeapon("sniper");
-      if (event.code === "Digit5") actions.setWeapon("sword");
-      if (event.code === "Digit6") actions.setWeapon("bazooka");
-      if (event.code === "Digit7") actions.setWeapon("grapple");
+      // Digit1..DigitN map to WEAPON_ORDER[0..N-1]. Adding a new weapon to
+      // WEAPON_ORDER automatically wires up its number key.
+      const digitMatch = event.code.match(/^Digit([1-9])$/);
+      if (digitMatch) {
+        const id = WEAPON_ORDER[Number(digitMatch[1]) - 1];
+        if (id) actions.setWeapon(id);
+      }
       if (event.code === "KeyQ") {
         cycleWeapon();
         actions.updateHUD();
@@ -819,18 +820,19 @@ function handleFiring(actions) {
     game.recoilOffset += weapon.recoilRX * 1.2 * adsRecoilMult;
     game.recoilOffset  = Math.min(0.14, game.recoilOffset); // capped at half the old value
 
-    // Bazooka self-knockback — push player away from aim direction
-    if (weapon.mode === "bazooka") {
+    // Bazooka self-knockback — push player away from aim direction.
+    // Minigun gets a much smaller per-bullet shove (1/10th the force) but
+    // still gives an upward boost when aimed downward.
+    if (weapon.mode === "bazooka" || weapon.mode === "minigun") {
       const phi  = game.camPhi + game.recoilOffset;
       const aimX = -Math.sin(game.camTheta) * Math.cos(phi);
       const aimY = Math.sin(phi);
       const aimZ = -Math.cos(game.camTheta) * Math.cos(phi);
-      const bazForce = 34;
-      game.knockbackX -= aimX * bazForce;
-      game.knockbackZ -= aimZ * bazForce;
-      // Aimed downward → rocket-jump: push upward proportionally
+      const force = weapon.mode === "bazooka" ? 34 : 3.4;
+      game.knockbackX -= aimX * force;
+      game.knockbackZ -= aimZ * force;
       if (aimY < -0.15) {
-        game.playerVelY = Math.max(game.playerVelY, -aimY * bazForce * 0.6);
+        game.playerVelY = Math.max(game.playerVelY, -aimY * force * 0.6);
         game.isGrounded  = false;
       }
     }

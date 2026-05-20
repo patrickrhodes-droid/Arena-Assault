@@ -83,6 +83,7 @@
             <option value="sword">Sword</option>
             <option value="bazooka">Bazooka</option>
             <option value="grapple">Grapple</option>
+            <option value="minigun">Minigun</option>
           </select>
 
           <div class="tab-row" style="margin-top:8px">
@@ -207,7 +208,12 @@
           </div>
         </div>
         <div class="field-group">
-          <div class="field-group-label">FPS Scale</div>
+          <div class="field-group-label" style="display:flex;align-items:center;gap:8px">
+            <span>FPS Scale</span>
+            <label style="font-weight:normal;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer">
+              <input type="checkbox" id="uniform-fp-scale" data-uniform="fpScale">Uniform
+            </label>
+          </div>
           <div class="field-grid">
             <label>X<input data-wfield="fpScale.0" type="number" step="0.01" min="0.001"></label>
             <label>Y<input data-wfield="fpScale.1" type="number" step="0.01" min="0.001"></label>
@@ -223,7 +229,12 @@
           </div>
         </div>
         <div class="field-group">
-          <div class="field-group-label">3P Scale</div>
+          <div class="field-group-label" style="display:flex;align-items:center;gap:8px">
+            <span>3P Scale</span>
+            <label style="font-weight:normal;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer">
+              <input type="checkbox" id="uniform-tp-scale" data-uniform="tpScale">Uniform
+            </label>
+          </div>
           <div class="field-grid">
             <label>X<input data-wfield="tpScale.0" type="number" step="0.01" min="0.001"></label>
             <label>Y<input data-wfield="tpScale.1" type="number" step="0.01" min="0.001"></label>
