@@ -230,18 +230,20 @@ function buildChunkProps(cx, cz, seed) {
     group.add(tree);
 
     const propId = `tree_${cx}_${cz}_${i}`;
-    const halfTrunk = 0.32 * s;
+    // Fat AABB encompasses trunk + crown so bullets aimed anywhere on the
+    // tree hit something and trigger destruction.
+    const half = 0.9 * s;
     const obsEntry = {
-      min: { x: wx - halfTrunk, z: wz - halfTrunk },
-      max: { x: wx + halfTrunk, z: wz + halfTrunk },
-      h: y + 0.6, yMin: y,
+      min: { x: wx - half, z: wz - half },
+      max: { x: wx + half, z: wz + half },
+      h: y + 4.5 * s, yMin: y,
     };
     game.oBs.push(obsEntry);
     obstacleEntries.push(obsEntry);
     const destEntry = {
       id: propId, mesh: tree,
       x: wx, z: wz,
-      triggerRadius: 1.8 * s,
+      triggerRadius: 2.4 * s,
       obsEntry, alive: true,
       kind: 'tree', biome: localBiome,
       hp: 30, maxHp: 30,

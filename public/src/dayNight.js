@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { game } from "./state.js";
 import { FULL_CYCLE, DAY_DURATION } from "./shared/survivalConfig.js";
+import { setSurvivalSkyForTime } from "./scene.js";
 
 // Palette stops for the dynamic sky / fog / ambient. Sun's vertical position
 // (-1..1) is the mix value.
@@ -63,7 +64,7 @@ export function tickDayNight(dt) {
     _tmpB.lerp(BLOOD_FOG, 0.7);
     sun.color.lerp(BLOOD_SKY, 0.4);
   }
-  game.scene.background = _tmpA;
+  setSurvivalSkyForTime(sunY <= 0);
   if (game.scene.fog) game.scene.fog.color.copy(_tmpB);
 
   // Hemisphere lift

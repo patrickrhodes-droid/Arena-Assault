@@ -11,6 +11,9 @@ function tickBarrelWarning() {
   let near = false;
   for (const d of game.destructibles) {
     if (!d.alive) continue;
+    // Trees and rocks are destructible but not explosive — only show the
+    // warning for actual barrels (existing map-authored destructibles).
+    if (d.kind === 'tree' || d.kind === 'rock') continue;
     const dx = d.x - pp.x, dz = d.z - pp.z;
     if (dx * dx + dz * dz < (d.triggerRadius + 2) ** 2) { near = true; break; }
   }

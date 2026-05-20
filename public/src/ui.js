@@ -955,7 +955,7 @@ export function updateHUD() {
   }
   // Wave counter only makes sense in wave-based modes (Endless / Campaign).
   game.dom.waveDisplay.style.display = (isCompetitive || isSurvival) ? "none" : "";
-  game.dom.inventoryBar.style.display = isPvP ? "none" : "";
+  game.dom.inventoryBar.style.display = (isPvP || isSurvival) ? "none" : "";
   if (isPvP) {
     game.dom.pvpKills.textContent = game.pvpKills;
     game.dom.pvpKillsMax.textContent = PVP_WIN_KILLS;

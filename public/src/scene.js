@@ -241,6 +241,11 @@ const HDR_SKY_PATHS = {
   city:   '/assets/Skies/Citysky.hdr',
 };
 
+const SURVIVAL_SKY_PATHS = {
+  day: HDR_SKY_PATHS.desert,
+  night: HDR_SKY_PATHS.arena,
+};
+
 function _applyHDRToScene(bg, env) {
   game.scene.background = bg;
   game.scene.environment = env ?? null;
@@ -284,6 +289,14 @@ function loadHDRSky(path, useAsEnv = false) {
     _hdrCache.set(path, { bg: tex, env });
     _applyHDRToScene(tex, useAsEnv ? env : null);
   });
+}
+
+export function setSurvivalSkyForTime(night) {
+  if (!game.scene) return;
+  const nextMode = night ? "night" : "day";
+  if (game.shared.survivalSkyMode === nextMode) return;
+  game.shared.survivalSkyMode = nextMode;
+  loadHDRSky(SURVIVAL_SKY_PATHS[nextMode], true);
 }
 
 export async function rebuildArena(mapId) {
@@ -352,7 +365,8 @@ if (typeof window !== 'undefined') {
 // Wires the dynamic sun + hemisphere light that dayNight.js animates, and sets
 // scene background/fog defaults. Stores refs in game.shared for tickDayNight.
 function buildSurvivalSceneChrome() {
-  game.scene.background = new THREE.Color(0x8ac0e4);
+  game.shared.survivalSkyMode = null;
+  setSurvivalSkyForTime(false);
   game.scene.fog = new THREE.FogExp2(0xcde0ea, 0.012);
 
   const hemi = new THREE.HemisphereLight(0xb8d6f0, 0x3a4030, 1.2);

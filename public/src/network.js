@@ -364,7 +364,7 @@ export function initNetworking(actions) {
       game.dayTimeSyncedAt = performance.now();
       game.bloodMoon = false;
       game.money = 50;
-      game.inventory = new Array(9).fill(null);
+      game.inventory = new Array(5).fill(null);
       game.inventory[0] = { itemId: 'pistol', qty: 1 };
       game.activeSlot = 0;
       game.backpackTier = 0;
@@ -473,6 +473,10 @@ export function initNetworking(actions) {
     if (typeof data?.hasJetpack === 'boolean') game.hasJetpack = data.hasJetpack;
     if (typeof data?.jetpackFuel === 'number') game.jetpackFuel = data.jetpackFuel;
     if (typeof data?.money === 'number') game.money = data.money;
+    const active = game.inventory?.[game.activeSlot];
+    if (active?.itemId && WEAPON_ORDER.includes(active.itemId)) {
+      setWeapon(active.itemId);
+    }
     if (typeof window !== 'undefined' && window.refreshInventoryUI) window.refreshInventoryUI();
   });
 

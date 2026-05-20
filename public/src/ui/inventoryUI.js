@@ -1,3 +1,5 @@
+import { WEAPON_ORDER } from "../config.js";
+import { setWeapon } from "../combat.js";
 import { game } from "../state.js";
 
 // Inventory + hotbar + shop UI. All survival-only — the elements are inserted
@@ -30,6 +32,34 @@ let _moneyEl = null;
 let _effectsEl = null;
 let _bloodMoonEl = null;
 let _shopHintEl = null;
+let _actionHintEl = null;
+
+const SURVIVAL_BASE_SLOTS = 5;
+const SURVIVAL_SLOTS_PER_TIER = 5;
+
+function inventoryCapacity() {
+  return SURVIVAL_BASE_SLOTS + (game.backpackTier || 0) * SURVIVAL_SLOTS_PER_TIER;
+}
+
+function getSlotKind(itemId) {
+  if (!itemId) return "empty";
+  if (WEAPON_ORDER.includes(itemId)) return "weapon";
+  if (itemId === "torch_placeable") return "placeable";
+  if (itemId.startsWith("potion_") || itemId === "medkit" || itemId === "pistol_ammo") return "consumable";
+  if (itemId === "jetpack" || itemId.startsWith("backpack_")) return "gear";
+  return "misc";
+}
+
+function getActiveSlotHint(slot) {
+  if (!slot?.itemId) return "Empty slot";
+  const label = ITEM_LABELS[slot.itemId] || slot.itemId;
+  const kind = getSlotKind(slot.itemId);
+  if (kind === "weapon") return `LMB fire ${label}`;
+  if (kind === "consumable") return `LMB use ${label}`;
+  if (kind === "placeable") return `LMB place ${label}`;
+  if (kind === "gear") return `${label} is passive gear`;
+  return label;
+}
 
 function el(tag, attrs = {}, children = []) {
   const n = document.createElement(tag);
@@ -52,7 +82,7 @@ function renderSlot(slot, index, parent) {
     alignItems: 'center', justifyContent: 'center',
     fontSize: '20px', color: '#cde',
   }});
-  if (index < 9 && index === game.activeSlot) {
+  if (index === game.activeSlot) {
     tile.style.outline = '2px solid #00ffaa';
   }
   if (slot) {
@@ -96,11 +126,12 @@ function renderSlot(slot, index, parent) {
     }
   });
   tile.addEventListener('click', () => {
-    if (index < 9) {
-      game.activeSlot = index;
-      game.socket?.emit('inventorySetActive', { slot: index });
-      refreshInventoryUI();
+    game.activeSlot = index;
+    game.socket?.emit('inventorySetActive', { slot: index });
+    if (slot?.itemId && WEAPON_ORDER.includes(slot.itemId)) {
+      setWeapon(slot.itemId);
     }
+    refreshInventoryUI();
   });
   parent.appendChild(tile);
 }
@@ -151,6 +182,23 @@ function ensureEffects() {
   }});
   document.body.appendChild(_effectsEl);
   return _effectsEl;
+}
+
+function ensureActionHint() {
+  if (_actionHintEl) return _actionHintEl;
+  _actionHintEl = el('div', { id: 'survival-action-hint', style: {
+    position: 'fixed', bottom: '70px', left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'none',
+    color: '#cde',
+    fontFamily: 'monospace',
+    fontSize: '11px',
+    letterSpacing: '1px',
+    zIndex: '40',
+    pointerEvents: 'none',
+  }});
+  document.body.appendChild(_actionHintEl);
+  return _actionHintEl;
 }
 
 function ensureShopHint() {
@@ -211,7 +259,7 @@ function ensureInventoryPanel() {
   const slots = el('div', { id: 'inv-slots', style: { display: 'flex', flexWrap: 'wrap', gap: '4px' }});
   _invPanelEl.appendChild(slots);
   const hint = el('div', { style: { marginTop: '10px', fontSize: '10px', color: '#788' }});
-  hint.textContent = 'Drag slots to reorder. Hotbar = slots 1-9.';
+  hint.textContent = 'Drag slots to reorder. Click any slot to make it active.';
   _invPanelEl.appendChild(hint);
   document.body.appendChild(_invPanelEl);
   return _invPanelEl;
@@ -250,8 +298,11 @@ export function refreshInventoryUI() {
     if (_effectsEl) _effectsEl.style.display = 'none';
     if (_bloodMoonEl) _bloodMoonEl.style.display = 'none';
     if (_shopHintEl) _shopHintEl.style.display = 'none';
+    if (_actionHintEl) _actionHintEl.style.display = 'none';
     return;
   }
+  const cap = inventoryCapacity();
+  if (game.activeSlot >= cap) game.activeSlot = 0;
   // Shop proximity hint: show when within vendor reach and shop is closed.
   const pp = game.visuals?.player?.playerGroup?.position;
   if (pp && !_shopOpen) {
@@ -268,7 +319,10 @@ export function refreshInventoryUI() {
   // Repaint hotbar
   _hotbarEl.innerHTML = '';
   const inv = Array.isArray(game.inventory) ? game.inventory : [];
-  for (let i = 0; i < 9; i++) renderSlot(inv[i] || null, i, _hotbarEl);
+  for (let i = 0; i < cap; i++) renderSlot(inv[i] || null, i, _hotbarEl);
+  const actionHint = ensureActionHint();
+  actionHint.style.display = 'block';
+  actionHint.textContent = getActiveSlotHint(inv[game.activeSlot] || null);
   // Effects line
   const fx = ensureEffects();
   const parts = [];
@@ -289,7 +343,6 @@ export function refreshInventoryUI() {
   if (_invOpen && _invPanelEl) {
     const slotEl = _invPanelEl.querySelector('#inv-slots');
     slotEl.innerHTML = '';
-    const cap = 9 + (game.backpackTier || 0) * 9;
     for (let i = 0; i < cap; i++) renderSlot(inv[i] || null, i, slotEl);
   }
 }
@@ -403,6 +456,7 @@ if (typeof window !== 'undefined') {
   window.refreshInventoryUI = refreshInventoryUI;
   window.toggleInventoryPanel = toggleInventoryPanel;
   window.toggleShopUI = toggleShopUI;
+  window.isSurvivalShopOpen = () => _shopOpen;
   window.renderShopCatalog = renderShopCatalog;
   window.flashShopRejected = flashShopRejected;
   window.flashShopPurchase = flashShopPurchase;

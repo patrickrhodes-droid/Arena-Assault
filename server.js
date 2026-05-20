@@ -1465,14 +1465,23 @@ const SURVIVAL_SHOP_CATALOG = [
     { id: 'backpack_large', name: 'Large Backpack', price: 800, kind: 'gear', stackSize: 1 },
 ];
 
+// Survival starts with a small inventory (5 slots). Backpacks add capacity:
+// tier 0 = 5, tier 1 = 10, tier 2 = 15.
+const SURVIVAL_BASE_SLOTS = 5;
+const SURVIVAL_SLOTS_PER_TIER = 5;
+
 function makeDefaultSurvivalInventory() {
-    const inv = new Array(9).fill(null);
+    const inv = new Array(SURVIVAL_BASE_SLOTS).fill(null);
     inv[0] = { itemId: 'pistol', qty: 1 };
     return inv;
 }
 
 function inventoryCapacityFor(p) {
-    return 9 + (p.backpackTier || 0) * 9;
+    return SURVIVAL_BASE_SLOTS + (p.backpackTier || 0) * SURVIVAL_SLOTS_PER_TIER;
+}
+
+function survivalSlotIndexIsValid(p, slot) {
+    return Number.isInteger(slot) && slot >= 0 && slot < inventoryCapacityFor(p);
 }
 
 function tryAddToInventory(p, itemId, qty) {
@@ -2350,7 +2359,7 @@ io.on('connection', (socket) => {
         const p = players[socket.id];
         if (!p) return;
         const slot = Number(data?.slot);
-        if (!Number.isInteger(slot) || slot < 0 || slot > 8) return;
+        if (!survivalSlotIndexIsValid(p, slot)) return;
         p.activeSlot = slot;
         // Broadcast so other players' visuals can swap held item
         io.emit('playerActiveSlot', { playerId: socket.id, slot });
@@ -2362,7 +2371,7 @@ io.on('connection', (socket) => {
         const p = players[socket.id];
         if (!p || !p.isAlive) return;
         const slot = Number(data?.slot);
-        if (!Number.isInteger(slot) || slot < 0 || slot > 8) return;
+        if (!survivalSlotIndexIsValid(p, slot)) return;
         const entry = p.inventory[slot];
         if (!entry) return;
         const item = SURVIVAL_SHOP_CATALOG.find(i => i.id === entry.itemId);

@@ -42,6 +42,27 @@ let _swayY          = 0; // current weapon sway offset Y
 let _mouseDeltaX    = 0; // accumulated mouse X delta since last weapon update
 let _mouseDeltaY    = 0;
 
+function getActiveSurvivalSlot() {
+  return game.mode === 'SURVIVAL' ? game.inventory?.[game.activeSlot] || null : null;
+}
+
+function useActiveSurvivalSlot() {
+  const active = getActiveSurvivalSlot();
+  if (!active?.itemId || WEAPON_ORDER.includes(active.itemId)) return false;
+  if (active.itemId === 'torch_placeable') {
+    const pp = game.visuals.player.playerGroup.position;
+    const fx = -Math.sin(game.camTheta);
+    const fz = -Math.cos(game.camTheta);
+    game.socket?.emit('placeTorch', { x: pp.x + fx * 2, z: pp.z + fz * 2 });
+    return true;
+  }
+  if (active.itemId.startsWith('potion_') || active.itemId === 'medkit' || active.itemId === 'pistol_ammo') {
+    game.socket?.emit('inventoryUseSlot', { slot: game.activeSlot });
+    return true;
+  }
+  return false;
+}
+
 function findEnemyFromHit(object) {
   let current = object;
   while (current) {
@@ -314,11 +335,24 @@ export function setupInput(actions) {
       }
     }
 
+    if (
+      event.code === "Escape"
+      && game.mode === 'SURVIVAL'
+      && typeof window !== 'undefined'
+      && window.isSurvivalShopOpen?.()
+      && window.toggleShopUI
+    ) {
+      event.preventDefault();
+      window.toggleShopUI();
+      return;
+    }
+
     if (game.mode === 'SURVIVAL') {
       // Survival hotbar: number keys pick the active slot, not a fixed weapon.
       const digitMatch = event.code.match(/^Digit([1-9])$/);
       if (digitMatch) {
         const slot = Number(digitMatch[1]) - 1;
+        if (slot >= (game.inventory?.length || 0)) return;
         game.activeSlot = slot;
         game.socket?.emit('inventorySetActive', { slot });
         const entry = game.inventory?.[slot];
@@ -330,22 +364,11 @@ export function setupInput(actions) {
       // G: place torch if active slot is one
       if (event.code === 'KeyG' && game.state === 'PLAYING') {
         const active = game.inventory?.[game.activeSlot];
-        if (active && active.itemId === 'torch_placeable') {
-          const pp = game.visuals.player.playerGroup.position;
-          // Place ~2 units in front of the player
-          const fx = -Math.sin(game.camTheta);
-          const fz = -Math.cos(game.camTheta);
-          game.socket?.emit('placeTorch', { x: pp.x + fx * 2, z: pp.z + fz * 2 });
-        }
+        if (active?.itemId === 'torch_placeable') useActiveSurvivalSlot();
       }
       // Q: use active consumable slot
       if (event.code === 'KeyQ' && game.state === 'PLAYING') {
-        const active = game.inventory?.[game.activeSlot];
-        if (active && active.itemId && active.itemId.startsWith('potion_')) {
-          game.socket?.emit('inventoryUseSlot', { slot: game.activeSlot });
-        } else if (active && (active.itemId === 'medkit' || active.itemId === 'pistol_ammo')) {
-          game.socket?.emit('inventoryUseSlot', { slot: game.activeSlot });
-        }
+        useActiveSurvivalSlot();
       }
       // Tab: toggle inventory panel (handled by ui)
       if (event.code === 'Tab' && game.state === 'PLAYING') {
@@ -399,6 +422,11 @@ export function setupInput(actions) {
     // mode — don't fire / aim from clicks on the UI.
     if (game.modalOpen) return;
     if (event.button === 0) {
+      if (game.mode === 'SURVIVAL' && game.state === "PLAYING" && useActiveSurvivalSlot()) {
+        game.mouseDown = false;
+        game.mouseClicked = false;
+        return;
+      }
       game.mouseDown = true;
       game.mouseClicked = true;
     }

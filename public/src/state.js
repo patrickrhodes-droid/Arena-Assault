@@ -130,9 +130,9 @@ export const game = {
   bloodMoon: false,        // server-flagged blood moon active
   money: 0,                // current run currency
   bestMoney: 0,            // career best (mirrored from server)
-  inventory: [],           // Survival hotbar+stash; null or { itemId, qty }
-  activeSlot: 0,           // 0-8 hotbar slot active
-  backpackTier: 0,         // 0|1|2 → 9|18|27 inventory length
+  inventory: [],           // Survival slots; null or { itemId, qty }
+  activeSlot: 0,           // currently selected survival slot
+  backpackTier: 0,         // 0|1|2 -> 5|10|15 inventory slots
   effects: {},             // active potion timers (speed/jump/damage)
   hasJetpack: false,
   jetpackActive: false,

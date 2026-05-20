@@ -21,9 +21,9 @@
       "id": "outpost_wall_n",
       "type": "box",
       "label": "Outpost / Wall N",
-      "position": [0, 2, -10],
+      "position": [0, 3, -10],
       "rotation": [0, 0, 0],
-      "size": [20, 4, 0.4],
+      "size": [20, 6, 0.4],
       "material": "metal",
       "collidable": true
     },
@@ -31,9 +31,9 @@
       "id": "outpost_wall_s",
       "type": "box",
       "label": "Outpost / Wall S",
-      "position": [0, 2, 10],
+      "position": [0, 3, 10],
       "rotation": [0, 0, 0],
-      "size": [20, 4, 0.4],
+      "size": [20, 6, 0.4],
       "material": "metal",
       "collidable": true
     },
@@ -41,9 +41,9 @@
       "id": "outpost_wall_e",
       "type": "box",
       "label": "Outpost / Wall E",
-      "position": [10, 2, 0],
+      "position": [10, 3, 0],
       "rotation": [0, 0, 0],
-      "size": [0.4, 4, 20],
+      "size": [0.4, 6, 20],
       "material": "metal",
       "collidable": true
     },
@@ -51,9 +51,9 @@
       "id": "outpost_wall_w",
       "type": "box",
       "label": "Outpost / Wall W",
-      "position": [-10, 2, 0],
+      "position": [-10, 3, 0],
       "rotation": [0, 0, 0],
-      "size": [0.4, 4, 20],
+      "size": [0.4, 6, 20],
       "material": "metal",
       "collidable": true
     },
@@ -74,6 +74,66 @@
       "position": [0, 0.4, 5],
       "rotation": [0, 0, 0],
       "size": [1.4, 0.8, 1.4],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_1",
+      "type": "box",
+      "label": "Outpost / Step 1",
+      "position": [-7, 0.5, 8.5],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_2",
+      "type": "box",
+      "label": "Outpost / Step 2",
+      "position": [-7, 1.5, 7.4],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_3",
+      "type": "box",
+      "label": "Outpost / Step 3",
+      "position": [-7, 2.5, 6.3],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_4",
+      "type": "box",
+      "label": "Outpost / Step 4",
+      "position": [-7, 3.5, 5.2],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_5",
+      "type": "box",
+      "label": "Outpost / Step 5",
+      "position": [-7, 4.5, 4.1],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
+      "material": "metal",
+      "collidable": true
+    },
+    {
+      "id": "outpost_step_top",
+      "type": "box",
+      "label": "Outpost / Top ledge",
+      "position": [-7, 5.5, 3.0],
+      "rotation": [0, 0, 0],
+      "size": [4, 1, 1.2],
       "material": "metal",
       "collidable": true
     }
