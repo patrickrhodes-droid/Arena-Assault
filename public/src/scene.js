@@ -731,13 +731,10 @@ function buildWildOutposts() {
     vendor.castShadow = true;
     group.add(vendor);
 
-    // Glowing beacon — easy to spot from a distance
+    // Glowing beacon — emissive mesh, no PointLight (saves per-fragment shading cost)
     const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 5, 8), beaconMat);
     beacon.position.set(0, 3, 0);
     group.add(beacon);
-    const beaconLight = new THREE.PointLight(0x00ffaa, 1.0, 22);
-    beaconLight.position.set(0, 5.2, 0);
-    group.add(beaconLight);
 
     game.scene.add(group);
     _outpostMeshes.set(o.id, group);
@@ -760,7 +757,7 @@ function _getCampMats() {
     _campMats = {
       stone:   new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true }),
       charcoal: new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.9 }),
-      flame:   new THREE.MeshBasicMaterial({ color: 0xff8030 }),
+      flame:   new THREE.MeshBasicMaterial({ color: 0xff9040 }),
       totem:   new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 }),
       skull:   new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 }),
     };
@@ -776,30 +773,24 @@ function _buildOneCampMarker(camp) {
   group.position.set(camp.x, y, camp.z);
 
   const stoneGeo = new THREE.IcosahedronGeometry(0.32, 0);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
     const stone = new THREE.Mesh(stoneGeo, stoneMat);
     stone.position.set(Math.cos(a) * 0.7, 0.15, Math.sin(a) * 0.7);
     stone.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-    stone.castShadow = true;
     group.add(stone);
   }
   const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
   log1.rotation.z = Math.PI / 2; log1.position.y = 0.18;
   group.add(log1);
-  const log2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
-  log2.rotation.x = Math.PI / 2; log2.position.y = 0.22;
-  group.add(log2);
   const flame = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 6), flameMat);
   flame.position.y = 0.7;
   group.add(flame);
-  const fireLight = new THREE.PointLight(0xff8830, 1.5, 14);
-  fireLight.position.y = 0.9;
-  group.add(fireLight);
+  // No PointLight — emissive flame mesh is visually identical but costs nothing
+  // extra in lighting. One PointLight per camp × many camps = huge fragment cost.
   const totemH = 1.4 + camp.size * 0.18;
   const totem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, totemH, 7), totemMat);
   totem.position.set(2.4, totemH / 2, 0);
-  totem.castShadow = true;
   group.add(totem);
   const skullMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), totemSkullMat);
   skullMesh.position.set(2.4, totemH + 0.12, 0);

@@ -2902,12 +2902,9 @@ io.on('connection', (socket) => {
         gameState.activeRoamingBoss = null; // tank or mech roaming boss arena
         gameState.driveableVehicles = [];   // jeeps the player has bought, defeated tanks
         gameState.nextRoamingBossTmr = 90 + Math.random() * 60; // first roaming boss after ~90-150s
-        // Pre-discover cells around origin so there are camps near the home base from turn 1
-        for (let dx = -CONTENT_DISCOVER_RADIUS; dx <= CONTENT_DISCOVER_RADIUS; dx++) {
-            for (let dz = -CONTENT_DISCOVER_RADIUS; dz <= CONTENT_DISCOVER_RADIUS; dz++) {
-                discoverContentCell(dx, dz);
-            }
-        }
+        // Pre-discover only the immediate origin cell so there's minimal content
+        // at spawn. The rest generates naturally as the player explores.
+        discoverContentCell(0, 0);
 
         Object.values(players).forEach(p => {
             p.isAlive = true;
