@@ -57,6 +57,14 @@
     },
     {
       "playerName": "Patrick",
+      "score": 3625,
+      "wave": 3,
+      "kills": 25,
+      "date": "2026-05-21",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
       "score": 2950,
       "wave": 8,
       "kills": 4,
@@ -146,14 +154,6 @@
       "wave": 5,
       "kills": 26,
       "date": "2026-05-07"
-    },
-    {
-      "playerName": "Patrick",
-      "score": 500,
-      "wave": 4,
-      "kills": 0,
-      "date": "2026-05-14",
-      "token": null
     }
   ],
   "pvp": [

@@ -570,6 +570,23 @@ if (typeof window !== 'undefined') {
     setTimeout(() => { t.style.opacity = '0'; }, 2500);
     setTimeout(() => t.remove(), 5100);
   };
+  window.flashTankCharge = function () {
+    const t = el('div', { style: {
+      position: 'fixed', top: '24%', left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '10px 22px',
+      background: 'rgba(80, 10, 0, 0.92)',
+      border: '2px solid #ff5533',
+      color: '#ffe0c0',
+      fontFamily: 'monospace', fontSize: '20px', letterSpacing: '4px',
+      zIndex: '62', pointerEvents: 'none',
+      transition: 'opacity 1.6s ease-out',
+    }});
+    t.textContent = 'TANK CHARGING — MOVE!';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 1800);
+    setTimeout(() => t.remove(), 3500);
+  };
   window.flashDroneEvent = function () {
     const t = el('div', { style: {
       position: 'fixed', top: '120px', left: '50%',

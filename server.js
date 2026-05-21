@@ -1322,13 +1322,15 @@ function spawnTankMissile(tank, target) {
         targetId: target.playerId,
         life: 9.0,
         ownerId: tank.id,
+        hp: 30,
+        radius: 0.6,
     };
     if (!gameState.missiles) gameState.missiles = [];
     gameState.missiles.push(missile);
     io.emit('missileSpawned', {
         id, x: missile.x, y: missile.y, z: missile.z,
         vx: missile.vx, vy: missile.vy, vz: missile.vz,
-        spd: missile.spd,
+        spd: missile.spd, hp: missile.hp, radius: missile.radius,
     });
 }
 
@@ -1375,9 +1377,9 @@ function tickMissiles(dt) {
     if (updates.length > 0) io.emit('missilesSynced', updates);
 }
 
-// Tank AI tick — slow tracking + missile barrage. Runs server-side because the
-// tank is a boss enemy; the existing enemy AI is client-owned but the tank's
-// firing must validate damage authoritatively, so we drive it from the server.
+// Tank AI tick — slow tracking + missile barrage + occasional charge attack.
+// Runs server-side because the tank is a boss enemy and missile firing /
+// collision damage must validate authoritatively.
 function tickTanks(dt) {
     const alive = getAlivePlayers();
     if (alive.length === 0) return;
@@ -1391,10 +1393,36 @@ function tickTanks(dt) {
             if (d2 < bestD2) { bestD2 = d2; best = p; }
         }
         if (!best) continue;
-        // Slow rotate toward target (cosmetic, the client mirrors enemy.rot)
-        // and trundle forward only if outside ideal engagement distance
         const dx = best.x - tank.x, dz = best.z - tank.z;
         const d = Math.sqrt(bestD2);
+        tank.rot = Math.atan2(dx, dz);
+
+        // ── State machine: NORMAL ↔ CHARGING ──────────────────────────────
+        tank._chargeCooldown = (tank._chargeCooldown ?? 8) - dt;
+        if (tank.chargeTmr > 0) {
+            // CHARGING: ram toward target at high speed; deal damage on contact.
+            tank.chargeTmr -= dt;
+            const inv = 1 / Math.max(d, 0.01);
+            const chargeSpd = 18;
+            tank.x += dx * inv * chargeSpd * dt;
+            tank.z += dz * inv * chargeSpd * dt;
+            if (typeof gameState.terrainSeed === 'number') {
+                tank.y = sampleHeight(tank.x, tank.z, gameState.terrainSeed);
+            }
+            // Contact damage if close enough
+            if (d < 3.2 && (tank._chargeHitTmr ?? 0) <= 0) {
+                applyEnemyDamage(best.playerId, 65, tank.id, dx * inv * 8, dz * inv * 8);
+                tank._chargeHitTmr = 0.5; // small i-frame so a single charge only hits once
+            }
+            tank._chargeHitTmr = Math.max(0, (tank._chargeHitTmr ?? 0) - dt);
+            if (tank.chargeTmr <= 0) {
+                tank._chargeCooldown = 7 + Math.random() * 4;
+                io.emit('survivalEvent', { type: 'tankChargeEnd', tankId: tank.id });
+            }
+            continue; // skip normal movement / firing this tick
+        }
+
+        // NORMAL: trundle forward only if outside ideal engagement distance
         if (d > 24) {
             const inv = 1 / Math.max(d, 0.01);
             const step = (tank.spd || 3.5) * dt;
@@ -1404,12 +1432,17 @@ function tickTanks(dt) {
                 tank.y = sampleHeight(tank.x, tank.z, gameState.terrainSeed);
             }
         }
-        tank.rot = Math.atan2(dx, dz);
         // Fire missile when cooldown elapses and target is in sight range
         tank.atkTmr = (tank.atkTmr ?? 0) - dt;
         if (tank.atkTmr <= 0 && d < 70) {
             tank.atkTmr = tank.fireInt || 3.5;
             spawnTankMissile(tank, best);
+        }
+        // Trigger a 3s charge if cooldown elapsed and target is in a useful band
+        if (tank._chargeCooldown <= 0 && d > 6 && d < 38) {
+            tank.chargeTmr = 3.0;
+            tank._chargeHitTmr = 0;
+            io.emit('survivalEvent', { type: 'tankChargeStart', tankId: tank.id });
         }
     }
 }
@@ -2240,6 +2273,28 @@ function tickSurvival(dt) {
     // Drone ping decay
     if (gameState.dronePing && Date.now() > gameState.dronePing.until) {
         gameState.dronePing = null;
+    }
+
+    // Boss arena exclusion: while a dome is active, push every enemy that's
+    // NOT the boss (or its missiles) out of the radius so the duel stays 1v1.
+    if (gameState.activeRoamingBoss) {
+        const arena = gameState.activeRoamingBoss;
+        const r = (arena.radius || 38) + 1.0;
+        for (const e of gameState.enemies) {
+            if (e.id === arena.bossId) continue;
+            if (e.isScoutDrone) continue; // drones float overhead, leave them
+            const dx = (e.x || 0) - arena.x;
+            const dz = (e.z || 0) - arena.z;
+            const d2 = dx * dx + dz * dz;
+            if (d2 < r * r) {
+                const d = Math.sqrt(d2) || 1;
+                e.x = arena.x + (dx / d) * r;
+                e.z = arena.z + (dz / d) * r;
+                if (typeof gameState.terrainSeed === 'number') {
+                    e.y = sampleHeight(e.x, e.z, gameState.terrainSeed);
+                }
+            }
+        }
     }
 
     // Expire effects
@@ -3187,6 +3242,22 @@ io.on('connection', (socket) => {
         // Send to everyone EXCEPT the sender — the sender already displays an
         // optimistic local echo, so server-broadcasting back would duplicate it.
         socket.broadcast.emit('chatMessage', { playerName, text });
+    });
+
+    // Client reports their bullet hit an incoming homing missile. Missiles
+    // have HP; once it's depleted they detonate harmlessly.
+    socket.on('missileHit', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'missileHit', 30)) return;
+        const id = String(data?.id || '');
+        const dmg = Math.min(120, Math.max(1, Number(data?.damage) || 10));
+        const m = (gameState.missiles || []).find(x => x.id === id);
+        if (!m) return;
+        m.hp -= dmg;
+        if (m.hp <= 0) {
+            io.emit('missileExploded', { id: m.id, x: m.x, y: m.y, z: m.z, hit: false });
+            gameState.missiles = gameState.missiles.filter(x => x.id !== m.id);
+        }
     });
 
     // Client reports their bullet hit an enemy — server is now authoritative

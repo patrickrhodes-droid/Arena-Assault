@@ -560,6 +560,8 @@ export function initNetworking(actions) {
       window.flashChampionEvent(data.x, data.z);
     } else if (data?.type === 'droneSpawned' && typeof window !== 'undefined' && window.flashDroneEvent) {
       window.flashDroneEvent();
+    } else if (data?.type === 'tankChargeStart' && typeof window !== 'undefined' && window.flashTankCharge) {
+      window.flashTankCharge();
     }
   });
 

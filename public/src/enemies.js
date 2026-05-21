@@ -1150,6 +1150,21 @@ function runOwnedEnemyAI(enemy) {
     enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
     return;
   }
+
+  // Boss arena exclusion: while a roaming-boss dome is active, no enemy
+  // EXCEPT the boss itself may enter the dome. Push owned enemies out so
+  // the player has a true 1v1 inside the dome.
+  if (game.activeBossArena && !enemy.isRoamingBoss && enemy.type !== 'tank') {
+    const a = game.activeBossArena;
+    const dxA = pos.x - a.x, dzA = pos.z - a.z;
+    const dA = Math.hypot(dxA, dzA);
+    const wallR = (a.radius || 38) + 1.0;
+    if (dA < wallR) {
+      const inv = dA > 0.001 ? 1 / dA : 1;
+      pos.x = a.x + dxA * inv * wallR;
+      pos.z = a.z + dzA * inv * wallR;
+    }
+  }
   if (enemy.isScoutDrone) {
     ownedDroneAI(enemy, pos, closest, dist, ndx, ndz);
   }

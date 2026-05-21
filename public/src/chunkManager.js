@@ -351,6 +351,13 @@ function destroyChunk(record) {
   }
 }
 
+// Cap how many chunks we build per frame. Building a chunk is ~7000 simplex
+// calls + a PlaneGeometry + several prop meshes; doing the full 49-chunk spawn
+// set in one frame freezes the main thread for hundreds of milliseconds when
+// the player first loads in. Streaming a few per frame keeps each frame under
+// the budget while still filling the world within ~1 second.
+const MAX_CHUNK_BUILDS_PER_FRAME = 2;
+
 export function updateChunkStreaming(playerPos) {
   if (game.mode !== 'SURVIVAL') return;
   if (!game.scene || !game.arenaGroup) return;
@@ -363,10 +370,19 @@ export function updateChunkStreaming(playerPos) {
       want.add(chunkKey(pcx + dx, pcz + dz));
     }
   }
-  // Load missing
+  // Collect missing chunks, sort by distance from the player so the player's
+  // immediate surroundings build first, then drip in the outer ring.
+  const missing = [];
   for (const key of want) {
     if (game.chunks.has(key)) continue;
     const [cx, cz] = key.split('|').map(Number);
+    const ddx = cx - pcx, ddz = cz - pcz;
+    missing.push({ key, cx, cz, dist: ddx * ddx + ddz * ddz });
+  }
+  missing.sort((a, b) => a.dist - b.dist);
+  const budget = Math.min(MAX_CHUNK_BUILDS_PER_FRAME, missing.length);
+  for (let i = 0; i < budget; i++) {
+    const { key, cx, cz } = missing[i];
     const mesh = buildChunkMesh(cx, cz, seed);
     game.arenaGroup.add(mesh);
     const { group, destructibles, obstacleEntries } = buildChunkProps(cx, cz, seed);

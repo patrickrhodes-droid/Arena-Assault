@@ -378,7 +378,10 @@ function ensureMissileMesh(id, data) {
   const gltf = game.shared.missileGltf;
   if (gltf) {
     const model = gltf.scene.clone(true);
-    model.scale.setScalar(0.6);
+    // GLB ships with the nose pointing along +X; rotate -90° about Y so the
+    // nose lies along +Z to match our velocity-driven yaw math below.
+    model.rotation.y = -Math.PI / 2;
+    model.scale.setScalar(0.15);
     group.add(model);
   } else {
     const body = new THREE.Mesh(
@@ -423,6 +426,19 @@ if (typeof window !== 'undefined') {
     if (rec) { rec.group.parent?.remove(rec.group); _missileMeshes.delete(data.id); }
     // Burst of orange/yellow particles via global hook (set by combat.js)
     if (window.__spawnExplosion) window.__spawnExplosion(data.x, data.y, data.z);
+  };
+  // Returns the id of any missile whose hitbox intersects the bullet segment,
+  // or null. Used by combat.js so bullets can shoot missiles down.
+  window.__findMissileHit = (prev, cur) => {
+    if (_missileMeshes.size === 0) return null;
+    const RADIUS_SQ = 0.8 * 0.8;
+    for (const [id, rec] of _missileMeshes) {
+      const dx = rec.x - cur.x;
+      const dy = rec.y - cur.y;
+      const dz = rec.z - cur.z;
+      if (dx * dx + dy * dy + dz * dz < RADIUS_SQ) return id;
+    }
+    return null;
   };
 }
 

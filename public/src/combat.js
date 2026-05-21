@@ -343,6 +343,18 @@ export function updateBullets({ processHit, playerDiedLocal, showDamage, addShak
       }
     }
 
+    // Bullet vs. incoming homing missile — players can shoot down missiles.
+    // Missiles live in window.__missileMeshes (scene.js) keyed by id. We probe
+    // via a small helper exposed there to avoid pulling scene state in here.
+    if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote && typeof window !== 'undefined' && window.__findMissileHit) {
+      const hitMissile = window.__findMissileHit(bullet.prevPos, position);
+      if (hitMissile) {
+        spawnParticles(position, 6, 0xffaa00, 6, false);
+        game.socket?.emit('missileHit', { id: hitMissile, damage: bullet.damage || 12 });
+        shouldRemove = true;
+      }
+    }
+
     if (!shouldRemove && bullet.isPlayer && !bullet.fromRemote) {
       // Find the NEAREST enemy whose hitbox intersects this bullet's path segment.
       // Using nearest (not first-in-array) ensures different spread pellets (shotgun)
