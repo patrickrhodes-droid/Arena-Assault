@@ -10,6 +10,7 @@ import { game } from "./state.js";
 import { disposeObject3D } from "./utils.js";
 import { buildMapFromJson } from "./mapLoader.js";
 import { sampleHeight } from "./shared/noise.js";
+import { disposeAllChunks } from "./chunkManager.js";
 
 export function applyCharacterHead(headGroup, characterId, options = {}) {
   for (let i = headGroup.children.length - 1; i >= 0; i -= 1) {
@@ -316,7 +317,7 @@ export async function rebuildArena(mapId) {
   game.oBs.length = 0;
   game.ladders.length = 0;
   game.destructibles.length = 0;
-  if (game.chunks) game.chunks.clear();
+  if (game.chunks) disposeAllChunks();
 
   game.arenaGroup = new THREE.Group();
   game.scene.add(game.arenaGroup);
@@ -649,7 +650,8 @@ export function tickJetpackParticles(dt, spawnParticlesFn) {
 function buildSurvivalSceneChrome() {
   game.shared.survivalSkyMode = null;
   setSurvivalSkyForTime(false);
-  game.scene.fog = new THREE.FogExp2(0xcde0ea, 0.012);
+  // Slightly denser fog so the 5×5 chunk boundary stays hidden
+  game.scene.fog = new THREE.FogExp2(0xcde0ea, 0.016);
 
   const hemi = new THREE.HemisphereLight(0xb8d6f0, 0x3a4030, 1.2);
   game.scene.add(hemi);
@@ -658,13 +660,15 @@ function buildSurvivalSceneChrome() {
   const sun = new THREE.DirectionalLight(0xffffff, 1.2);
   sun.position.set(120, 180, 60);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.left = -60;
-  sun.shadow.camera.right = 60;
-  sun.shadow.camera.top = 60;
-  sun.shadow.camera.bottom = -60;
+  // Smaller shadow map + tighter frustum — the dynamic sun only needs to
+  // cover the immediate area around the player, not the full chunk horizon.
+  sun.shadow.mapSize.set(512, 512);
+  sun.shadow.camera.left = -50;
+  sun.shadow.camera.right = 50;
+  sun.shadow.camera.top = 50;
+  sun.shadow.camera.bottom = -50;
   sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 400;
+  sun.shadow.camera.far = 80;
   sun.target = new THREE.Object3D();
   game.scene.add(sun.target);
   game.scene.add(sun);

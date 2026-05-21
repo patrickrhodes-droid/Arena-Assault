@@ -714,8 +714,11 @@ export function triggerDestructible(propId, origin, processHit) {
   // Survival trees/rocks: gentle particle effects + a money pickup. Barrels
   // and other COOP destructibles keep the dramatic explosion + AOE damage.
   if (kind === 'tree' || kind === 'rock') {
-    if (d.mesh?.parent) {
-      // Brief fall-over for trees, instant remove for rocks
+    // Instanced trees/rocks: call the slot-release closure instead of mesh ops
+    if (d.hideInst) {
+      d.hideInst();
+    } else if (d.mesh?.parent) {
+      // Legacy non-instanced fallback (mesh-based props)
       if (kind === 'tree') {
         const mesh = d.mesh;
         const startTime = performance.now();

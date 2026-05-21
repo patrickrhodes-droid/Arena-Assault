@@ -1,9 +1,9 @@
 // Tunables for Survival mode. Imported by both server and client.
 
 export const CHUNK_SIZE = 64;       // world units per chunk side
-export const CHUNK_RES  = 24;       // vertices per chunk side (23x23 quads ~= 1k tris/chunk)
-export const LOAD_RADIUS   = 3;     // 7x7 chunks around player
-export const UNLOAD_RADIUS = 4;     // hysteresis before disposal
+export const CHUNK_RES  = 16;       // vertices per chunk side (15x15 quads ~= 450 tris/chunk)
+export const LOAD_RADIUS   = 2;     // 5x5 chunks around player
+export const UNLOAD_RADIUS = 3;     // hysteresis before disposal
 
 export const OUTPOST_RADIUS = 18;   // no-fire / no-spawn safe radius around origin
 export const VENDOR_REACH   = 6;    // E key opens shop within this distance from vendor

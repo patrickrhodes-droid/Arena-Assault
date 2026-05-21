@@ -47,7 +47,7 @@ function loadGlb(url) {
   const p = new Promise((resolve) => {
     _gltfLoader.load(url, (gltf) => {
       gltf.scene.traverse((n) => {
-        if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
+        if (n.isMesh) { n.castShadow = false; n.receiveShadow = false; }
       });
       resolve(gltf);
     }, undefined, () => resolve(null));
@@ -64,7 +64,6 @@ const BIOME_COLORS = {
 };
 
 const TRUNK_COLOR  = new THREE.Color(0x4a2d1a);
-const TRUNK_SNOWY  = new THREE.Color(0x3d2614);
 const CROWN_COLOR = {
   [BIOME_MEADOW]:    new THREE.Color(0x3f7a2a),
   [BIOME_FROSTPINE]: new THREE.Color(0x2a4a2a),
@@ -100,16 +99,12 @@ function ensureSharedAssets() {
   _trunkMat = new THREE.MeshStandardMaterial({ color: TRUNK_COLOR, roughness: 0.95, flatShading: true });
   _crownGeoBy = {};
   _crownMatBy = {};
-  // Meadow: rounded conifer-y blob
   _crownGeoBy[BIOME_MEADOW] = new THREE.ConeGeometry(1.0, 2.4, 7);
   _crownGeoBy[BIOME_MEADOW].translate(0, 3.0, 0);
-  // Frostpine: pine, taller + narrower
   _crownGeoBy[BIOME_FROSTPINE] = new THREE.ConeGeometry(0.8, 3.6, 7);
   _crownGeoBy[BIOME_FROSTPINE].translate(0, 3.6, 0);
-  // Ashfen: bare burnt trunk top — use a thin cone for branch silhouette
   _crownGeoBy[BIOME_ASHFEN] = new THREE.ConeGeometry(0.5, 1.6, 5);
   _crownGeoBy[BIOME_ASHFEN].translate(0, 2.6, 0);
-  // Crimson: crystal spire — sharp octahedron
   _crownGeoBy[BIOME_CRIMSON] = new THREE.OctahedronGeometry(1.0, 0);
   _crownGeoBy[BIOME_CRIMSON].scale(0.7, 1.6, 0.7);
   _crownGeoBy[BIOME_CRIMSON].translate(0, 2.6, 0);
@@ -128,6 +123,84 @@ function ensureSharedAssets() {
     });
   }
 }
+
+// ── InstancedMesh pool (one trunk IM, one crown IM per biome, one rock IM per biome) ──
+// Minecraft's core trick: merge all same-material geometry into a single draw call.
+// Going from ~1800 individual meshes → ~9 InstancedMesh objects.
+
+const _BIOMES = [BIOME_MEADOW, BIOME_FROSTPINE, BIOME_ASHFEN, BIOME_CRIMSON];
+
+// Cap at (LOAD_RADIUS*2+1)^2 * max density + 30% headroom.
+// With LOAD_RADIUS=2: 5×5=25 chunks. 25×8 trees = 200 trunk/crown slots.
+// 25×7 rocks = 175, round up.
+const TREE_CAPACITY = 256;
+const ROCK_CAPACITY = 256;
+
+let _trunkIM = null;
+let _trunkAlloc = null;
+const _crownIM = {};
+const _crownAlloc = {};
+const _rockIM = {};
+const _rockAlloc = {};
+
+const _dummy = new THREE.Object3D();
+const _hiddenMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
+
+class SlotAllocator {
+  constructor(capacity) {
+    this._free = [];
+    for (let i = capacity - 1; i >= 0; i--) this._free.push(i);
+  }
+  alloc() { return this._free.pop(); } // undefined when full
+  release(slot) { if (slot != null) this._free.push(slot); }
+  releaseAll(slots) { for (const s of slots) this.release(s); }
+}
+
+function ensureInstances() {
+  if (_trunkIM) return;
+  ensureSharedAssets();
+
+  _trunkIM = new THREE.InstancedMesh(_trunkGeo, _trunkMat, TREE_CAPACITY);
+  _trunkIM.castShadow = false;
+  _trunkIM.receiveShadow = false;
+  _trunkIM.frustumCulled = false;
+  for (let i = 0; i < TREE_CAPACITY; i++) _trunkIM.setMatrixAt(i, _hiddenMatrix);
+  _trunkIM.instanceMatrix.needsUpdate = true;
+  game.scene.add(_trunkIM);
+  _trunkAlloc = new SlotAllocator(TREE_CAPACITY);
+
+  for (const b of _BIOMES) {
+    const cim = new THREE.InstancedMesh(_crownGeoBy[b], _crownMatBy[b], TREE_CAPACITY);
+    cim.castShadow = false;
+    cim.receiveShadow = false;
+    cim.frustumCulled = false;
+    for (let i = 0; i < TREE_CAPACITY; i++) cim.setMatrixAt(i, _hiddenMatrix);
+    cim.instanceMatrix.needsUpdate = true;
+    game.scene.add(cim);
+    _crownIM[b] = cim;
+    _crownAlloc[b] = new SlotAllocator(TREE_CAPACITY);
+
+    const rim = new THREE.InstancedMesh(_rockGeo, _rockMatBy[b], ROCK_CAPACITY);
+    rim.castShadow = false;
+    rim.receiveShadow = false;
+    rim.frustumCulled = false;
+    for (let i = 0; i < ROCK_CAPACITY; i++) rim.setMatrixAt(i, _hiddenMatrix);
+    rim.instanceMatrix.needsUpdate = true;
+    game.scene.add(rim);
+    _rockIM[b] = rim;
+    _rockAlloc[b] = new SlotAllocator(ROCK_CAPACITY);
+  }
+}
+
+function teardownInstances() {
+  if (_trunkIM) { game.scene?.remove(_trunkIM); _trunkIM = null; _trunkAlloc = null; }
+  for (const b of _BIOMES) {
+    if (_crownIM[b]) { game.scene?.remove(_crownIM[b]); delete _crownIM[b]; delete _crownAlloc[b]; }
+    if (_rockIM[b])  { game.scene?.remove(_rockIM[b]);  delete _rockIM[b];  delete _rockAlloc[b]; }
+  }
+}
+
+// ── Terrain mesh (one per chunk, ~450 triangles at CHUNK_RES=16) ──────────────
 
 function buildChunkMesh(cx, cz, seed) {
   ensureSharedAssets();
@@ -154,15 +227,16 @@ function buildChunkMesh(cx, cz, seed) {
   geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, _terrainMaterial);
   mesh.receiveShadow = true;
+  // Terrain doesn't need to cast shadow — the shadow comes from above and the
+  // ground receiving is what matters. Disabling castShadow halves shadow draw calls.
+  mesh.castShadow = false;
   mesh.position.set(baseX + CHUNK_SIZE / 2, 0, baseZ + CHUNK_SIZE / 2);
   return mesh;
 }
 
 function getCachedGlbSync(url) {
-  // Promise resolved? Return the GLTF; otherwise return null.
   const entry = _propCache.get(url);
   if (!entry) return null;
-  // Trick: if the promise has a .__resolved property we set ourselves, return it.
   return entry.__resolved || null;
 }
 
@@ -187,121 +261,151 @@ function placeProp(rng, props, x, z, minDist) {
   return true;
 }
 
+// ── Chunk props: trees + rocks via InstancedMesh, scatter props as individual meshes ─
+
 function buildChunkProps(cx, cz, seed) {
   ensureSharedAssets();
-  const group = new THREE.Group();
-  const props = [];
+  ensureInstances();
+
+  const scatterGroup = new THREE.Group(); // only scatter GLB props go here
+  const props = [];           // spatial de-overlap list
   const destructibles = [];
   const obstacleEntries = [];
+  const treeSlots = [];       // { trunkSlot, crownSlot, biome } — for cleanup
+  const rockSlots = [];       // { slot, biome } — for cleanup
 
   const rng = mulberry32(hash2(cx, cz, seed));
   const baseX = cx * CHUNK_SIZE;
   const baseZ = cz * CHUNK_SIZE;
 
-  // Determine "dominant" biome at the chunk centre for prop density
   const cxw = baseX + CHUNK_SIZE / 2;
   const czw = baseZ + CHUNK_SIZE / 2;
   const { id: chunkBiome } = sampleBiome(cxw, czw, seed);
 
-  const treeDensity = { [BIOME_MEADOW]: 8, [BIOME_FROSTPINE]: 12, [BIOME_ASHFEN]: 4, [BIOME_CRIMSON]: 6 }[chunkBiome] ?? 6;
-  const rockDensity = { [BIOME_MEADOW]: 4, [BIOME_FROSTPINE]: 6, [BIOME_ASHFEN]: 9, [BIOME_CRIMSON]: 10 }[chunkBiome] ?? 5;
+  const treeDensity = { [BIOME_MEADOW]: 6, [BIOME_FROSTPINE]: 8, [BIOME_ASHFEN]: 4, [BIOME_CRIMSON]: 5 }[chunkBiome] ?? 5;
+  const rockDensity = { [BIOME_MEADOW]: 3, [BIOME_FROSTPINE]: 4, [BIOME_ASHFEN]: 6, [BIOME_CRIMSON]: 7 }[chunkBiome] ?? 4;
 
-  // Trees — prefer real GLBs when cached, fall back to primitive cones.
+  // ── Trees (instanced trunk + crown, no shadow, one draw call each across all chunks) ──
   for (let i = 0; i < treeDensity; i++) {
     const wx = baseX + rng() * CHUNK_SIZE;
     const wz = baseZ + rng() * CHUNK_SIZE;
-    // Skip outpost safe zone
     if (isInsideAnyOutpost(wx, wz)) continue;
-    // Skip steep slopes
     if (sampleSlope(wx, wz, seed) > 0.45) continue;
     if (!placeProp(rng, props, wx, wz, 3.5)) continue;
+
     const y = sampleHeight(wx, wz, seed);
     const { id: localBiome } = sampleBiome(wx, wz, seed);
-
-    const tree = new THREE.Group();
-    const glbUrls = TREE_GLB_BY_BIOME[localBiome] || [];
-    const glbUrl = glbUrls[Math.floor(rng() * glbUrls.length)] || null;
-    const cached = glbUrl ? getCachedGlbSync(glbUrl) : null;
-    if (cached) {
-      const clone = cached.scene.clone(true);
-      clone.traverse((n) => { if (n.isMesh) n.castShadow = true; });
-      tree.add(clone);
-    } else {
-      const trunk = new THREE.Mesh(_trunkGeo, _trunkMat);
-      const crown = new THREE.Mesh(_crownGeoBy[localBiome], _crownMatBy[localBiome]);
-      tree.add(trunk);
-      tree.add(crown);
-      trunk.castShadow = true;
-      crown.castShadow = true;
-    }
     const s = 0.9 + rng() * 0.45;
-    tree.scale.setScalar(s);
-    tree.rotation.y = rng() * Math.PI * 2;
-    tree.position.set(wx, y, wz);
-    group.add(tree);
+    const ry = rng() * Math.PI * 2;
 
-    const propId = `tree_${cx}_${cz}_${i}`;
-    // Fat AABB encompasses trunk + crown so bullets aimed anywhere on the
-    // tree hit something and trigger destruction.
-    const half = 0.9 * s;
-    const obsEntry = {
-      min: { x: wx - half, z: wz - half },
-      max: { x: wx + half, z: wz + half },
-      h: y + 4.5 * s, yMin: y,
-    };
-    game.oBs.push(obsEntry);
-    obstacleEntries.push(obsEntry);
-    const destEntry = {
-      id: propId, mesh: tree,
-      x: wx, z: wz,
-      triggerRadius: 2.4 * s,
-      obsEntry, alive: true,
-      kind: 'tree', biome: localBiome,
-      hp: 30, maxHp: 30,
-    };
-    game.destructibles.push(destEntry);
-    destructibles.push(destEntry);
+    const trunkSlot = _trunkAlloc?.alloc();
+    const crownSlot = _crownAlloc[localBiome]?.alloc();
+
+    if (trunkSlot != null && crownSlot != null) {
+      // Write trunk instance matrix
+      _dummy.position.set(wx, y, wz);
+      _dummy.rotation.set(0, ry, 0);
+      _dummy.scale.setScalar(s);
+      _dummy.updateMatrix();
+      _trunkIM.setMatrixAt(trunkSlot, _dummy.matrix);
+      _trunkIM.instanceMatrix.needsUpdate = true;
+
+      // Crown shares the same world transform (geometry is pre-shifted upward)
+      _crownIM[localBiome].setMatrixAt(crownSlot, _dummy.matrix);
+      _crownIM[localBiome].instanceMatrix.needsUpdate = true;
+
+      const propId = `tree_${cx}_${cz}_${i}`;
+      const half = 0.9 * s;
+      const obsEntry = {
+        min: { x: wx - half, z: wz - half },
+        max: { x: wx + half, z: wz + half },
+        h: y + 4.5 * s, yMin: y,
+      };
+      game.oBs.push(obsEntry);
+      obstacleEntries.push(obsEntry);
+
+      // Close over the slot indices so triggerDestructible can hide just this instance.
+      const _ts = trunkSlot, _cs = crownSlot, _lb = localBiome;
+      const hideInst = () => {
+        _trunkIM.setMatrixAt(_ts, _hiddenMatrix);
+        _trunkIM.instanceMatrix.needsUpdate = true;
+        _trunkAlloc?.release(_ts);
+        _crownIM[_lb]?.setMatrixAt(_cs, _hiddenMatrix);
+        if (_crownIM[_lb]) _crownIM[_lb].instanceMatrix.needsUpdate = true;
+        _crownAlloc[_lb]?.release(_cs);
+        // Remove from tracking so destroyChunk doesn't double-free
+        const idx = treeSlots.findIndex(t => t.trunkSlot === _ts);
+        if (idx >= 0) treeSlots.splice(idx, 1);
+      };
+
+      treeSlots.push({ trunkSlot, crownSlot, biome: localBiome });
+      const destEntry = {
+        id: propId, hideInst,
+        x: wx, z: wz,
+        triggerRadius: 2.4 * s,
+        obsEntry, alive: true,
+        kind: 'tree', biome: localBiome,
+        hp: 30, maxHp: 30,
+      };
+      game.destructibles.push(destEntry);
+      destructibles.push(destEntry);
+    }
   }
 
-  // Rocks
+  // ── Rocks (instanced per biome, no shadow) ────────────────────────────────────
   for (let i = 0; i < rockDensity; i++) {
     const wx = baseX + rng() * CHUNK_SIZE;
     const wz = baseZ + rng() * CHUNK_SIZE;
     if (isInsideAnyOutpost(wx, wz)) continue;
     if (!placeProp(rng, props, wx, wz, 2.5)) continue;
+
     const y = sampleHeight(wx, wz, seed);
     const { id: localBiome } = sampleBiome(wx, wz, seed);
-    const rock = new THREE.Mesh(_rockGeo, _rockMatBy[localBiome]);
     const s = 0.6 + rng() * 1.4;
-    rock.scale.setScalar(s);
-    rock.rotation.set(rng() * Math.PI, rng() * Math.PI, rng() * Math.PI);
-    rock.position.set(wx, y + 0.15 * s, wz);
-    rock.castShadow = true;
-    rock.receiveShadow = true;
-    group.add(rock);
 
-    const propId = `rock_${cx}_${cz}_${i}`;
-    const halfRock = 0.6 * s;
-    const obsEntry = {
-      min: { x: wx - halfRock, z: wz - halfRock },
-      max: { x: wx + halfRock, z: wz + halfRock },
-      h: y + 0.5 * s, yMin: y,
-    };
-    game.oBs.push(obsEntry);
-    obstacleEntries.push(obsEntry);
-    const destEntry = {
-      id: propId, mesh: rock,
-      x: wx, z: wz,
-      triggerRadius: 1.4 * s,
-      obsEntry, alive: true,
-      kind: 'rock', biome: localBiome,
-      hp: 80, maxHp: 80,
-    };
-    game.destructibles.push(destEntry);
-    destructibles.push(destEntry);
+    const slot = _rockAlloc[localBiome]?.alloc();
+    if (slot != null) {
+      _dummy.position.set(wx, y + 0.15 * s, wz);
+      _dummy.rotation.set(rng() * Math.PI, rng() * Math.PI, rng() * Math.PI);
+      _dummy.scale.setScalar(s);
+      _dummy.updateMatrix();
+      _rockIM[localBiome].setMatrixAt(slot, _dummy.matrix);
+      _rockIM[localBiome].instanceMatrix.needsUpdate = true;
+
+      const propId = `rock_${cx}_${cz}_${i}`;
+      const halfRock = 0.6 * s;
+      const obsEntry = {
+        min: { x: wx - halfRock, z: wz - halfRock },
+        max: { x: wx + halfRock, z: wz + halfRock },
+        h: y + 0.5 * s, yMin: y,
+      };
+      game.oBs.push(obsEntry);
+      obstacleEntries.push(obsEntry);
+
+      const _sl = slot, _lb = localBiome;
+      const hideInst = () => {
+        _rockIM[_lb]?.setMatrixAt(_sl, _hiddenMatrix);
+        if (_rockIM[_lb]) _rockIM[_lb].instanceMatrix.needsUpdate = true;
+        _rockAlloc[_lb]?.release(_sl);
+        const idx = rockSlots.findIndex(r => r.slot === _sl);
+        if (idx >= 0) rockSlots.splice(idx, 1);
+      };
+
+      rockSlots.push({ slot, biome: localBiome });
+      const destEntry = {
+        id: propId, hideInst,
+        x: wx, z: wz,
+        triggerRadius: 1.4 * s,
+        obsEntry, alive: true,
+        kind: 'rock', biome: localBiome,
+        hp: 80, maxHp: 80,
+      };
+      game.destructibles.push(destEntry);
+      destructibles.push(destEntry);
+    }
   }
 
-  // Scatter props (non-destructible decor — bushes, crates, barrels)
+  // ── Scatter props (GLB-based decorative clutter, rare) ───────────────────────
   const scatterDensity = 3;
   for (let i = 0; i < scatterDensity; i++) {
     if (rng() > 0.55) continue;
@@ -314,32 +418,40 @@ function buildChunkProps(cx, cz, seed) {
     const cached = getCachedGlbSync(url);
     if (!cached) continue;
     const propMesh = cached.scene.clone(true);
-    propMesh.traverse((n) => { if (n.isMesh) n.castShadow = true; });
+    propMesh.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = false; } });
     const s = 0.7 + rng() * 0.6;
     propMesh.scale.setScalar(s);
     propMesh.rotation.y = rng() * Math.PI * 2;
     propMesh.position.set(wx, sampleHeight(wx, wz, seed), wz);
-    group.add(propMesh);
+    scatterGroup.add(propMesh);
   }
 
-  return { group, destructibles, obstacleEntries };
+  return { scatterGroup, destructibles, obstacleEntries, treeSlots, rockSlots };
 }
 
 function destroyChunk(record) {
-  // Remove mesh + props from scene
+  // Remove terrain mesh
   if (record.mesh) {
     record.mesh.geometry?.dispose();
     record.mesh.parent?.remove(record.mesh);
   }
-  if (record.propsGroup) {
-    record.propsGroup.traverse((node) => {
-      if (node.isMesh && node !== record.mesh) {
-        // Don't dispose shared materials/geometries
-      }
-    });
-    record.propsGroup.parent?.remove(record.propsGroup);
+  // Remove scatter props
+  if (record.scatterGroup) {
+    record.scatterGroup.parent?.remove(record.scatterGroup);
   }
-  // Remove obstacle entries (splice each)
+  // Release tree instance slots
+  for (const ts of record.treeSlots || []) {
+    if (_trunkIM) { _trunkIM.setMatrixAt(ts.trunkSlot, _hiddenMatrix); _trunkIM.instanceMatrix.needsUpdate = true; }
+    _trunkAlloc?.release(ts.trunkSlot);
+    if (_crownIM[ts.biome]) { _crownIM[ts.biome].setMatrixAt(ts.crownSlot, _hiddenMatrix); _crownIM[ts.biome].instanceMatrix.needsUpdate = true; }
+    _crownAlloc[ts.biome]?.release(ts.crownSlot);
+  }
+  // Release rock instance slots
+  for (const rs of record.rockSlots || []) {
+    if (_rockIM[rs.biome]) { _rockIM[rs.biome].setMatrixAt(rs.slot, _hiddenMatrix); _rockIM[rs.biome].instanceMatrix.needsUpdate = true; }
+    _rockAlloc[rs.biome]?.release(rs.slot);
+  }
+  // Remove obstacle entries
   for (const entry of record.obstacleEntries) {
     const idx = game.oBs.indexOf(entry);
     if (idx >= 0) game.oBs.splice(idx, 1);
@@ -351,11 +463,7 @@ function destroyChunk(record) {
   }
 }
 
-// Cap how many chunks we build per frame. Building a chunk is ~7000 simplex
-// calls + a PlaneGeometry + several prop meshes; doing the full 49-chunk spawn
-// set in one frame freezes the main thread for hundreds of milliseconds when
-// the player first loads in. Streaming a few per frame keeps each frame under
-// the budget while still filling the world within ~1 second.
+// Cap how many chunks we build per frame.
 const MAX_CHUNK_BUILDS_PER_FRAME = 2;
 
 export function updateChunkStreaming(playerPos) {
@@ -370,8 +478,7 @@ export function updateChunkStreaming(playerPos) {
       want.add(chunkKey(pcx + dx, pcz + dz));
     }
   }
-  // Collect missing chunks, sort by distance from the player so the player's
-  // immediate surroundings build first, then drip in the outer ring.
+  // Sort missing chunks by proximity so the player's immediate area loads first.
   const missing = [];
   for (const key of want) {
     if (game.chunks.has(key)) continue;
@@ -385,11 +492,11 @@ export function updateChunkStreaming(playerPos) {
     const { key, cx, cz } = missing[i];
     const mesh = buildChunkMesh(cx, cz, seed);
     game.arenaGroup.add(mesh);
-    const { group, destructibles, obstacleEntries } = buildChunkProps(cx, cz, seed);
-    game.arenaGroup.add(group);
-    game.chunks.set(key, { mesh, propsGroup: group, destructibles, obstacleEntries, cx, cz });
+    const { scatterGroup, destructibles, obstacleEntries, treeSlots, rockSlots } = buildChunkProps(cx, cz, seed);
+    game.arenaGroup.add(scatterGroup);
+    game.chunks.set(key, { mesh, scatterGroup, destructibles, obstacleEntries, treeSlots, rockSlots, cx, cz });
   }
-  // Unload chunks outside the unload radius (hysteresis)
+  // Unload chunks outside the unload radius
   for (const [key, record] of game.chunks) {
     const dx = record.cx - pcx;
     const dz = record.cz - pcz;
@@ -403,4 +510,5 @@ export function updateChunkStreaming(playerPos) {
 export function disposeAllChunks() {
   for (const [, record] of game.chunks) destroyChunk(record);
   game.chunks.clear();
+  teardownInstances();
 }
