@@ -2618,6 +2618,7 @@ io.on('connection', (socket) => {
             dayTimeSec: 0,
             outposts: gameState.outposts,
             oreVeins: gameState.oreVeins,
+            camps: gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome })),
         });
         broadcastPauseState();
     });

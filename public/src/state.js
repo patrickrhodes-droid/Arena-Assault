@@ -145,6 +145,7 @@ export const game = {
   outposts: [],            // [{ id, x, z, name }] — wild + origin outposts
   homeBaseId: 'origin',    // active home base for compass + respawn
   oreVeins: [],            // [{ id, kind:'iron'|'crystal', x, z }]
+  camps: [],               // [{ id, x, z, size, biome }] — enemy camps
   iron: 0,
   crystal: 0,
   supplyPods: [],          // [{ id, x, z, y, landAt }]

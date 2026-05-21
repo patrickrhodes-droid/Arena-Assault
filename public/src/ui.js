@@ -1485,6 +1485,24 @@ export function drawMinimap() {
         ctx.fillRect(cp.x - 3, cp.y - 3, 6, 6);
       }
     }
+    // Enemy camps — small dim red dots so you can spot territorial clusters
+    if (Array.isArray(game.camps)) {
+      for (const camp of game.camps) {
+        const dx = camp.x - playerPos.x;
+        const dz = camp.z - playerPos.z;
+        if (Math.hypot(dx, dz) > MINIMAP_VIEW_RADIUS) continue;
+        const cp = toCanvas(camp.x, camp.z);
+        ctx.fillStyle = 'rgba(200, 60, 40, 0.55)';
+        const sz = 2 + (camp.size || 2) * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(cp.x, cp.y - sz);
+        ctx.lineTo(cp.x + sz, cp.y);
+        ctx.lineTo(cp.x, cp.y + sz);
+        ctx.lineTo(cp.x - sz, cp.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
     // Drone ping ring — pulses on the minimap while active
     if (game.dronePing && performance.now() < game.dronePing.until) {
       const dx = game.dronePing.x - playerPos.x;

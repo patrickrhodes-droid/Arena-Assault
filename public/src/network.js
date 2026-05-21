@@ -375,6 +375,7 @@ export function initNetworking(actions) {
       game.outposts = Array.isArray(payload?.outposts) ? payload.outposts : [{ id: 'origin', x: 0, z: 0, name: 'HOME OUTPOST' }];
       game.homeBaseId = 'origin';
       game.oreVeins = Array.isArray(payload?.oreVeins) ? payload.oreVeins.slice() : [];
+      game.camps = Array.isArray(payload?.camps) ? payload.camps.slice() : [];
       game.supplyPods = [];
       game.caravan = null;
       game.weatherActive = false;

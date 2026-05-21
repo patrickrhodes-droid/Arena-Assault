@@ -329,6 +329,8 @@ export async function rebuildArena(mapId) {
     buildWildOutposts();
     // Ore veins: glowing destructibles at deterministic positions
     buildOreVeinMeshes();
+    // Enemy camps: campfire + crude totem so the territorial cluster is visible
+    buildCampMarkers();
     return;
   }
 
@@ -408,10 +410,12 @@ let _weatherFogOriginal = null;
 function buildWildOutposts() {
   for (const [, g] of _outpostMeshes) g.parent?.remove(g);
   _outpostMeshes.clear();
-  // Also clear pods + caravan from any previous match
+  // Also clear pods + caravan + camp markers from any previous match
   for (const [, rec] of _supplyPodMeshes) rec.group?.parent?.remove(rec.group);
   _supplyPodMeshes.clear();
   if (_caravanMesh) { _caravanMesh.parent?.remove(_caravanMesh); _caravanMesh = null; }
+  for (const [, g] of _campMarkers) g.parent?.remove(g);
+  _campMarkers.clear();
   if (_weatherFogOriginal != null && game.scene?.fog) {
     game.scene.fog.density = _weatherFogOriginal;
     _weatherFogOriginal = null;
@@ -466,6 +470,68 @@ function buildWildOutposts() {
       max: { x: o.x + baseFloorHalf, z: o.z + baseFloorHalf },
       h: y + 0.4, yMin: y,
     });
+  }
+}
+
+const _campMarkers = new Map(); // campId -> THREE.Group
+
+function buildCampMarkers() {
+  for (const [, g] of _campMarkers) g.parent?.remove(g);
+  _campMarkers.clear();
+  const camps = game.camps || [];
+  if (camps.length === 0) return;
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true });
+  const charcoalMat = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.9 });
+  const flameMat = new THREE.MeshBasicMaterial({ color: 0xff8030 });
+  const totemMat = new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 });
+  const totemSkullMat = new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 });
+  for (const camp of camps) {
+    const y = sampleHeight(camp.x, camp.z, game.terrainSeed | 0);
+    const group = new THREE.Group();
+    group.position.set(camp.x, y, camp.z);
+
+    // Ring of 5 stones around the fire
+    const stoneGeo = new THREE.IcosahedronGeometry(0.32, 0);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const sx = Math.cos(a) * 0.7;
+      const sz = Math.sin(a) * 0.7;
+      const stone = new THREE.Mesh(stoneGeo, stoneMat);
+      stone.position.set(sx, 0.15, sz);
+      stone.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      stone.castShadow = true;
+      group.add(stone);
+    }
+    // Charcoal logs in the middle
+    const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
+    log1.rotation.z = Math.PI / 2;
+    log1.position.y = 0.18;
+    group.add(log1);
+    const log2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
+    log2.rotation.x = Math.PI / 2;
+    log2.position.y = 0.22;
+    group.add(log2);
+    // Flame mesh + warm point light
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 6), flameMat);
+    flame.position.y = 0.7;
+    group.add(flame);
+    const fireLight = new THREE.PointLight(0xff8830, 1.5, 14);
+    fireLight.position.y = 0.9;
+    group.add(fireLight);
+
+    // Totem pole — bigger camps get a taller totem so they stand out
+    const totemH = 1.4 + camp.size * 0.18;
+    const totem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, totemH, 7), totemMat);
+    totem.position.set(2.4, totemH / 2, 0);
+    totem.castShadow = true;
+    group.add(totem);
+    // Crown the totem with a skull (sphere stand-in)
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), totemSkullMat);
+    skull.position.set(2.4, totemH + 0.12, 0);
+    group.add(skull);
+
+    game.scene.add(group);
+    _campMarkers.set(camp.id, group);
   }
 }
 

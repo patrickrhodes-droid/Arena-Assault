@@ -751,15 +751,21 @@ export function updateEnemies() {
     }
     if (runAI) {
       runOwnedEnemyAI(enemy);
-      // Survival: every frame, snap the enemy's feet to the procedural terrain
-      // so they don't sink into hills or float over valleys. Skip bosses/escape
-      // states where vertical motion is intentional, and skip flying enemies
-      // (scout drones) that maintain their own altitude.
-      if (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number' && !enemy.escaping && !enemy.isScoutDrone) {
+      // Survival: snap ground-walking enemies to the procedural terrain so
+      // they don't sink into hills or float when walking up/down slopes.
+      // Skip: bosses/minibosses (own gravity in ownedBossAI), escaping
+      // jumpers, and flying scout drones.
+      if (
+        game.mode === 'SURVIVAL'
+        && typeof game.terrainSeed === 'number'
+        && !enemy.escaping
+        && !enemy.isScoutDrone
+        && enemy.type !== 'boss'
+        && enemy.type !== 'miniboss'
+      ) {
         const p = enemy.group.position;
-        const targetY = sampleHeight(p.x, p.z, game.terrainSeed);
-        // Smoothly track to terrain rather than teleport (helps animation)
-        p.y += (targetY - p.y) * Math.min(1, 18 * game.dt);
+        // Direct assignment — lerping caused visible foot clipping on slopes.
+        p.y = sampleHeight(p.x, p.z, game.terrainSeed);
       }
       if (doSync) {
         const p = enemy.group.position;
@@ -810,7 +816,12 @@ function getTargets() {
 }
 
 function getFloorYAtPos(x, z) {
-  let floor = 0;
+  // Survival uses the procedural heightfield as the baseline floor; other
+  // modes use the flat ground plane at y=0. Obstacle tops still override
+  // (so enemies can stand on boxes / platforms).
+  let floor = (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number')
+    ? sampleHeight(x, z, game.terrainSeed)
+    : 0;
   for (const ob of game.oBs) {
     if (x >= ob.min.x && x <= ob.max.x && z >= ob.min.z && z <= ob.max.z) {
       floor = Math.max(floor, ob.h ?? 0);
