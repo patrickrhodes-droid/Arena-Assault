@@ -966,10 +966,54 @@ function crossfadeToAction(enemy, toAction, duration) {
   enemy.currentAction = toAction;
 }
 
+// Returns true if there's an active drone ping whose circle covers `pos`.
+// Pinged enemies temporarily ignore their normal leash and chase the player.
+function isPositionInsideDronePing(pos) {
+  const ping = game.dronePing;
+  if (!ping) return false;
+  if (performance.now() > ping.until) return false;
+  const dx = pos.x - ping.x, dz = pos.z - ping.z;
+  const r = ping.radius || 250;
+  return dx * dx + dz * dz < r * r;
+}
+
 function runOwnedEnemyAI(enemy) {
   const pos = enemy.group.position;
   const targets = getTargets();
   if (targets.length === 0) return;
+
+  // Territorial leash (Survival only): if this enemy has wandered too far from
+  // its home camp AND no drone ping is active here, walk back home instead of
+  // chasing. Champions, bosses, and drones are exempt.
+  if (
+    game.mode === 'SURVIVAL'
+    && typeof enemy.homeX === 'number'
+    && typeof enemy.homeZ === 'number'
+    && enemy.leashRange
+    && enemy.type !== 'boss'
+    && !enemy.isChampion
+    && !enemy.isScoutDrone
+  ) {
+    const hdx = pos.x - enemy.homeX;
+    const hdz = pos.z - enemy.homeZ;
+    const distHome = Math.hypot(hdx, hdz);
+    const pinged = isPositionInsideDronePing(pos);
+    const effectiveLeash = pinged ? enemy.leashRange + 140 : enemy.leashRange;
+    if (distHome > effectiveLeash) {
+      // Patrol back home: head straight toward camp at 60% speed
+      const dirX = -hdx / Math.max(0.001, distHome);
+      const dirZ = -hdz / Math.max(0.001, distHome);
+      enemy.group.rotation.y = Math.atan2(dirX, dirZ) + Math.PI;
+      const stepX = dirX * (enemy.spd || 3) * 0.6 * game.dt;
+      const stepZ = dirZ * (enemy.spd || 3) * 0.6 * game.dt;
+      pos.x += stepX;
+      pos.z += stepZ;
+      enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
+      // Stop "noticed" so the next chase begins with a fresh look-up beat
+      if (distHome < enemy.leashRange * 0.5) enemy.noticed = false;
+      return;
+    }
+  }
 
   // ── Awareness: brief look-up pause the FIRST time an enemy spots a player ──
   // Enemies move normally until within detection range; then pause once, then charge.

@@ -1576,6 +1576,120 @@ function awardSurvivalMoney(killerId, enemy) {
     emitMoneyUpdate(killerId, p, dollars, 'kill');
 }
 
+// ── Survival camps: territorial enemy clusters ────────────────────────────────
+//
+// Enemies live in deterministic camps scattered across the world (size grows
+// with distance from origin). Each enemy stays leashed to its home camp and
+// refuses to chase a player beyond a per-type range. The exception is the
+// scout drone: when one spawns, it emits a wide-area ping that temporarily
+// lets enemies inside that radius break leash to converge on the player.
+
+const LEASH_BY_TYPE = {
+    skeleton: 25,
+    dog:      32,
+    soldier:  45,
+    miniboss: 60,
+};
+// While inside a drone ping, leash is extended dramatically.
+const DRONE_PING_LEASH_BONUS = 140; // added to base leash
+const DRONE_PING_RADIUS      = 250; // enemies within this radius of the ping break leash
+const DRONE_PING_DURATION_MS = 30000;
+
+function generateSurvivalCamps(seed) {
+    const camps = [];
+    let idCounter = 0;
+    // Five concentric rings, larger camps further out
+    const RINGS = [
+        { r: 70,  count: 6,  size: 2 },
+        { r: 160, count: 8,  size: 3 },
+        { r: 260, count: 10, size: 5 },
+        { r: 380, count: 10, size: 7 },
+        { r: 520, count: 8,  size: 9 },
+    ];
+    const baseRng = mulberry32((seed ^ 0xC4C9) >>> 0);
+    for (const ring of RINGS) {
+        for (let i = 0; i < ring.count; i++) {
+            const ang = (i / ring.count) * Math.PI * 2 + (baseRng() - 0.5) * (Math.PI / ring.count) * 1.4;
+            const rad = ring.r * (1 + (baseRng() - 0.5) * 0.25);
+            const x = Math.round(Math.cos(ang) * rad);
+            const z = Math.round(Math.sin(ang) * rad);
+            // Skip if too close to any outpost (including wild ones)
+            let badSpot = Math.hypot(x, z) < OUTPOST_RADIUS + 12;
+            if (!badSpot) {
+                for (const o of (gameState.outposts || [])) {
+                    if (o.id === 'origin') continue;
+                    const dx = x - o.x, dz = z - o.z;
+                    if (dx * dx + dz * dz < (OUTPOST_BUILD_RADIUS + 16) * (OUTPOST_BUILD_RADIUS + 16)) {
+                        badSpot = true; break;
+                    }
+                }
+            }
+            if (badSpot) continue;
+            const { id: biomeId } = sampleBiome(x, z, seed);
+            camps.push({
+                id: 'camp_' + (idCounter++),
+                x, z, biome: biomeId,
+                size: ring.size,
+                respawnTmr: Math.random() * 6,
+            });
+        }
+    }
+    return camps;
+}
+
+function pickCampEnemyKind(camp) {
+    const weights = {
+        [BIOME_MEADOW]:    [70, 25, 5,  0],
+        [BIOME_FROSTPINE]: [40, 30, 25, 5],
+        [BIOME_ASHFEN]:    [30, 20, 40, 10],
+        [BIOME_CRIMSON]:   [10, 30, 40, 20],
+    }[camp.biome] || [70, 25, 5, 0];
+    const roll = Math.random() * (weights[0] + weights[1] + weights[2] + weights[3]);
+    let kind = 'skeleton', cum = weights[0];
+    if (roll > cum) { kind = 'soldier'; cum += weights[1]; }
+    if (roll > cum) { kind = 'dog'; cum += weights[2]; }
+    if (roll > cum) { kind = 'miniboss'; }
+    return kind;
+}
+
+function spawnCampEnemy(camp, ownerPlayer) {
+    // Jitter position within camp (radius ~6u, more spread on bigger camps)
+    const spread = 3 + camp.size * 0.5;
+    const jx = camp.x + (Math.random() - 0.5) * spread * 2;
+    const jz = camp.z + (Math.random() - 0.5) * spread * 2;
+    const kind = pickCampEnemyKind(camp);
+    const mult = difficultyAt(jx, jz);
+    let e;
+    if (kind === 'soldier')        e = makeSoldier(jx, jz);
+    else if (kind === 'dog')       e = makeDog(jx, jz);
+    else if (kind === 'miniboss')  e = makeMiniBoss(jx, jz);
+    else                           e = makeSkeleton(jx, jz);
+    e.hp = Math.round(e.hp * mult);
+    e.maxHp = e.hp;
+    if (e.atkDmg) e.atkDmg = Math.round(e.atkDmg * mult);
+    if (e.spd) e.spd = Math.min(e.spd * Math.min(mult, 1.8), 18);
+    e.y = sampleHeight(jx, jz, gameState.terrainSeed);
+    e.biome = camp.biome;
+    if (gameState.dayTimeSec > DAY_DURATION) {
+        e.hp = Math.round(e.hp * 1.15);
+        e.maxHp = e.hp;
+    }
+    // Territorial fields
+    e.campId = camp.id;
+    e.homeX  = camp.x;
+    e.homeZ  = camp.z;
+    e.leashRange = LEASH_BY_TYPE[kind] || 30;
+    e.ownerId = ownerPlayer?.playerId || null;
+    gameState.enemies.push(e);
+    io.emit('enemySpawned', {
+        id: e.id, type: e.type, x: e.x, y: e.y, z: e.z,
+        hp: e.hp, maxHp: e.maxHp, ownerId: e.ownerId,
+        homeX: e.homeX, homeZ: e.homeZ, leashRange: e.leashRange,
+        campId: e.campId,
+    });
+    return e;
+}
+
 // Pick a spawn position ringed around a player and in a loaded chunk-ish
 // region. Avoids the outpost.
 function pickSurvivalSpawnPos(player) {
@@ -1679,7 +1793,16 @@ function spawnChampion(target) {
 
 function spawnScoutDrone(target) {
     // Lightweight passive flying enemy — tied into the enemy list but with
-    // low hp and harmless. On spawn, pings the owner's position.
+    // low hp and harmless. On spawn, broadcasts a ping at the target's location
+    // that lets enemies inside DRONE_PING_RADIUS break their normal leash.
+    gameState.dronePing = {
+        x: target.x | 0, z: target.z | 0,
+        until: Date.now() + DRONE_PING_DURATION_MS,
+    };
+    io.emit('survivalPing', {
+        x: gameState.dronePing.x, z: gameState.dronePing.z,
+        radius: DRONE_PING_RADIUS, durationMs: DRONE_PING_DURATION_MS,
+    });
     const ang = Math.random() * Math.PI * 2;
     const r = 90 + Math.random() * 40;
     const dx = target.x + Math.cos(ang) * r;
@@ -1839,16 +1962,35 @@ function tickSurvival(dt) {
         if (d > (p.deepestDistance || 0)) p.deepestDistance = d;
     }
 
-    // Spawn enemies — global budget proportional to alive players
-    const budget = Math.min(35, alive.length * 8);
-    gameState.survivalEnemySpawnTmr -= dt;
-    if (gameState.enemies.length < budget && gameState.survivalEnemySpawnTmr <= 0) {
-        // Pick a random alive player and spawn near them
-        const target = alive[Math.floor(Math.random() * alive.length)];
-        if (!isInsideOutpost(target)) {
-            spawnSurvivalEnemy(target);
+    // Camp-based spawning: walk camps near any alive player and top them up.
+    // A camp is "active" only when a player is within ~180u; this keeps enemy
+    // counts proportional to the area being explored.
+    const budget = Math.min(48, alive.length * 12);
+    const enemiesByCamp = new Map();
+    let totalCampEnemies = 0;
+    for (const e of gameState.enemies) {
+        if (!e.campId) continue;
+        enemiesByCamp.set(e.campId, (enemiesByCamp.get(e.campId) || 0) + 1);
+        totalCampEnemies++;
+    }
+    for (const camp of (gameState.camps || [])) {
+        const count = enemiesByCamp.get(camp.id) || 0;
+        if (count >= camp.size) { camp.respawnTmr = Math.max(camp.respawnTmr || 0, 1.5); continue; }
+        let owner = null;
+        let minD2 = Infinity;
+        for (const p of alive) {
+            const dx = p.x - camp.x, dz = p.z - camp.z;
+            const d2 = dx * dx + dz * dz;
+            if (d2 < 180 * 180 && d2 < minD2) { minD2 = d2; owner = p; }
         }
-        gameState.survivalEnemySpawnTmr = 0.6 + Math.random() * 0.6;
+        if (!owner) continue;
+        camp.respawnTmr = (camp.respawnTmr || 0) - dt;
+        if (camp.respawnTmr > 0) continue;
+        if (totalCampEnemies >= budget) break;
+        spawnCampEnemy(camp, owner);
+        totalCampEnemies++;
+        // Slower respawn for larger camps so they don't all burst-spawn at once
+        camp.respawnTmr = 2.5 + Math.random() * 3 + camp.size * 0.3;
     }
 
     // GC enemies far from every player
@@ -1865,6 +2007,11 @@ function tickSurvival(dt) {
         }
         return true;
     });
+
+    // Drone ping decay
+    if (gameState.dronePing && Date.now() > gameState.dronePing.until) {
+        gameState.dronePing = null;
+    }
 
     // Expire effects
     const now = Date.now();
@@ -2419,6 +2566,8 @@ io.on('connection', (socket) => {
         gameState.weatherActive = false;
         gameState.weatherTmr = 60 + Math.random() * 120;
         gameState.outposts = getOutpostLocations(seed);
+        gameState.camps = generateSurvivalCamps(seed);
+        gameState.dronePing = null; // { x, z, until }
         // Pre-spawn ore veins as destructibles, one per wild outpost cluster
         gameState.oreVeins = [];
         for (let i = 0; i < 12; i++) {

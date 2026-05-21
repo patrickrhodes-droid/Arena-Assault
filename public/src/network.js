@@ -490,6 +490,15 @@ export function initNetworking(actions) {
     if (typeof window !== 'undefined' && window.addPlacedTorch) window.addPlacedTorch(data);
   });
 
+  game.socket.on("survivalPing", (data) => {
+    if (typeof data?.x !== 'number' || typeof data?.z !== 'number') return;
+    game.dronePing = {
+      x: data.x, z: data.z,
+      radius: data.radius || 250,
+      until: performance.now() + (data.durationMs || 30000),
+    };
+  });
+
   game.socket.on("survivalEvent", (data) => {
     if (data?.type === 'bloodMoon') game.bloodMoon = !!data.active;
     else if (data?.type === 'weather') {
@@ -770,6 +779,11 @@ export function initNetworking(actions) {
     enemy.ownerId = data.ownerId ?? null;
     enemy.isChampion = !!data.isChampion;
     enemy.isScoutDrone = !!data.isScoutDrone;
+    // Territorial leash data — enemies stay around their home camp
+    if (typeof data.homeX === 'number') enemy.homeX = data.homeX;
+    if (typeof data.homeZ === 'number') enemy.homeZ = data.homeZ;
+    if (typeof data.leashRange === 'number') enemy.leashRange = data.leashRange;
+    if (data.campId) enemy.campId = data.campId;
     // Champion: scale up the mesh + tint it for a visual cue
     if (enemy.isChampion && enemy.group) {
       enemy.group.scale.setScalar(1.6);

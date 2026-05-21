@@ -150,6 +150,7 @@ export const game = {
   supplyPods: [],          // [{ id, x, z, y, landAt }]
   caravan: null,           // { x, z, despawnAt }
   weatherActive: false,
+  dronePing: null,         // { x, z, radius, until } — extends enemy leash near point
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"

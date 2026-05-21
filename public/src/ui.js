@@ -1485,6 +1485,25 @@ export function drawMinimap() {
         ctx.fillRect(cp.x - 3, cp.y - 3, 6, 6);
       }
     }
+    // Drone ping ring — pulses on the minimap while active
+    if (game.dronePing && performance.now() < game.dronePing.until) {
+      const dx = game.dronePing.x - playerPos.x;
+      const dz = game.dronePing.z - playerPos.z;
+      const dist = Math.hypot(dx, dz);
+      const radiusPx = (game.dronePing.radius || 250) * scale;
+      const pingPos = toCanvas(game.dronePing.x, game.dronePing.z);
+      const pulse = 0.4 + 0.4 * Math.sin(performance.now() / 220);
+      ctx.strokeStyle = `rgba(102, 204, 255, ${pulse})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      // Only draw a partial ring if the ping is partly off-screen
+      ctx.arc(pingPos.x, pingPos.y, Math.min(radiusPx, MINIMAP_VIEW_RADIUS * scale + 40), 0, Math.PI * 2);
+      ctx.stroke();
+      if (dist <= MINIMAP_VIEW_RADIUS) {
+        ctx.fillStyle = '#66ccff';
+        ctx.beginPath(); ctx.arc(pingPos.x, pingPos.y, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
     // Supply pods
     if (Array.isArray(game.supplyPods)) {
       for (const pod of game.supplyPods) {
