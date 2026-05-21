@@ -75,17 +75,31 @@ export function fbm2(x, z, seed = 0, octaves = 4, lacunarity = 2.0, gain = 0.5) 
 }
 
 // Canonical heightfield for Survival. Returns y in world units.
-// Layered noise: low-frequency rolling hills + ridge-like mid frequency for
-// distinct slopes + small detail bumpiness.
+// Tuned to be roughly half as mountainous as before, with rare very-tall
+// mountains (sharp ridges where a low-frequency mask exceeds a threshold).
 export function sampleHeight(x, z, seed = 0) {
-  const continents = fbm2(x * 0.006, z * 0.006, seed, 4) * 22;
-  const hills      = fbm2(x * 0.018, z * 0.018, seed ^ 1, 3) * 6;
-  const detail     = fbm2(x * 0.06,  z * 0.06,  seed ^ 7, 2) * 1.4;
+  // Continents/hills/detail amplitudes halved from the previous tuning.
+  const continents = fbm2(x * 0.006, z * 0.006, seed,     4) * 11;
+  const hills      = fbm2(x * 0.018, z * 0.018, seed ^ 1, 3) * 3;
+  const detail     = fbm2(x * 0.06,  z * 0.06,  seed ^ 7, 2) * 0.7;
+
+  // Mountain mask: low-frequency simplex; values above a threshold spike up.
+  // The threshold is high enough that only a small fraction of the world
+  // has mountains, but where they hit they're very tall.
+  const mountainMask = simplex2(x * 0.003, z * 0.003, seed ^ 0x4D5A); // -1..1
+  let mountainBonus = 0;
+  if (mountainMask > 0.55) {
+    // 0 at the threshold, 1 at the peak (mask = 1)
+    const t = (mountainMask - 0.55) / 0.45;
+    // Cubic ease-in so transition into the mountain is smooth
+    mountainBonus = t * t * t * 60;
+  }
+
   // Smooth dome around the origin so the outpost sits on flatter ground.
   const distFromOrigin = Math.sqrt(x * x + z * z);
-  const outpostFlatten = Math.max(0, 1 - distFromOrigin / 30); // 0..1 inside 30u of origin
-  const h = continents + hills + detail;
-  return h * (1 - outpostFlatten * 0.92);
+  const outpostFlatten = Math.max(0, 1 - distFromOrigin / 30);
+  const base = continents + hills + detail;
+  return (base + mountainBonus) * (1 - outpostFlatten * 0.92);
 }
 
 export const BIOME_MEADOW    = 0;

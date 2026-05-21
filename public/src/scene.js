@@ -369,6 +369,50 @@ if (typeof window !== 'undefined') {
   };
 }
 
+let _jetpackMounted = false;
+if (typeof window !== 'undefined') {
+  window.__attachJetpackVisual = () => attachJetpackToPlayer();
+  window.__detachJetpackVisual = () => detachJetpackFromPlayer();
+}
+export function attachJetpackToPlayer() {
+  const pv = game.visuals?.player;
+  if (!pv?.jetpackGroup) return;
+  pv.jetpackGroup.visible = true;
+  if (_jetpackMounted) return;
+  const gltf = game.shared.jetpackGltf;
+  if (!gltf) return; // model not loaded yet; will retry on load
+  const model = gltf.scene.clone(true);
+  model.scale.setScalar(0.5);
+  // Orient so the pack faces backwards; tweak in-engine if needed.
+  model.rotation.y = Math.PI;
+  pv.jetpackGroup.add(model);
+  _jetpackMounted = true;
+}
+
+export function detachJetpackFromPlayer() {
+  const pv = game.visuals?.player;
+  if (!pv?.jetpackGroup) return;
+  pv.jetpackGroup.visible = false;
+}
+
+// Called from main render loop while game.jetpackActive — emit a stream of
+// flame-coloured particles from each thruster.
+let _jetpackParticleTmr = 0;
+export function tickJetpackParticles(dt, spawnParticlesFn) {
+  if (!game.jetpackActive || !game.hasJetpack) return;
+  const pv = game.visuals?.player;
+  if (!pv?.leftThruster || !pv?.rightThruster) return;
+  _jetpackParticleTmr -= dt;
+  if (_jetpackParticleTmr > 0) return;
+  _jetpackParticleTmr = 0.04; // ~25/s per thruster
+  const lp = new THREE.Vector3(); pv.leftThruster.getWorldPosition(lp);
+  const rp = new THREE.Vector3(); pv.rightThruster.getWorldPosition(rp);
+  spawnParticlesFn(lp, 2, 0xff8030, 5, false);
+  spawnParticlesFn(rp, 2, 0xff8030, 5, false);
+  if (Math.random() < 0.3) spawnParticlesFn(lp, 1, 0xffd060, 4, true);
+  if (Math.random() < 0.3) spawnParticlesFn(rp, 1, 0xffd060, 4, true);
+}
+
 // Wires the dynamic sun + hemisphere light that dayNight.js animates, and sets
 // scene background/fog defaults. Stores refs in game.shared for tickDayNight.
 function buildSurvivalSceneChrome() {
@@ -717,6 +761,20 @@ function buildPlayer() {
   rightBoot.position.set(0.2, 0.08 + Y, 0);
   playerGroup.add(rightBoot);
 
+  // Jetpack mount: hangs off the back of the torso. Hidden until equipped.
+  // The actual mesh is swapped in once Jetpack.glb finishes loading.
+  const jetpackGroup = new THREE.Group();
+  jetpackGroup.position.set(0, 1.25 + Y, 0.28); // sits on back of torso
+  jetpackGroup.visible = false;
+  playerGroup.add(jetpackGroup);
+  // Two thruster emitters (bottom of the pack)
+  const leftThruster = new THREE.Object3D();
+  leftThruster.position.set(-0.12, -0.2, 0);
+  jetpackGroup.add(leftThruster);
+  const rightThruster = new THREE.Object3D();
+  rightThruster.position.set(0.12, -0.2, 0);
+  jetpackGroup.add(rightThruster);
+
   game.visuals.player = {
     playerGroup,
     bodyMat,
@@ -731,6 +789,9 @@ function buildPlayer() {
     rightLeg,
     leftBoot,
     rightBoot,
+    jetpackGroup,
+    leftThruster,
+    rightThruster,
   };
 }
 
@@ -958,6 +1019,14 @@ function buildSharedRuntimeAssets() {
   game.shared.mechGltf = null;
   new GLTFLoader().load("/assets/models/Mech.glb", (gltf) => {
     game.shared.mechGltf = gltf;
+  });
+
+  game.shared.jetpackGltf = null;
+  new GLTFLoader().load("/assets/models/Jetpack.glb", (gltf) => {
+    gltf.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; } });
+    game.shared.jetpackGltf = gltf;
+    // If the local player already owns a jetpack, mount it now
+    if (game.hasJetpack) attachJetpackToPlayer();
   });
 
   game.shared.droneGltf = null;

@@ -29,13 +29,13 @@ function tickPingDisplay() {
     game.socket.volatile.emit("clientPing", performance.now());
   }
 }
-import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, tickDamageNumbers, updateBullets, updateHealthPacks, updateParticles, updateShells, updateWeaponPickups } from "./combat.js";
+import { collectWeapon, processHit, removeWeaponPickup, resetCombatState, setWeapon, spawnParticles, tickDamageNumbers, updateBullets, updateHealthPacks, updateParticles, updateShells, updateWeaponPickups } from "./combat.js";
 import { resetComboState } from "./features.js";
 import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
 import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryJump, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
 import { pollGamepad } from "./gamepad.js";
-import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, updateRemotePlayerVisuals } from "./scene.js";
+import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, tickJetpackParticles, updateRemotePlayerVisuals } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
 import { updateChunkStreaming, disposeAllChunks } from "./chunkManager.js";
 import { tickDayNight } from "./dayNight.js";
@@ -855,6 +855,8 @@ function animate(time) {
       updateChunkStreaming(pp);
       tickDayNight(game.dt);
       if (game.frameIndex % 6 === 0) refreshInventoryUI();
+      // Jetpack thrust particles (fire from each shoulder thruster when active)
+      tickJetpackParticles(game.dt, spawnParticles);
     }
 
     // World time-scale: hit-stop (freeze) and kill slow-mo

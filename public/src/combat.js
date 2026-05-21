@@ -805,13 +805,15 @@ export function spawnHealthPackVisual(id, position) {
   group.add(horizontalBar);
   group.add(verticalBar);
   group.position.copy(position);
-  group.position.y = 0.3;
+  // Use the y the server sent (terrain-adjusted in Survival, 0.3 elsewhere).
+  group.position.y = position.y || 0.3;
   game.scene.add(group);
 
   game.healthPacks.push({
     id,
     mesh: group,
     pos: position.clone(),
+    anchorY: position.y || 0.3,
     bobT: Math.random() * Math.PI * 2,
   });
 }
@@ -828,7 +830,10 @@ export function updateHealthPacks(updateHUD) {
 
   for (const pack of game.healthPacks) {
     pack.bobT += game.dt * 2.2;
-    pack.mesh.position.y = 0.3 + Math.sin(pack.bobT) * 0.12;
+    // Anchor to the original spawn Y (terrain-aware in Survival) so packs
+    // dropped on a hill stay visible above the slope.
+    const anchorY = pack.anchorY ?? 0.3;
+    pack.mesh.position.y = anchorY + Math.sin(pack.bobT) * 0.12;
     pack.mesh.rotation.y += game.dt * 1.5;
 
     if (!game.localPlayerIsAlive || game.localPlayerIsDowned) {
@@ -837,7 +842,10 @@ export function updateHealthPacks(updateHUD) {
 
     const dx = playerGroup.position.x - pack.pos.x;
     const dz = playerGroup.position.z - pack.pos.z;
-    if (dx * dx + dz * dz >= 1.5 || game.hp >= P_MAX_HP) {
+    // Slightly larger pickup radius in Survival so hilly terrain doesn't make
+    // packs feel impossible to grab.
+    const pickRadiusSq = game.mode === 'SURVIVAL' ? 4.0 : 1.5;
+    if (dx * dx + dz * dz >= pickRadiusSq || game.hp >= P_MAX_HP) {
       continue;
     }
 

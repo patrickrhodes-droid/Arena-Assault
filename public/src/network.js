@@ -477,7 +477,12 @@ export function initNetworking(actions) {
     if (typeof data?.activeSlot === 'number') game.activeSlot = data.activeSlot;
     if (typeof data?.backpackTier === 'number') game.backpackTier = data.backpackTier;
     if (data?.effects) game.effects = data.effects;
-    if (typeof data?.hasJetpack === 'boolean') game.hasJetpack = data.hasJetpack;
+    if (typeof data?.hasJetpack === 'boolean') {
+      const had = !!game.hasJetpack;
+      game.hasJetpack = data.hasJetpack;
+      if (game.hasJetpack && !had && typeof window !== 'undefined' && window.__attachJetpackVisual) window.__attachJetpackVisual();
+      if (!game.hasJetpack && had && typeof window !== 'undefined' && window.__detachJetpackVisual) window.__detachJetpackVisual();
+    }
     if (typeof data?.jetpackFuel === 'number') game.jetpackFuel = data.jetpackFuel;
     if (typeof data?.money === 'number') game.money = data.money;
     const active = game.inventory?.[game.activeSlot];

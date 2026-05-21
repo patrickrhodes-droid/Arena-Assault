@@ -1263,7 +1263,11 @@ function killEnemy(enemy, killerId) {
 function spawnHealthPack(x, z) {
     const id = `pack${gameState.nextPackId++}`;
     gameState.healthPacks.push({ id, x, z });
-    io.emit('healthPackSpawned', { id, x, y: 0.3, z });
+    // Survival packs need to sit on the procedural terrain or they spawn buried.
+    const baseY = (gameState.mode === 'SURVIVAL' && typeof gameState.terrainSeed === 'number')
+        ? sampleHeight(x, z, gameState.terrainSeed) + 0.3
+        : 0.3;
+    io.emit('healthPackSpawned', { id, x, y: baseY, z });
 }
 
 // ── Enemy AI tick ─────────────────────────────────────────────────────────────
