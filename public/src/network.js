@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./config.js";
 import { game } from "./state.js";
 import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, spawnWeaponPickupVisual, triggerDestructible } from "./combat.js";
-import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, handleEnemyDamaged, removeEnemy } from "./enemies.js";
+import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, createTank, handleEnemyDamaged, removeEnemy } from "./enemies.js";
 import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { applyMapScreenRole, setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 import { showCampaignCutscene, showPreGameCharSelect, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
@@ -496,6 +496,51 @@ export function initNetworking(actions) {
     if (typeof window !== 'undefined' && window.addPlacedTorch) window.addPlacedTorch(data);
   });
 
+  game.socket.on("missileSpawned", (data) => {
+    if (typeof window !== 'undefined' && window.__missileSpawned) window.__missileSpawned(data);
+  });
+  game.socket.on("missilesSynced", (list) => {
+    if (typeof window !== 'undefined' && window.__missilesSync) window.__missilesSync(list);
+  });
+  game.socket.on("missileExploded", (data) => {
+    if (typeof window !== 'undefined' && window.__missileExploded) window.__missileExploded(data);
+  });
+
+  game.socket.on("roamingBossArenaSpawned", (data) => {
+    if (typeof window !== 'undefined' && window.__roamingArenaSpawned) window.__roamingArenaSpawned(data);
+  });
+  game.socket.on("roamingBossArenaCleared", () => {
+    if (typeof window !== 'undefined' && window.__roamingArenaCleared) window.__roamingArenaCleared();
+  });
+
+  game.socket.on("vehicleSpawned", (data) => {
+    if (typeof window !== 'undefined' && window.__vehicleSpawned) window.__vehicleSpawned(data);
+  });
+  game.socket.on("vehicleSync", (data) => {
+    if (typeof window !== 'undefined' && window.__vehicleSync) window.__vehicleSync(data);
+  });
+  game.socket.on("vehicleOccupied", (data) => {
+    if (typeof window !== 'undefined' && window.__vehicleOccupied) window.__vehicleOccupied(data);
+    if (data.occupantId === game.socket.id) {
+      // I just got in — sync local heading
+      const v = (game.vehicles || []).find(x => x.id === data.vehicleId);
+      if (v && typeof window !== 'undefined' && window.__onEnterVehicle) window.__onEnterVehicle(v);
+    } else if (data.occupantId === null && game.inVehicleId === null) {
+      // I just got out — restore player visuals
+      if (typeof window !== 'undefined' && window.__restorePlayerAfterExit) window.__restorePlayerAfterExit();
+    }
+  });
+  game.socket.on("tankShellFired", (data) => {
+    // Visualise a fast non-homing cannon shell as a bullet
+    spawnBullet(
+      new THREE.Vector3(data.x, data.y, data.z),
+      new THREE.Vector3(data.dx, 0, data.dz).normalize(),
+      data.ownerId === game.socket.id, // tracked locally if I fired it
+      { spd: 90, life: 1.4, damage: 220 },
+      data.ownerId !== game.socket.id,
+    );
+  });
+
   game.socket.on("survivalPing", (data) => {
     if (typeof data?.x !== 'number' || typeof data?.z !== 'number') return;
     game.dronePing = {
@@ -741,6 +786,7 @@ export function initNetworking(actions) {
         else if (entry.type === "skeleton") createSkeleton(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "boss") createBoss(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         else if (entry.type === "miniboss") createMiniBoss(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
+        else if (entry.type === "tank") createTank(new THREE.Vector3(entry.x, entry.y, entry.z), entry.id);
         enemy = game.enemies[game.enemies.length - 1];
       }
 
@@ -774,6 +820,7 @@ export function initNetworking(actions) {
     else if (data.type === "skeleton" || data.type === "drone") createSkeleton(pos, data.id);
     else if (data.type === "boss") createBoss(pos, data.id);
     else if (data.type === "miniboss") createMiniBoss(pos, data.id);
+    else if (data.type === "tank") createTank(pos, data.id, { hp: data.maxHp, bossName: data.bossName });
     const enemy = game.enemies[game.enemies.length - 1];
     if (!enemy) return;
     // Stamp AI fields with server values so owned-client AI is accurate.
@@ -785,6 +832,8 @@ export function initNetworking(actions) {
     enemy.ownerId = data.ownerId ?? null;
     enemy.isChampion = !!data.isChampion;
     enemy.isScoutDrone = !!data.isScoutDrone;
+    enemy.isRoamingBoss = !!data.isRoamingBoss;
+    if (data.bossName) enemy.bossName = data.bossName;
     // Territorial leash data — enemies stay around their home camp
     if (typeof data.homeX === 'number') enemy.homeX = data.homeX;
     if (typeof data.homeZ === 'number') enemy.homeZ = data.homeZ;

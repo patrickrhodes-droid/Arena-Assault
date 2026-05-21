@@ -889,6 +889,26 @@ function makeMiniBoss(x, z) {
     });
 }
 
+// Tank boss: slow-moving turret that fires homing missiles.
+// Used both as the desert campaign end boss and as a roaming boss in Survival.
+function makeTank(x, z, options = {}) {
+    const w = gameState.wave;
+    const hpMult = options.hpMult || 1.0;
+    // Big HP pool — about 2.5× a regular boss base
+    const hp = Math.round(2500 * Math.pow(1.06, w) * hpMult);
+    return Object.assign(baseEnemy('tank', x, z), {
+        hp, maxHp: hp,
+        spd: 3.5,                      // slow tracks
+        atkDmg: 80 + w * 8,            // missile direct hit damage
+        atkTmr: 2.0,                   // first shot after 2s
+        fireInt: 3.5,                  // base fire interval
+        missileSpd: 12,                // u/s — slow missile
+        missileTurnRate: 1.4,          // rad/s
+        bossName: options.bossName || 'ARMOR TITAN',
+        radius: 2.2,
+    });
+}
+
 // ── Spawn helpers ─────────────────────────────────────────────────────────────
 
 // Returns false if the spawn position lands inside a known solid/blocked area
@@ -1020,6 +1040,18 @@ function spawnSkeletonGroup() {
 }
 
 function spawnBoss() {
+    // Desert campaign boss is the tank instead of the mech.
+    const isDesertCampaignBoss = gameState.gameMode === 'campaign'
+        && selectedMap === 'desert'
+        && gameState.wave === gameState.campaignMapStartWave + 7;
+    if (isDesertCampaignBoss) {
+        const [sx, sz] = pickSpawnPos(22);
+        const e = makeTank(sx, sz, { hpMult: 1.2, bossName: 'DESERT ARMOR' });
+        e.ownerId = getClosestPlayerId(sx, sz) || Object.keys(players)[0] || null;
+        gameState.enemies.push(e);
+        emitEnemySpawned(e);
+        return;
+    }
     const bossWaveNum = Math.floor(gameState.wave / 5);
     const bossCount = bossWaveNum <= 1 ? 1 : Math.floor((bossWaveNum + 2) / 2);
     const hpMult = bossWaveNum <= 1 ? 1 : Math.pow(2, Math.floor((bossWaveNum - 1) / 2));
@@ -1270,6 +1302,118 @@ function spawnHealthPack(x, z) {
     io.emit('healthPackSpawned', { id, x, y: baseY, z });
 }
 
+// ── Tank missiles: server-authoritative homing projectiles ───────────────────
+
+let _nextMissileId = 1;
+function spawnTankMissile(tank, target) {
+    const id = `missile_${_nextMissileId++}`;
+    const startY = (tank.y || 0) + 3.0;
+    const dx = target.x - tank.x, dz = target.z - tank.z;
+    const d = Math.hypot(dx, dz) || 1;
+    const spd = tank.missileSpd || 12;
+    const missile = {
+        id, x: tank.x, y: startY, z: tank.z,
+        vx: (dx / d) * spd,
+        vy: 1.0,
+        vz: (dz / d) * spd,
+        spd,
+        turnRate: tank.missileTurnRate || 1.4,
+        damage: tank.atkDmg || 60,
+        targetId: target.playerId,
+        life: 9.0,
+        ownerId: tank.id,
+    };
+    if (!gameState.missiles) gameState.missiles = [];
+    gameState.missiles.push(missile);
+    io.emit('missileSpawned', {
+        id, x: missile.x, y: missile.y, z: missile.z,
+        vx: missile.vx, vy: missile.vy, vz: missile.vz,
+        spd: missile.spd,
+    });
+}
+
+function tickMissiles(dt) {
+    if (!gameState.missiles || gameState.missiles.length === 0) return;
+    const survivors = [];
+    const updates = [];
+    for (const m of gameState.missiles) {
+        m.life -= dt;
+        const target = players[m.targetId];
+        const targetAlive = target && target.isAlive && !target.isSpectating;
+        if (m.life <= 0 || !targetAlive) {
+            io.emit('missileExploded', { id: m.id, x: m.x, y: m.y, z: m.z, hit: false });
+            continue;
+        }
+        // Steer horizontally toward target with limited turn rate
+        const dx = target.x - m.x;
+        const dy = ((target.y || 0) + 1.0) - m.y;
+        const dz = target.z - m.z;
+        const dist = Math.hypot(dx, dy, dz);
+        const horizD = Math.hypot(dx, dz) || 1;
+        const wantAng = Math.atan2(dx, dz);
+        const curAng = Math.atan2(m.vx, m.vz);
+        let diff = ((wantAng - curAng) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+        const maxTurn = m.turnRate * dt;
+        if (Math.abs(diff) > maxTurn) diff = Math.sign(diff) * maxTurn;
+        const newAng = curAng + diff;
+        m.vx = Math.sin(newAng) * m.spd;
+        m.vz = Math.cos(newAng) * m.spd;
+        // Vertical seek (clamped)
+        m.vy = Math.max(-8, Math.min(8, dy * 1.3));
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        m.z += m.vz * dt;
+        if (dist < 2.0) {
+            applyEnemyDamage(target.playerId, m.damage, m.ownerId);
+            io.emit('missileExploded', { id: m.id, x: m.x, y: m.y, z: m.z, hit: true });
+            continue;
+        }
+        survivors.push(m);
+        updates.push({ id: m.id, x: m.x, y: m.y, z: m.z, vx: m.vx, vy: m.vy, vz: m.vz });
+    }
+    gameState.missiles = survivors;
+    if (updates.length > 0) io.emit('missilesSynced', updates);
+}
+
+// Tank AI tick — slow tracking + missile barrage. Runs server-side because the
+// tank is a boss enemy; the existing enemy AI is client-owned but the tank's
+// firing must validate damage authoritatively, so we drive it from the server.
+function tickTanks(dt) {
+    const alive = getAlivePlayers();
+    if (alive.length === 0) return;
+    for (const tank of gameState.enemies) {
+        if (tank.type !== 'tank') continue;
+        // Pick the closest alive player as target
+        let best = null, bestD2 = Infinity;
+        for (const p of alive) {
+            const dx = p.x - tank.x, dz = p.z - tank.z;
+            const d2 = dx * dx + dz * dz;
+            if (d2 < bestD2) { bestD2 = d2; best = p; }
+        }
+        if (!best) continue;
+        // Slow rotate toward target (cosmetic, the client mirrors enemy.rot)
+        // and trundle forward only if outside ideal engagement distance
+        const dx = best.x - tank.x, dz = best.z - tank.z;
+        const d = Math.sqrt(bestD2);
+        if (d > 24) {
+            const inv = 1 / Math.max(d, 0.01);
+            const step = (tank.spd || 3.5) * dt;
+            tank.x += dx * inv * step;
+            tank.z += dz * inv * step;
+            if (typeof gameState.terrainSeed === 'number') {
+                tank.y = sampleHeight(tank.x, tank.z, gameState.terrainSeed);
+            }
+        }
+        tank.rot = Math.atan2(dx, dz);
+        // Fire missile when cooldown elapses and target is in sight range
+        tank.atkTmr = (tank.atkTmr ?? 0) - dt;
+        if (tank.atkTmr <= 0 && d < 70) {
+            tank.atkTmr = tank.fireInt || 3.5;
+            spawnTankMissile(tank, best);
+        }
+    }
+}
+
 // ── Enemy AI tick ─────────────────────────────────────────────────────────────
 
 function tickEnemies(dt) {
@@ -1468,6 +1612,7 @@ const SURVIVAL_SHOP_CATALOG = [
     { id: 'potion_damage', name: 'Damage Potion', price: 150, kind: 'consumable', stackSize: 8 },
     { id: 'backpack_small', name: 'Small Backpack', price: 300, kind: 'gear', stackSize: 1 },
     { id: 'backpack_large', name: 'Large Backpack', price: 800, kind: 'gear', stackSize: 1 },
+    { id: 'jeep',           name: 'Jeep (vehicle)',  price: 600, kind: 'vehicle', stackSize: 1 },
 ];
 
 // Caravan: a roving premium vendor that visits once per day for 90s and
@@ -1795,6 +1940,48 @@ function spawnChampion(target) {
     return e;
 }
 
+function spawnRoamingBoss(target) {
+    // Pick tank or mech at random; spawn ~70u from the target so the player
+    // sees them approach before the arena snaps in.
+    const ang = Math.random() * Math.PI * 2;
+    const r = 60 + Math.random() * 25;
+    const bx = target.x + Math.cos(ang) * r;
+    const bz = target.z + Math.sin(ang) * r;
+    const isTank = Math.random() < 0.6;
+    let e;
+    if (isTank) {
+        e = makeTank(bx, bz, { hpMult: 1.0, bossName: 'ARMOR TITAN' });
+        e.isRoamingBoss = true;
+    } else {
+        e = makeMiniBoss(bx, bz);
+        e.type = 'miniboss';
+        e.hp = Math.round(e.hp * 1.5);
+        e.maxHp = e.hp;
+        e.isRoamingBoss = true;
+        e.bossName = 'ROGUE TITAN';
+    }
+    e.y = sampleHeight(bx, bz, gameState.terrainSeed);
+    e.leashRange = 9999; // never leash — they're the arena
+    e.ownerId = target.playerId;
+    gameState.enemies.push(e);
+    // Dome arena: centred on the boss, radius covers both boss + target
+    const arena = {
+        bossId: e.id,
+        x: (bx + target.x) / 2,
+        z: (bz + target.z) / 2,
+        radius: 38,
+        bossName: e.bossName,
+        bossKind: isTank ? 'tank' : 'mech',
+    };
+    gameState.activeRoamingBoss = arena;
+    io.emit('enemySpawned', {
+        id: e.id, type: e.type, x: e.x, y: e.y, z: e.z,
+        hp: e.hp, maxHp: e.maxHp, ownerId: e.ownerId,
+        isRoamingBoss: true, bossName: e.bossName,
+    });
+    io.emit('roamingBossArenaSpawned', arena);
+}
+
 function spawnScoutDrone(target) {
     // Lightweight passive flying enemy — tied into the enemy list but with
     // low hp and harmless. On spawn, broadcasts a ping at the target's location
@@ -1918,6 +2105,44 @@ function tickSurvival(dt) {
         const drones = gameState.enemies.filter(e => e.isScoutDrone).length;
         if (alive.length > 0 && drones < 2) {
             spawnScoutDrone(alive[Math.floor(Math.random() * alive.length)]);
+        }
+    }
+
+    // Roaming bosses (tank / mech) appear periodically. Only one at a time.
+    gameState.nextRoamingBossTmr -= dt;
+    if (gameState.nextRoamingBossTmr <= 0) {
+        gameState.nextRoamingBossTmr = 180 + Math.random() * 120; // every 3-5 minutes
+        const alivePlayers = getAlivePlayers();
+        const hasBossAlready = gameState.activeRoamingBoss
+            && gameState.enemies.some(e => e.id === gameState.activeRoamingBoss.bossId);
+        if (!hasBossAlready && alivePlayers.length > 0) {
+            // Pick a player who's wandered far from origin so the encounter feels earned
+            const candidates = alivePlayers.filter(p => Math.hypot(p.x, p.z) > 60);
+            const target = candidates[Math.floor(Math.random() * candidates.length)]
+                || alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+            spawnRoamingBoss(target);
+        }
+    }
+    // Clear the arena once the boss is dead. If the boss was a tank, leave a
+    // driveable corpse the player can enter with E.
+    if (gameState.activeRoamingBoss) {
+        const stillAlive = gameState.enemies.find(e => e.id === gameState.activeRoamingBoss.bossId);
+        if (!stillAlive) {
+            const arena = gameState.activeRoamingBoss;
+            if (arena.bossKind === 'tank') {
+                const vehicleId = `tankvehicle_${Date.now().toString(36)}`;
+                const vehicle = {
+                    id: vehicleId, kind: 'tank',
+                    x: arena.x, y: sampleHeight(arena.x, arena.z, gameState.terrainSeed), z: arena.z,
+                    rot: 0,
+                    occupantId: null,
+                };
+                if (!gameState.driveableVehicles) gameState.driveableVehicles = [];
+                gameState.driveableVehicles.push(vehicle);
+                io.emit('vehicleSpawned', vehicle);
+            }
+            io.emit('roamingBossArenaCleared', { bossId: arena.bossId });
+            gameState.activeRoamingBoss = null;
         }
     }
 
@@ -2049,6 +2274,9 @@ function startGameLoop() {
             } else {
                 tickWave(dt);
             }
+            // Tank boss firing + missile homing (both Survival and Campaign)
+            tickTanks(dt);
+            tickMissiles(dt);
         }
 
         // Periodically reassign enemy ownership to the closest alive player.
@@ -2572,6 +2800,10 @@ io.on('connection', (socket) => {
         gameState.outposts = getOutpostLocations(seed);
         gameState.camps = generateSurvivalCamps(seed);
         gameState.dronePing = null; // { x, z, until }
+        gameState.missiles = [];
+        gameState.activeRoamingBoss = null; // tank or mech roaming boss arena
+        gameState.driveableVehicles = [];   // jeeps the player has bought, defeated tanks
+        gameState.nextRoamingBossTmr = 90 + Math.random() * 60; // first roaming boss after ~90-150s
         // Pre-spawn ore veins as destructibles, one per wild outpost cluster
         gameState.oreVeins = [];
         for (let i = 0; i < 12; i++) {
@@ -2690,6 +2922,27 @@ io.on('connection', (socket) => {
             if (p.backpackTier < 2) { p.backpackTier = 2; granted = true; }
         } else if (item.id === 'jetpack') {
             p.hasJetpack = true; granted = true;
+        } else if (item.id === 'jeep') {
+            // Spawn the jeep just outside the player's current outpost so they
+            // can walk to it. Drops at home base by default.
+            const home = (gameState.outposts || []).find(o => o.id === (p.homeBaseId || 'origin'))
+                || (gameState.outposts || [])[0]
+                || { x: 0, z: 0 };
+            const jeepX = home.x + 18;
+            const jeepZ = home.z + 0;
+            const vehicleId = `jeep_${Date.now().toString(36)}_${Math.floor(Math.random()*1000)}`;
+            const vehicle = {
+                id: vehicleId, kind: 'jeep',
+                x: jeepX,
+                y: (typeof gameState.terrainSeed === 'number')
+                    ? sampleHeight(jeepX, jeepZ, gameState.terrainSeed)
+                    : 0,
+                z: jeepZ, rot: 0, occupantId: null,
+            };
+            if (!gameState.driveableVehicles) gameState.driveableVehicles = [];
+            gameState.driveableVehicles.push(vehicle);
+            io.emit('vehicleSpawned', vehicle);
+            granted = true;
         } else {
             // Inventory items
             granted = tryAddToInventory(p, item.id, qty);
@@ -2832,6 +3085,67 @@ io.on('connection', (socket) => {
         emitMoneyUpdate(socket.id, p, cash, 'ore_' + vein.kind);
         socket.emit('oreVeinCollected', { veinId, kind: vein.kind, iron: p.iron, crystal: p.crystal });
         io.emit('oreVeinRemoved', { veinId });
+    });
+
+    socket.on('vehicleEnter', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'vehicleEnter', 250)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const vehicleId = String(data?.vehicleId || '');
+        const v = (gameState.driveableVehicles || []).find(x => x.id === vehicleId);
+        if (!v) return;
+        if (v.occupantId && v.occupantId !== socket.id) return; // someone else is driving
+        const dx = p.x - v.x, dz = p.z - v.z;
+        if (dx * dx + dz * dz > 9 * 9) return; // must be within 9u to enter
+        v.occupantId = socket.id;
+        p.inVehicleId = vehicleId;
+        io.emit('vehicleOccupied', { vehicleId, occupantId: socket.id });
+    });
+
+    socket.on('vehicleExit', () => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'vehicleExit', 250)) return;
+        const p = players[socket.id];
+        if (!p) return;
+        const vId = p.inVehicleId;
+        if (!vId) return;
+        const v = (gameState.driveableVehicles || []).find(x => x.id === vId);
+        if (v && v.occupantId === socket.id) v.occupantId = null;
+        p.inVehicleId = null;
+        io.emit('vehicleOccupied', { vehicleId: vId, occupantId: null });
+    });
+
+    socket.on('vehiclePos', (data) => {
+        // Driver-authoritative position update (like enemy ownership)
+        if (gameState.mode !== 'SURVIVAL') return;
+        const p = players[socket.id];
+        if (!p?.inVehicleId) return;
+        const v = (gameState.driveableVehicles || []).find(x => x.id === p.inVehicleId);
+        if (!v || v.occupantId !== socket.id) return;
+        if (typeof data?.x === 'number') v.x = data.x;
+        if (typeof data?.y === 'number') v.y = data.y;
+        if (typeof data?.z === 'number') v.z = data.z;
+        if (typeof data?.rot === 'number') v.rot = data.rot;
+        socket.broadcast.emit('vehicleSync', { id: v.id, x: v.x, y: v.y, z: v.z, rot: v.rot });
+    });
+
+    socket.on('tankFire', (data) => {
+        // Player-driven tank fires a fast, non-homing cannon shell.
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'tankFire', 350)) return;
+        const p = players[socket.id];
+        if (!p?.inVehicleId) return;
+        const v = (gameState.driveableVehicles || []).find(x => x.id === p.inVehicleId);
+        if (!v || v.kind !== 'tank' || v.occupantId !== socket.id) return;
+        const dx = Number(data?.dx) || 0;
+        const dz = Number(data?.dz) || 0;
+        const len = Math.hypot(dx, dz) || 1;
+        io.emit('tankShellFired', {
+            x: v.x, y: (v.y || 0) + 2.2, z: v.z,
+            dx: dx / len, dz: dz / len,
+            ownerId: socket.id,
+        });
     });
 
     socket.on('placeTorch', (data) => {

@@ -152,6 +152,9 @@ export const game = {
   caravan: null,           // { x, z, despawnAt }
   weatherActive: false,
   dronePing: null,         // { x, z, radius, until } — extends enemy leash near point
+  vehicles: [],            // [{ id, kind:'jeep'|'tank', x, y, z, rot, occupantId }]
+  inVehicleId: null,       // id of vehicle the local player is driving, or null
+  activeBossArena: null,   // { x, z, radius, bossId } when a dome is up
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"

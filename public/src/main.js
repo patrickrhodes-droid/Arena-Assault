@@ -35,7 +35,7 @@ import { initNetworking } from "./network.js";
 import { updateEnemies, updateWaves, trySwordHit } from "./enemies.js";
 import { syncLocalPlayerState, updateCamera, updatePlayer, setupInput, tryJump, tryPointerLock, resetViewState, fireGrapple, updateGrapple } from "./player.js";
 import { pollGamepad } from "./gamepad.js";
-import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, tickJetpackParticles, updateRemotePlayerVisuals } from "./scene.js";
+import { applyCharacterHead, applyWeaponModel, initScene, rebuildArena, tickBossArenaDome, tickJetpackParticles, tickMissileMeshes, tickVehicleMeshes, updateRemotePlayerVisuals } from "./scene.js";
 import { addShake, game, resetSessionState } from "./state.js";
 import { updateChunkStreaming, disposeAllChunks } from "./chunkManager.js";
 import { tickDayNight } from "./dayNight.js";
@@ -857,6 +857,10 @@ function animate(time) {
       if (game.frameIndex % 6 === 0) refreshInventoryUI();
       // Jetpack thrust particles (fire from each shoulder thruster when active)
       tickJetpackParticles(game.dt, spawnParticles);
+      // Missiles + vehicles + boss arena dome
+      tickMissileMeshes(game.dt);
+      tickVehicleMeshes(game.dt);
+      tickBossArenaDome();
     }
 
     // World time-scale: hit-stop (freeze) and kill slow-mo

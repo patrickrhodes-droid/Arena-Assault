@@ -31,6 +31,8 @@ import {
   usingScopedSniperView,
 } from "./combat.js";
 import { getBossEnemy } from "./enemies.js";
+import { setOwnedVehiclePose } from "./scene.js";
+import { sampleHeight } from "./shared/noise.js";
 
 let bossAlertCooldown = 0;
 let _prevVelY       = 0; // track vertical velocity between frames for landing detection
@@ -378,12 +380,26 @@ export function setupInput(actions) {
           window.toggleInventoryPanel();
         }
       }
-      // E: open shop if near vendor (uses VENDOR_POS / VENDOR_REACH from
-      // survivalConfig so client + server agree on the radius check).
-      // Counts the origin outpost, any wild outpost, and the active caravan
-      // — server validates the exact match.
+      // E: vehicle enter/exit OR open shop. Vehicles take priority when nearby.
       if (event.code === 'KeyE' && game.state === 'PLAYING' && !event.repeat) {
         const pp = game.visuals.player.playerGroup.position;
+        // If already driving a vehicle, exit it.
+        if (game.inVehicleId) {
+          game.socket?.emit('vehicleExit');
+          return;
+        }
+        // Nearest vehicle within 5u?
+        let nearestVehicle = null, nvDist = Infinity;
+        for (const v of (game.vehicles || [])) {
+          if (v.occupantId && v.occupantId !== game.socket?.id) continue;
+          const dx = pp.x - v.x, dz = pp.z - v.z;
+          const d2 = dx * dx + dz * dz;
+          if (d2 < 25 && d2 < nvDist) { nvDist = d2; nearestVehicle = v; }
+        }
+        if (nearestVehicle) {
+          game.socket?.emit('vehicleEnter', { vehicleId: nearestVehicle.id });
+          return;
+        }
         const isNear = (cx, cz, r) => {
           const dx = pp.x - cx, dz = pp.z - cz;
           return dx * dx + dz * dz < r * r;
@@ -573,6 +589,11 @@ export function tryJump() {
 }
 
 export function updatePlayer(actions) {
+  // ── Driving a vehicle? Override movement and skip the on-foot logic. ──
+  if (game.inVehicleId && game.mode === 'SURVIVAL') {
+    updateVehicleDriving();
+    return;
+  }
   const wasGrounded = game.isGrounded;
   const prevY = game.visuals.player.playerGroup.position.y;
   const prevX = game.visuals.player.playerGroup.position.x;
@@ -773,6 +794,17 @@ export function updatePlayer(actions) {
   if (game.mode !== 'SURVIVAL') {
     game.visuals.player.playerGroup.position.x = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.x));
     game.visuals.player.playerGroup.position.z = Math.max(-HALF + 1.5, Math.min(HALF - 1.5, game.visuals.player.playerGroup.position.z));
+  } else if (game.activeBossArena) {
+    // Inside a roaming-boss arena dome — clamp to its radius
+    const a = game.activeBossArena;
+    const pg = game.visuals.player.playerGroup.position;
+    const dx = pg.x - a.x, dz = pg.z - a.z;
+    const d = Math.hypot(dx, dz);
+    const maxR = a.radius - 1.0;
+    if (d > maxR) {
+      pg.x = a.x + (dx / d) * maxR;
+      pg.z = a.z + (dz / d) * maxR;
+    }
   }
 
   // ── Landing impact ──────────────────────────────────────────────────────
@@ -1282,6 +1314,116 @@ export function resetViewState() {
   game.camera.updateProjectionMatrix();
   game.dom.crosshair.classList.remove("hidden");
   game.dom.scopeOverlay.classList.remove("show");
+}
+
+// ── Vehicle driving ────────────────────────────────────────────────────────────
+//
+// While the local player is in a vehicle, we override movement entirely:
+//   - W/S throttles forward/back, A/D yaws the chassis.
+//   - The player mesh hides; the camera trails behind the vehicle.
+//   - In a tank, LMB fires a fast non-homing shell (server-validated).
+//   - E exits the vehicle (handled in the keydown listener).
+let _vehicleHeading = 0;
+let _vehicleSpeed = 0;
+let _tankFireCooldown = 0;
+
+function updateVehicleDriving() {
+  const v = (game.vehicles || []).find(x => x.id === game.inVehicleId);
+  if (!v) {
+    // Vehicle disappeared — drop the player out
+    game.inVehicleId = null;
+    return;
+  }
+  const dt = game.dt;
+  // Throttle and steering
+  const accel = (game.keys.KeyW ? 16 : 0) - (game.keys.KeyS ? 12 : 0);
+  const steer = ((game.keys.KeyA ? 1 : 0) - (game.keys.KeyD ? 1 : 0));
+  const maxSpeed = v.kind === 'jeep' ? 26 : 14; // jeep is faster
+  const friction = 4.5;
+  _vehicleSpeed += accel * dt;
+  // Friction decay toward zero
+  if (Math.abs(accel) < 0.1) {
+    _vehicleSpeed -= _vehicleSpeed * friction * dt;
+  }
+  _vehicleSpeed = Math.max(-maxSpeed * 0.55, Math.min(maxSpeed, _vehicleSpeed));
+  // Steering only meaningful at non-zero speed
+  const steerScale = Math.min(1, Math.abs(_vehicleSpeed) / 6);
+  _vehicleHeading += steer * 1.6 * dt * steerScale * Math.sign(_vehicleSpeed || 1);
+  // Integrate position
+  const dx = Math.sin(_vehicleHeading) * _vehicleSpeed * dt;
+  const dz = Math.cos(_vehicleHeading) * _vehicleSpeed * dt;
+  v.x += dx;
+  v.z += dz;
+  // Sit on terrain
+  if (typeof game.terrainSeed === 'number') {
+    v.y = sampleHeight(v.x, v.z, game.terrainSeed);
+  }
+  v.rot = _vehicleHeading;
+  // Push the local mesh directly so there's no lag for the driver
+  setOwnedVehiclePose(v.id, v.x, v.y, v.z, v.rot);
+  // Sync to server ~15Hz (only when moving)
+  if (!game._vehicleSyncTmr) game._vehicleSyncTmr = 0;
+  game._vehicleSyncTmr -= dt;
+  if (game._vehicleSyncTmr <= 0 && (Math.abs(_vehicleSpeed) > 0.1 || Math.abs(steer) > 0)) {
+    game._vehicleSyncTmr = 1 / 15;
+    game.socket?.emit('vehiclePos', { x: v.x, y: v.y, z: v.z, rot: v.rot });
+  }
+  // Keep the player group anchored on the vehicle (so existing camera follows it)
+  const pg = game.visuals.player.playerGroup;
+  pg.position.set(v.x, v.y + 0.5, v.z);
+  pg.rotation.y = v.rot;
+  // Hide player limbs so they don't poke through
+  game.visuals.player.torso.visible = false;
+  game.visuals.player.leftLeg.visible = false;
+  game.visuals.player.rightLeg.visible = false;
+  game.visuals.player.leftBoot.visible = false;
+  game.visuals.player.rightBoot.visible = false;
+  game.visuals.player.leftArm.visible = false;
+  game.visuals.player.rightArm.visible = false;
+  game.visuals.player.headGroup.visible = false;
+  game.visuals.player.visor.visible = false;
+  if (game.visuals.weapon?.firstPersonGun) game.visuals.weapon.firstPersonGun.visible = false;
+  if (game.visuals.player.jetpackGroup) game.visuals.player.jetpackGroup.visible = false;
+  // Tank cannon: LMB fires a fast non-homing shell on a 350ms cooldown
+  _tankFireCooldown -= dt;
+  if (v.kind === 'tank' && game.mouseDown && _tankFireCooldown <= 0) {
+    _tankFireCooldown = 0.35;
+    const fwd = new THREE.Vector3(
+      -Math.sin(game.camTheta),
+      0,
+      -Math.cos(game.camTheta),
+    );
+    game.socket?.emit('tankFire', { dx: fwd.x, dz: fwd.z });
+  }
+}
+
+// Restore the hidden player limbs after exiting a vehicle (called from network
+// vehicleOccupied handler when occupantId becomes null for the local player).
+export function restorePlayerVisualsAfterExit() {
+  const p = game.visuals?.player;
+  if (!p) return;
+  p.torso.visible = true;
+  p.leftLeg.visible = true;
+  p.rightLeg.visible = true;
+  p.leftBoot.visible = true;
+  p.rightBoot.visible = true;
+  p.leftArm.visible = true;
+  p.rightArm.visible = true;
+  p.headGroup.visible = true;
+  p.visor.visible = true;
+  _vehicleSpeed = 0;
+  if (game.hasJetpack && p.jetpackGroup) p.jetpackGroup.visible = true;
+}
+
+// Sync heading on entry so the vehicle starts driving in its current orientation.
+export function onEnterVehicle(v) {
+  _vehicleHeading = v.rot || 0;
+  _vehicleSpeed = 0;
+}
+
+if (typeof window !== 'undefined') {
+  window.__onEnterVehicle = (v) => onEnterVehicle(v);
+  window.__restorePlayerAfterExit = () => restorePlayerVisualsAfterExit();
 }
 
 export function syncLocalPlayerState(force = false) {

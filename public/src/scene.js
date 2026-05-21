@@ -369,6 +369,218 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// ── Tank missiles (server-driven homing projectiles) ───────────────────────────
+
+const _missileMeshes = new Map(); // id -> { group, targetX,targetY,targetZ }
+function ensureMissileMesh(id, data) {
+  if (_missileMeshes.has(id)) return _missileMeshes.get(id);
+  const group = new THREE.Group();
+  const gltf = game.shared.missileGltf;
+  if (gltf) {
+    const model = gltf.scene.clone(true);
+    model.scale.setScalar(0.6);
+    group.add(model);
+  } else {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.9, 8),
+      new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.5 }),
+    );
+    body.rotation.x = Math.PI / 2;
+    group.add(body);
+    const fin = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18, 0.4, 4),
+      new THREE.MeshBasicMaterial({ color: 0xffaa00 }),
+    );
+    fin.position.z = 0.55;
+    fin.rotation.x = Math.PI / 2;
+    group.add(fin);
+  }
+  group.position.set(data.x, data.y, data.z);
+  game.scene.add(group);
+  const rec = { group, x: data.x, y: data.y, z: data.z, tx: data.x, ty: data.y, tz: data.z };
+  _missileMeshes.set(id, rec);
+  return rec;
+}
+
+if (typeof window !== 'undefined') {
+  window.__missileSpawned = (data) => {
+    ensureMissileMesh(data.id, data);
+  };
+  window.__missilesSync = (list) => {
+    for (const m of list) {
+      const rec = _missileMeshes.get(m.id);
+      if (!rec) { ensureMissileMesh(m.id, m); continue; }
+      rec.tx = m.x; rec.ty = m.y; rec.tz = m.z;
+      // Orient toward velocity
+      const vx = m.vx ?? (m.x - rec.x);
+      const vz = m.vz ?? (m.z - rec.z);
+      rec.group.rotation.y = Math.atan2(vx, vz);
+      rec.group.rotation.x = -Math.atan2(m.vy ?? 0, Math.hypot(vx, vz) || 1);
+    }
+  };
+  window.__missileExploded = (data) => {
+    const rec = _missileMeshes.get(data.id);
+    if (rec) { rec.group.parent?.remove(rec.group); _missileMeshes.delete(data.id); }
+    // Burst of orange/yellow particles via global hook (set by combat.js)
+    if (window.__spawnExplosion) window.__spawnExplosion(data.x, data.y, data.z);
+  };
+}
+
+// Smooth-lerp missiles each frame
+export function tickMissileMeshes(dt) {
+  if (_missileMeshes.size === 0) return;
+  for (const [, rec] of _missileMeshes) {
+    rec.x += (rec.tx - rec.x) * Math.min(1, 18 * dt);
+    rec.y += (rec.ty - rec.y) * Math.min(1, 18 * dt);
+    rec.z += (rec.tz - rec.z) * Math.min(1, 18 * dt);
+    rec.group.position.set(rec.x, rec.y, rec.z);
+  }
+}
+
+// ── Roaming-boss arena dome ────────────────────────────────────────────────────
+
+let _arenaDome = null;
+let _arenaInfo = null; // { x, z, radius, bossId }
+
+if (typeof window !== 'undefined') {
+  window.__roamingArenaSpawned = (arena) => {
+    if (_arenaDome) { _arenaDome.parent?.remove(_arenaDome); _arenaDome = null; }
+    _arenaInfo = arena;
+    game.activeBossArena = arena;
+    const geo = new THREE.SphereGeometry(arena.radius, 24, 16);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xff5544, transparent: true, opacity: 0.18,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const dome = new THREE.Mesh(geo, mat);
+    dome.position.set(arena.x, 0, arena.z);
+    game.scene.add(dome);
+    _arenaDome = dome;
+  };
+  window.__roamingArenaCleared = () => {
+    if (_arenaDome) { _arenaDome.parent?.remove(_arenaDome); _arenaDome = null; }
+    _arenaInfo = null;
+    game.activeBossArena = null;
+  };
+}
+
+export function tickBossArenaDome() {
+  if (_arenaDome) {
+    const t = performance.now() / 600;
+    _arenaDome.material.opacity = 0.14 + 0.08 * Math.sin(t);
+    _arenaDome.rotation.y += 0.003;
+  }
+}
+
+// Confines the player inside the dome (called by player.js after movement).
+export function clampPlayerInsideArena(playerGroup) {
+  if (!_arenaInfo) return;
+  const dx = playerGroup.position.x - _arenaInfo.x;
+  const dz = playerGroup.position.z - _arenaInfo.z;
+  const d = Math.hypot(dx, dz);
+  const maxR = _arenaInfo.radius - 1.0;
+  if (d > maxR) {
+    playerGroup.position.x = _arenaInfo.x + (dx / d) * maxR;
+    playerGroup.position.z = _arenaInfo.z + (dz / d) * maxR;
+  }
+}
+
+// ── Driveable vehicles (Jeep / Tank corpse) ────────────────────────────────────
+
+const _vehicleMeshes = new Map(); // id -> { group, kind, x, y, z, rot, occupantId }
+
+function buildVehicleMesh(data) {
+  const group = new THREE.Group();
+  const isJeep = data.kind === 'jeep';
+  const gltf = isJeep ? game.shared.jeepGltf : game.shared.tankGltf;
+  if (gltf) {
+    const model = gltf.scene.clone(true);
+    model.scale.setScalar(isJeep ? 1.0 : 1.4);
+    model.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    group.add(model);
+  } else {
+    const mat = new THREE.MeshStandardMaterial({ color: isJeep ? 0x6a8d4a : 0x4a5040, roughness: 0.85 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 4.0), mat);
+    body.position.y = 0.7;
+    group.add(body);
+  }
+  group.position.set(data.x, data.y || 0, data.z);
+  group.rotation.y = data.rot || 0;
+  game.scene.add(group);
+  return group;
+}
+
+if (typeof window !== 'undefined') {
+  window.__vehicleSpawned = (data) => {
+    if (_vehicleMeshes.has(data.id)) return;
+    const group = buildVehicleMesh(data);
+    _vehicleMeshes.set(data.id, {
+      group, kind: data.kind,
+      x: data.x, y: data.y || 0, z: data.z, rot: data.rot || 0,
+      tx: data.x, ty: data.y || 0, tz: data.z, trot: data.rot || 0,
+      occupantId: data.occupantId || null,
+    });
+    if (!Array.isArray(game.vehicles)) game.vehicles = [];
+    game.vehicles.push({
+      id: data.id, kind: data.kind,
+      x: data.x, y: data.y || 0, z: data.z, rot: data.rot || 0,
+      occupantId: data.occupantId || null,
+    });
+  };
+  window.__vehicleSync = (data) => {
+    const rec = _vehicleMeshes.get(data.id);
+    if (!rec) return;
+    rec.tx = data.x; rec.ty = data.y; rec.tz = data.z; rec.trot = data.rot;
+    const v = (game.vehicles || []).find(x => x.id === data.id);
+    if (v) { v.x = data.x; v.y = data.y; v.z = data.z; v.rot = data.rot; }
+  };
+  window.__vehicleOccupied = (data) => {
+    const rec = _vehicleMeshes.get(data.vehicleId);
+    if (rec) rec.occupantId = data.occupantId;
+    const v = (game.vehicles || []).find(x => x.id === data.vehicleId);
+    if (v) v.occupantId = data.occupantId;
+    if (data.occupantId === game.socket?.id) {
+      game.inVehicleId = data.vehicleId;
+    } else if (game.inVehicleId === data.vehicleId) {
+      game.inVehicleId = null;
+    }
+  };
+  window.__vehicleRemoved = (id) => {
+    const rec = _vehicleMeshes.get(id);
+    if (rec) { rec.group.parent?.remove(rec.group); _vehicleMeshes.delete(id); }
+    if (Array.isArray(game.vehicles)) game.vehicles = game.vehicles.filter(v => v.id !== id);
+  };
+}
+
+export function tickVehicleMeshes(dt) {
+  for (const [, rec] of _vehicleMeshes) {
+    rec.x += (rec.tx - rec.x) * Math.min(1, 18 * dt);
+    rec.y += (rec.ty - rec.y) * Math.min(1, 18 * dt);
+    rec.z += (rec.tz - rec.z) * Math.min(1, 18 * dt);
+    // Smooth rotation lerp (handle wrap)
+    let dr = rec.trot - rec.rot;
+    while (dr > Math.PI) dr -= Math.PI * 2;
+    while (dr < -Math.PI) dr += Math.PI * 2;
+    rec.rot += dr * Math.min(1, 12 * dt);
+    rec.group.position.set(rec.x, rec.y, rec.z);
+    rec.group.rotation.y = rec.rot;
+  }
+}
+
+// Direct write from local driver — call this when the player is driving so the
+// mesh tracks the player's position instantly (no lerp lag for the driver).
+export function setOwnedVehiclePose(id, x, y, z, rot) {
+  const rec = _vehicleMeshes.get(id);
+  if (!rec) return;
+  rec.x = rec.tx = x;
+  rec.y = rec.ty = y;
+  rec.z = rec.tz = z;
+  rec.rot = rec.trot = rot;
+  rec.group.position.set(x, y, z);
+  rec.group.rotation.y = rot;
+}
+
 let _jetpackMounted = false;
 if (typeof window !== 'undefined') {
   window.__attachJetpackVisual = () => attachJetpackToPlayer();
@@ -1019,6 +1231,24 @@ function buildSharedRuntimeAssets() {
   game.shared.mechGltf = null;
   new GLTFLoader().load("/assets/models/Mech.glb", (gltf) => {
     game.shared.mechGltf = gltf;
+  });
+
+  game.shared.tankGltf = null;
+  new GLTFLoader().load("/assets/models/Tank.glb", (gltf) => {
+    gltf.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    game.shared.tankGltf = gltf;
+  });
+
+  game.shared.missileGltf = null;
+  new GLTFLoader().load("/assets/models/Missile.glb", (gltf) => {
+    gltf.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; } });
+    game.shared.missileGltf = gltf;
+  });
+
+  game.shared.jeepGltf = null;
+  new GLTFLoader().load("/assets/models/Jeep.glb", (gltf) => {
+    gltf.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    game.shared.jeepGltf = gltf;
   });
 
   game.shared.jetpackGltf = null;

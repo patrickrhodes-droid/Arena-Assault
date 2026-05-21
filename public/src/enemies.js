@@ -69,7 +69,10 @@ export function getBossEnemy() {
 }
 
 export function getBossEnemies() {
-  return game.enemies.filter((enemy) => enemy.type === "boss");
+  // Tanks and any flagged roaming-boss miniboss also drive the boss-HP HUD.
+  return game.enemies.filter((enemy) =>
+    enemy.type === "boss" || enemy.type === "tank" || enemy.isRoamingBoss
+  );
 }
 
 function getBossWaveNumber() {
@@ -544,6 +547,82 @@ export function createMiniBoss(position, id = Math.random(), options = {}) {
     hpBar,
     hpFg: hpFill,
     bossName: "TITAN SCOUT",
+  });
+}
+
+// Tank boss visual. Uses Tank.glb (with a primitive fallback). Spawns into the
+// scene as a boss-class enemy with its own health bar.
+export function createTank(position, id = Math.random(), options = {}) {
+  const group = new THREE.Group();
+  let flashPart = null;
+
+  const tankGltf = game.shared.tankGltf;
+  let tankBoundsRadius = 2.2;
+  let tankBoundsHeight = 3.0;
+  if (tankGltf) {
+    const model = tankGltf.scene.clone(true);
+    model.scale.setScalar(1.4);
+    model.traverse((node) => { if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; } });
+    group.add(model);
+    const bbox = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    tankBoundsRadius = Math.max(size.x, size.z) * 0.5;
+    tankBoundsHeight = size.y;
+  } else {
+    // Fallback primitive tank (hull + turret + barrel)
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0x4a5040, roughness: 0.85 });
+    const turretMat = new THREE.MeshStandardMaterial({ color: 0x303625, roughness: 0.85 });
+    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.2, 2.4), hullMat);
+    hull.position.y = 0.8;
+    group.add(hull);
+    const turret = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.2, 0.7, 8), turretMat);
+    turret.position.y = 1.85;
+    group.add(turret);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.4, 8), barrelMat);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 1.85, -1.6);
+    group.add(barrel);
+    flashPart = turret;
+  }
+
+  group.position.copy(position);
+  game.scene.add(group);
+
+  const hpMax = options.hp ?? 2500;
+  const hpBar = new THREE.Group();
+  const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
+  const hpFill = new THREE.Mesh(
+    game.shared.hpFgGeo,
+    new THREE.MeshBasicMaterial({ color: 0xffcc33, side: THREE.DoubleSide }),
+  );
+  hpFill.position.set(-0.6, 0, 0.002);
+  hpBar.add(hpBarBg);
+  hpBar.add(hpFill);
+  game.scene.add(hpBar);
+
+  game.enemies.push({
+    id,
+    type: "tank",
+    group,
+    flashPart,
+    radius: tankBoundsRadius,
+    bossHeight: tankBoundsHeight,
+    hp: hpMax,
+    maxHp: hpMax,
+    spd: 3.5,
+    atkDmg: 80,
+    atkTmr: 0,
+    flashTmr: 0,
+    walkT: 0,
+    velX: 0,
+    velZ: 0,
+    velY: 0,
+    hpBar,
+    hpFg: hpFill,
+    bossName: options.bossName || "ARMOR TITAN",
+    isTank: true,
   });
 }
 
@@ -1065,6 +1144,12 @@ function runOwnedEnemyAI(enemy) {
   const dist = Math.max(closestDist, 0.001);
   const ndx = dx / dist, ndz = dz / dist;
   enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
+  // Tanks are server-driven (their own tick handles AI and missile firing).
+  // The client just renders position from enemiesSynced.
+  if (enemy.type === 'tank') {
+    enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
+    return;
+  }
   if (enemy.isScoutDrone) {
     ownedDroneAI(enemy, pos, closest, dist, ndx, ndz);
   }
