@@ -1399,6 +1399,14 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
     pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + (enemy.bossEfx || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
     pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + (enemy.bossEfz || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
+    // Also clamp within the dome during mid-air traversal
+    const _jArena = game.activeBossArena;
+    if (_jArena && (enemy.isRoamingBoss || enemy.type === 'boss' || enemy.type === 'miniboss')) {
+      const _jdx = pos.x - _jArena.x, _jdz = pos.z - _jArena.z;
+      const _jd  = Math.hypot(_jdx, _jdz);
+      const _jmaxR = _jArena.radius - 1.5;
+      if (_jd > _jmaxR) { pos.x = _jArena.x + (_jdx / _jd) * _jmaxR; pos.z = _jArena.z + (_jdz / _jd) * _jmaxR; }
+    }
 
     // Body-slam: damage any target the boss flies into while airborne
     if (!enemy.bossBumpFired) {
@@ -1527,6 +1535,19 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     } else {
       pos.y = floorY;
       enemy.velY = 0;
+    }
+  }
+
+  // ── Dome containment — boss must stay inside its own arena sphere ──────────
+  const arena = game.activeBossArena;
+  if (arena && (enemy.isRoamingBoss || enemy.type === 'boss' || enemy.type === 'miniboss')) {
+    const bdx = pos.x - arena.x;
+    const bdz = pos.z - arena.z;
+    const bd  = Math.hypot(bdx, bdz);
+    const maxR = arena.radius - 1.5;
+    if (bd > maxR) {
+      pos.x = arena.x + (bdx / bd) * maxR;
+      pos.z = arena.z + (bdz / bd) * maxR;
     }
   }
 }
