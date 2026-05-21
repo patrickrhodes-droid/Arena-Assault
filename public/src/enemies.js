@@ -1100,15 +1100,59 @@ function runOwnedEnemyAI(enemy) {
       pos.z += stepZ;
       enemy.walkT = (enemy.walkT || 0) + game.dt * 6;
       // Stop "noticed" so the next chase begins with a fresh look-up beat
-      if (distHome < enemy.leashRange * 0.5) enemy.noticed = false;
+      if (distHome < enemy.leashRange * 0.5) {
+        enemy.noticed = false;
+        enemy.idleTarget = null; // pick a fresh wander point near fire
+      }
+      return;
+    }
+  }
+
+  // ── Camp idle (Survival only): hang near the fire until a player enters the ring ──
+  if (
+    game.mode === 'SURVIVAL'
+    && typeof enemy.homeX === 'number'
+    && !enemy.noticed
+    && enemy.type !== 'boss'
+    && !enemy.isChampion
+    && !enemy.isScoutDrone
+  ) {
+    // Aggro as soon as a player steps inside the patrol ring
+    const aggroR2 = (enemy.leashRange || 20) * (enemy.leashRange || 20);
+    for (const t of targets) {
+      const dx = t.pos.x - pos.x, dz = t.pos.z - pos.z;
+      if (dx * dx + dz * dz < aggroR2) {
+        enemy.noticed   = true;
+        enemy.noticeTmr = 0.28;
+        break;
+      }
+    }
+    if (!enemy.noticed) {
+      // Wander lazily within ~4 units of the campfire
+      if (!enemy.idleTarget || (enemy.idleTmr || 0) <= 0) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * 4;
+        enemy.idleTarget = { x: enemy.homeX + Math.cos(angle) * r, z: enemy.homeZ + Math.sin(angle) * r };
+        enemy.idleTmr = 3 + Math.random() * 4;
+      }
+      enemy.idleTmr -= game.dt;
+      const tx = enemy.idleTarget.x - pos.x;
+      const tz = enemy.idleTarget.z - pos.z;
+      const tdist = Math.hypot(tx, tz);
+      if (tdist > 0.6) {
+        enemy.group.rotation.y = Math.atan2(tx, tz) + Math.PI;
+        const speed = (enemy.spd || 3) * 0.25;
+        pos.x += (tx / tdist) * speed * game.dt;
+        pos.z += (tz / tdist) * speed * game.dt;
+        enemy.walkT = (enemy.walkT || 0) + game.dt * 3;
+      }
       return;
     }
   }
 
   // ── Awareness: brief look-up pause the FIRST time an enemy spots a player ──
-  // Enemies move normally until within detection range; then pause once, then charge.
   if (!enemy.noticed) {
-    const detectionR2 = enemy.type === "boss" ? 2500 : 1600; // 50 or 40 units
+    const detectionR2 = enemy.type === "boss" ? 2500 : 1600; // 50 or 40 units (non-camp enemies)
     for (const t of targets) {
       const dx = t.pos.x - pos.x, dz = t.pos.z - pos.z;
       if (dx * dx + dz * dz < detectionR2) {
@@ -1117,7 +1161,6 @@ function runOwnedEnemyAI(enemy) {
         break;
       }
     }
-    // NOT noticed yet — fall through to normal AI (enemies still pathfind toward player)
   }
   if (enemy.noticeTmr > 0) {
     enemy.noticeTmr -= game.dt;
