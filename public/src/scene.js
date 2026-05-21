@@ -749,82 +749,105 @@ function buildWildOutposts() {
 }
 
 const _campMarkers = new Map(); // campId -> THREE.Group
+let _campMats = null;
+
+function _getCampMats() {
+  if (!_campMats) {
+    _campMats = {
+      stone:   new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true }),
+      charcoal: new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.9 }),
+      flame:   new THREE.MeshBasicMaterial({ color: 0xff8030 }),
+      totem:   new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 }),
+      skull:   new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 }),
+    };
+  }
+  return _campMats;
+}
+
+function _buildOneCampMarker(camp) {
+  if (_campMarkers.has(camp.id) || !game.scene) return;
+  const { stone: stoneMat, charcoal: charcoalMat, flame: flameMat, totem: totemMat, skull: totemSkullMat } = _getCampMats();
+  const y = sampleHeight(camp.x, camp.z, game.terrainSeed | 0);
+  const group = new THREE.Group();
+  group.position.set(camp.x, y, camp.z);
+
+  const stoneGeo = new THREE.IcosahedronGeometry(0.32, 0);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const stone = new THREE.Mesh(stoneGeo, stoneMat);
+    stone.position.set(Math.cos(a) * 0.7, 0.15, Math.sin(a) * 0.7);
+    stone.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+    stone.castShadow = true;
+    group.add(stone);
+  }
+  const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
+  log1.rotation.z = Math.PI / 2; log1.position.y = 0.18;
+  group.add(log1);
+  const log2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
+  log2.rotation.x = Math.PI / 2; log2.position.y = 0.22;
+  group.add(log2);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 6), flameMat);
+  flame.position.y = 0.7;
+  group.add(flame);
+  const fireLight = new THREE.PointLight(0xff8830, 1.5, 14);
+  fireLight.position.y = 0.9;
+  group.add(fireLight);
+  const totemH = 1.4 + camp.size * 0.18;
+  const totem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, totemH, 7), totemMat);
+  totem.position.set(2.4, totemH / 2, 0);
+  totem.castShadow = true;
+  group.add(totem);
+  const skullMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), totemSkullMat);
+  skullMesh.position.set(2.4, totemH + 0.12, 0);
+  group.add(skullMesh);
+
+  game.scene.add(group);
+  _campMarkers.set(camp.id, group);
+}
 
 function buildCampMarkers() {
   for (const [, g] of _campMarkers) g.parent?.remove(g);
   _campMarkers.clear();
-  const camps = game.camps || [];
-  if (camps.length === 0) return;
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true });
-  const charcoalMat = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.9 });
-  const flameMat = new THREE.MeshBasicMaterial({ color: 0xff8030 });
-  const totemMat = new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 });
-  const totemSkullMat = new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 });
-  for (const camp of camps) {
-    const y = sampleHeight(camp.x, camp.z, game.terrainSeed | 0);
-    const group = new THREE.Group();
-    group.position.set(camp.x, y, camp.z);
+  _campMats = null;
+  for (const camp of (game.camps || [])) _buildOneCampMarker(camp);
+}
 
-    // Ring of 5 stones around the fire
-    const stoneGeo = new THREE.IcosahedronGeometry(0.32, 0);
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      const sx = Math.cos(a) * 0.7;
-      const sz = Math.sin(a) * 0.7;
-      const stone = new THREE.Mesh(stoneGeo, stoneMat);
-      stone.position.set(sx, 0.15, sz);
-      stone.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      stone.castShadow = true;
-      group.add(stone);
-    }
-    // Charcoal logs in the middle
-    const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
-    log1.rotation.z = Math.PI / 2;
-    log1.position.y = 0.18;
-    group.add(log1);
-    const log2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 6), charcoalMat);
-    log2.rotation.x = Math.PI / 2;
-    log2.position.y = 0.22;
-    group.add(log2);
-    // Flame mesh + warm point light
-    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 6), flameMat);
-    flame.position.y = 0.7;
-    group.add(flame);
-    const fireLight = new THREE.PointLight(0xff8830, 1.5, 14);
-    fireLight.position.y = 0.9;
-    group.add(fireLight);
+export function addCampMarker(camp) {
+  _buildOneCampMarker(camp);
+}
 
-    // Totem pole — bigger camps get a taller totem so they stand out
-    const totemH = 1.4 + camp.size * 0.18;
-    const totem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, totemH, 7), totemMat);
-    totem.position.set(2.4, totemH / 2, 0);
-    totem.castShadow = true;
-    group.add(totem);
-    // Crown the totem with a skull (sphere stand-in)
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), totemSkullMat);
-    skull.position.set(2.4, totemH + 0.12, 0);
-    group.add(skull);
-
-    game.scene.add(group);
-    _campMarkers.set(camp.id, group);
+let _oreVeinMats = null;
+function _getOreVeinMats() {
+  if (!_oreVeinMats) {
+    _oreVeinMats = {
+      iron:    new THREE.MeshStandardMaterial({ color: 0xd3d8e0, emissive: 0x303a44, emissiveIntensity: 0.6, roughness: 0.55, metalness: 0.4 }),
+      crystal: new THREE.MeshStandardMaterial({ color: 0xff66c8, emissive: 0xc01a80, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.2 }),
+    };
   }
+  return _oreVeinMats;
+}
+
+function _buildOneOreVeinMesh(v) {
+  if (_oreMeshes.has(v.id) || !game.scene) return;
+  const mats = _getOreVeinMats();
+  const y = sampleHeight(v.x, v.z, game.terrainSeed | 0);
+  const geo = v.kind === 'crystal' ? new THREE.OctahedronGeometry(1.0, 0) : new THREE.IcosahedronGeometry(0.9, 0);
+  const mesh = new THREE.Mesh(geo, mats[v.kind] || mats.iron);
+  mesh.position.set(v.x, y + 0.7, v.z);
+  mesh.castShadow = true;
+  game.scene.add(mesh);
+  _oreMeshes.set(v.id, { mesh, x: v.x, z: v.z, kind: v.kind });
 }
 
 function buildOreVeinMeshes() {
   for (const [, rec] of _oreMeshes) rec.mesh?.parent?.remove(rec.mesh);
   _oreMeshes.clear();
-  const veins = game.oreVeins || [];
-  const ironMat = new THREE.MeshStandardMaterial({ color: 0xd3d8e0, emissive: 0x303a44, emissiveIntensity: 0.6, roughness: 0.55, metalness: 0.4 });
-  const crystalMat = new THREE.MeshStandardMaterial({ color: 0xff66c8, emissive: 0xc01a80, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.2 });
-  for (const v of veins) {
-    const y = sampleHeight(v.x, v.z, game.terrainSeed | 0);
-    const geo = v.kind === 'crystal' ? new THREE.OctahedronGeometry(1.0, 0) : new THREE.IcosahedronGeometry(0.9, 0);
-    const mesh = new THREE.Mesh(geo, v.kind === 'crystal' ? crystalMat : ironMat);
-    mesh.position.set(v.x, y + 0.7, v.z);
-    mesh.castShadow = true;
-    game.scene.add(mesh);
-    _oreMeshes.set(v.id, { mesh, x: v.x, z: v.z, kind: v.kind });
-  }
+  _oreVeinMats = null;
+  for (const v of (game.oreVeins || [])) _buildOneOreVeinMesh(v);
+}
+
+export function addOreVeinMesh(vein) {
+  _buildOneOreVeinMesh(vein);
 }
 
 if (typeof window !== 'undefined') {

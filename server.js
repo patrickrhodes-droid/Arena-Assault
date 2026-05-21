@@ -1777,46 +1777,70 @@ const DRONE_PING_LEASH_BONUS = 140; // added to base leash
 const DRONE_PING_RADIUS      = 250; // enemies within this radius of the ping break leash
 const DRONE_PING_DURATION_MS = 30000;
 
-function generateSurvivalCamps(seed) {
-    const camps = [];
-    let idCounter = 0;
-    // Five concentric rings, larger camps further out
-    const RINGS = [
-        { r: 70,  count: 6,  size: 2 },
-        { r: 160, count: 8,  size: 3 },
-        { r: 260, count: 10, size: 5 },
-        { r: 380, count: 10, size: 7 },
-        { r: 520, count: 8,  size: 9 },
-    ];
-    const baseRng = mulberry32((seed ^ 0xC4C9) >>> 0);
-    for (const ring of RINGS) {
-        for (let i = 0; i < ring.count; i++) {
-            const ang = (i / ring.count) * Math.PI * 2 + (baseRng() - 0.5) * (Math.PI / ring.count) * 1.4;
-            const rad = ring.r * (1 + (baseRng() - 0.5) * 0.25);
-            const x = Math.round(Math.cos(ang) * rad);
-            const z = Math.round(Math.sin(ang) * rad);
-            // Skip if too close to any outpost (including wild ones)
-            let badSpot = Math.hypot(x, z) < OUTPOST_RADIUS + 12;
-            if (!badSpot) {
-                for (const o of (gameState.outposts || [])) {
-                    if (o.id === 'origin') continue;
-                    const dx = x - o.x, dz = z - o.z;
-                    if (dx * dx + dz * dz < (OUTPOST_BUILD_RADIUS + 16) * (OUTPOST_BUILD_RADIUS + 16)) {
-                        badSpot = true; break;
-                    }
-                }
-            }
-            if (badSpot) continue;
-            const { id: biomeId } = sampleBiome(x, z, seed);
-            camps.push({
-                id: 'camp_' + (idCounter++),
-                x, z, biome: biomeId,
-                size: ring.size,
-                respawnTmr: Math.random() * 6,
-            });
+// --- Infinite procedural world content (Minecraft-style cell discovery) ---
+const CONTENT_CELL_SIZE = 192;       // world units per content cell
+const CONTENT_DISCOVER_RADIUS = 2;  // cells around each player to activate each tick
+const CONTENT_CELL_MIN_DIST = 50;   // cells whose centre is within this radius of origin are skipped (home base safe zone)
+let _campIdCounter = 0;
+
+function discoverContentCell(cellX, cellZ) {
+    const key = `${cellX},${cellZ}`;
+    if (gameState.discoveredCells.has(key)) return;
+
+    // Centre of this cell in world space
+    const wx = (cellX + 0.5) * CONTENT_CELL_SIZE;
+    const wz = (cellZ + 0.5) * CONTENT_CELL_SIZE;
+    const distFromOrigin = Math.hypot(wx, wz);
+    if (distFromOrigin < CONTENT_CELL_MIN_DIST) { gameState.discoveredCells.add(key); return; }
+
+    gameState.discoveredCells.add(key);
+
+    const seed = gameState.terrainSeed;
+    const rng = mulberry32((hash2(cellX, cellZ, seed) ^ 0xF00DBABE) >>> 0);
+
+    // ── Camps ───────────────────────────────────────────────────────────────
+    // Probability of each camp slot: scales from 0.35 near origin up to 0.9 far out
+    const campProb = Math.min(0.9, 0.35 + distFromOrigin / 500);
+    const maxCamps = distFromOrigin > 400 ? 2 : 1;
+    for (let i = 0; i < maxCamps; i++) {
+        if (rng() > campProb) continue;
+        const cx = Math.round(cellX * CONTENT_CELL_SIZE + rng() * CONTENT_CELL_SIZE);
+        const cz = Math.round(cellZ * CONTENT_CELL_SIZE + rng() * CONTENT_CELL_SIZE);
+        const campDist = Math.hypot(cx, cz);
+        if (campDist < CONTENT_CELL_MIN_DIST) continue;
+        // Skip if too close to any outpost
+        let tooClose = false;
+        for (const o of (gameState.outposts || [])) {
+            const dx = cx - o.x, dz = cz - o.z;
+            if (dx * dx + dz * dz < (OUTPOST_BUILD_RADIUS + 16) ** 2) { tooClose = true; break; }
+        }
+        if (tooClose) continue;
+        const size = Math.min(12, Math.max(2, Math.round(1 + campDist / 90)));
+        const { id: biomeId } = sampleBiome(cx, cz, seed);
+        const camp = {
+            id: `camp_${_campIdCounter++}`,
+            x: cx, z: cz, biome: biomeId,
+            size,
+            respawnTmr: rng() * 6,
+        };
+        gameState.camps.push(camp);
+        io.emit('campSpawned', { id: camp.id, x: camp.x, z: camp.z, size: camp.size, biome: camp.biome });
+    }
+
+    // ── Ore veins (biome-gated) ─────────────────────────────────────────────
+    if (distFromOrigin > 150 && rng() < 0.28) {
+        const vx = Math.round(cellX * CONTENT_CELL_SIZE + rng() * CONTENT_CELL_SIZE);
+        const vz = Math.round(cellZ * CONTENT_CELL_SIZE + rng() * CONTENT_CELL_SIZE);
+        const { id: biomeId } = sampleBiome(vx, vz, seed);
+        let kind = null;
+        if (biomeId === BIOME_FROSTPINE) kind = 'iron';
+        else if (biomeId === BIOME_CRIMSON) kind = 'crystal';
+        if (kind) {
+            const vein = { id: `vein_${kind}_${_campIdCounter++}`, kind, x: vx, z: vz };
+            gameState.oreVeins.push(vein);
+            io.emit('oreVeinSpawned', vein);
         }
     }
-    return camps;
 }
 
 function pickCampEnemyKind(camp) {
@@ -2222,6 +2246,22 @@ function tickSurvival(dt) {
     for (const p of alive) {
         const d = Math.hypot(p.x, p.z);
         if (d > (p.deepestDistance || 0)) p.deepestDistance = d;
+    }
+
+    // Discover new content cells around each player every 2 s
+    if (!gameState._cellDiscoverTmr) gameState._cellDiscoverTmr = 0;
+    gameState._cellDiscoverTmr -= dt;
+    if (gameState._cellDiscoverTmr <= 0) {
+        gameState._cellDiscoverTmr = 2;
+        for (const p of alive) {
+            const cx = Math.floor(p.x / CONTENT_CELL_SIZE);
+            const cz = Math.floor(p.z / CONTENT_CELL_SIZE);
+            for (let dx = -CONTENT_DISCOVER_RADIUS; dx <= CONTENT_DISCOVER_RADIUS; dx++) {
+                for (let dz = -CONTENT_DISCOVER_RADIUS; dz <= CONTENT_DISCOVER_RADIUS; dz++) {
+                    discoverContentCell(cx + dx, cz + dz);
+                }
+            }
+        }
     }
 
     // Camp-based spawning: walk camps near any alive player and top them up.
@@ -2853,25 +2893,19 @@ io.on('connection', (socket) => {
         gameState.weatherActive = false;
         gameState.weatherTmr = 60 + Math.random() * 120;
         gameState.outposts = getOutpostLocations(seed);
-        gameState.camps = generateSurvivalCamps(seed);
+        gameState.camps = [];
+        gameState.oreVeins = [];
+        gameState.discoveredCells = new Set();
+        _campIdCounter = 0;
         gameState.dronePing = null; // { x, z, until }
         gameState.missiles = [];
         gameState.activeRoamingBoss = null; // tank or mech roaming boss arena
         gameState.driveableVehicles = [];   // jeeps the player has bought, defeated tanks
         gameState.nextRoamingBossTmr = 90 + Math.random() * 60; // first roaming boss after ~90-150s
-        // Pre-spawn ore veins as destructibles, one per wild outpost cluster
-        gameState.oreVeins = [];
-        for (let i = 0; i < 12; i++) {
-            const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.3;
-            const r = 180 + Math.random() * 380;
-            const ox = Math.round(Math.cos(ang) * r);
-            const oz = Math.round(Math.sin(ang) * r);
-            const { id: biomeId } = sampleBiome(ox, oz, seed);
-            // Iron in frostpine, crystal in crimson, skip meadow/ashfen
-            if (biomeId === BIOME_FROSTPINE) {
-                gameState.oreVeins.push({ id: `vein_iron_${i}`, kind: 'iron', x: ox, z: oz });
-            } else if (biomeId === BIOME_CRIMSON) {
-                gameState.oreVeins.push({ id: `vein_crystal_${i}`, kind: 'crystal', x: ox, z: oz });
+        // Pre-discover cells around origin so there are camps near the home base from turn 1
+        for (let dx = -CONTENT_DISCOVER_RADIUS; dx <= CONTENT_DISCOVER_RADIUS; dx++) {
+            for (let dz = -CONTENT_DISCOVER_RADIUS; dz <= CONTENT_DISCOVER_RADIUS; dz++) {
+                discoverContentCell(dx, dz);
             }
         }
 
@@ -3616,6 +3650,13 @@ io.on('connection', (socket) => {
             y: restored.y || 0,
             z: restored.z || 0,
             rotation: restored.rotation || 0,
+            // Survival world state (empty for non-survival matches)
+            terrainSeed: gameState.mode === 'SURVIVAL' ? gameState.terrainSeed : undefined,
+            outposts:   gameState.mode === 'SURVIVAL' ? gameState.outposts : undefined,
+            camps:      gameState.mode === 'SURVIVAL'
+                ? gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome }))
+                : undefined,
+            oreVeins:   gameState.mode === 'SURVIVAL' ? gameState.oreVeins : undefined,
         });
 
         // Let other players see the rejoiner as a normal newPlayer so their

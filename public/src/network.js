@@ -4,7 +4,7 @@ import { P_MAX_HP, WEAPON_ORDER, WEAPON_DEFS, PVP_KILLS_PER_WEAPON } from "./con
 import { game } from "./state.js";
 import { collectWeapon, removeWeaponPickup, setWeapon, spawnBullet, spawnHealthPackVisual, spawnParticles, spawnWeaponPickupVisual, triggerDestructible } from "./combat.js";
 import { announceWave, createBoss, createMiniBoss, createDog, createSkeleton, createSoldier, createTank, handleEnemyDamaged, removeEnemy } from "./enemies.js";
-import { applyCharacterHead, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
+import { applyCharacterHead, addCampMarker, addOreVeinMesh, createRemotePlayer, rebuildArena, removeRemotePlayer, updateRemotePlayerNametag } from "./scene.js";
 import { applyMapScreenRole, setJoinLinkState, syncMapCards, updateLobbyUI, showTeammateDownAlert, showPvPRankings, showWeaponUnlockAlert, pushKillFeed, showWaveClear, showScorePopup } from "./ui.js";
 import { showCampaignCutscene, showPreGameCharSelect, updateCutsceneReadyStatus, finishCampaignCutscene } from "./story.js";
 import { fireBanter } from "./banter.js";
@@ -231,6 +231,16 @@ export function initNetworking(actions) {
     // Seed collectedWeapons before startGame so the HUD picks them up.
     if (Array.isArray(data.collectedWeapons)) {
       game.collectedWeapons = new Set(data.collectedWeapons);
+    }
+
+    // Restore survival world state before the scene builds so buildCampMarkers / buildOreVeinMeshes have data
+    if (data.mode === "SURVIVAL") {
+      game.mode = "SURVIVAL";
+      game.selectedMap = "survival";
+      game.terrainSeed = data.terrainSeed | 0;
+      game.outposts = Array.isArray(data.outposts) ? data.outposts : [{ id: 'origin', x: 0, z: 0, name: 'HOME OUTPOST' }];
+      game.camps = Array.isArray(data.camps) ? data.camps.slice() : [];
+      game.oreVeins = Array.isArray(data.oreVeins) ? data.oreVeins.slice() : [];
     }
 
     // Dispatch to the same start function the normal lobby flow would use.
@@ -614,6 +624,20 @@ export function initNetworking(actions) {
     const idx = (game.oreVeins || []).findIndex(v => v.id === data?.veinId);
     if (idx >= 0) game.oreVeins.splice(idx, 1);
     if (typeof window !== 'undefined' && window.removeOreVeinMesh) window.removeOreVeinMesh(data?.veinId);
+  });
+
+  game.socket.on("campSpawned", (camp) => {
+    if (!camp?.id) return;
+    if (!Array.isArray(game.camps)) game.camps = [];
+    if (!game.camps.find(c => c.id === camp.id)) game.camps.push(camp);
+    addCampMarker(camp);
+  });
+
+  game.socket.on("oreVeinSpawned", (vein) => {
+    if (!vein?.id) return;
+    if (!Array.isArray(game.oreVeins)) game.oreVeins = [];
+    if (!game.oreVeins.find(v => v.id === vein.id)) game.oreVeins.push(vein);
+    addOreVeinMesh(vein);
   });
 
   game.socket.on("newHost", (id) => {
