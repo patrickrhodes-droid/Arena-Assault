@@ -3,12 +3,23 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { game } from "./state.js";
 import {
   CHUNK_SIZE, CHUNK_RES, LOAD_RADIUS, UNLOAD_RADIUS,
-  OUTPOST_RADIUS, worldToChunk, chunkKey,
+  OUTPOST_RADIUS, OUTPOST_BUILD_RADIUS, worldToChunk, chunkKey,
 } from "./shared/survivalConfig.js";
 import {
   sampleHeight, sampleBiome, sampleSlope, hash2, mulberry32,
   BIOME_MEADOW, BIOME_FROSTPINE, BIOME_ASHFEN, BIOME_CRIMSON,
 } from "./shared/noise.js";
+
+function isInsideAnyOutpost(wx, wz) {
+  if (Math.hypot(wx, wz) < OUTPOST_RADIUS + 4) return true;
+  const outposts = game.outposts || [];
+  for (const o of outposts) {
+    if (o.id === 'origin') continue;
+    const dx = wx - o.x, dz = wz - o.z;
+    if (dx * dx + dz * dz < (OUTPOST_BUILD_RADIUS + 4) * (OUTPOST_BUILD_RADIUS + 4)) return true;
+  }
+  return false;
+}
 
 const _gltfLoader = new GLTFLoader();
 const _propCache = new Map(); // url -> Promise<GLTF>
@@ -200,7 +211,7 @@ function buildChunkProps(cx, cz, seed) {
     const wx = baseX + rng() * CHUNK_SIZE;
     const wz = baseZ + rng() * CHUNK_SIZE;
     // Skip outpost safe zone
-    if (Math.hypot(wx, wz) < OUTPOST_RADIUS + 4) continue;
+    if (isInsideAnyOutpost(wx, wz)) continue;
     // Skip steep slopes
     if (sampleSlope(wx, wz, seed) > 0.45) continue;
     if (!placeProp(rng, props, wx, wz, 3.5)) continue;
@@ -256,7 +267,7 @@ function buildChunkProps(cx, cz, seed) {
   for (let i = 0; i < rockDensity; i++) {
     const wx = baseX + rng() * CHUNK_SIZE;
     const wz = baseZ + rng() * CHUNK_SIZE;
-    if (Math.hypot(wx, wz) < OUTPOST_RADIUS + 4) continue;
+    if (isInsideAnyOutpost(wx, wz)) continue;
     if (!placeProp(rng, props, wx, wz, 2.5)) continue;
     const y = sampleHeight(wx, wz, seed);
     const { id: localBiome } = sampleBiome(wx, wz, seed);
@@ -296,7 +307,7 @@ function buildChunkProps(cx, cz, seed) {
     if (rng() > 0.55) continue;
     const wx = baseX + rng() * CHUNK_SIZE;
     const wz = baseZ + rng() * CHUNK_SIZE;
-    if (Math.hypot(wx, wz) < OUTPOST_RADIUS + 4) continue;
+    if (isInsideAnyOutpost(wx, wz)) continue;
     if (sampleSlope(wx, wz, seed) > 0.5) continue;
     if (!placeProp(rng, props, wx, wz, 2.2)) continue;
     const url = SCATTER_PROPS[Math.floor(rng() * SCATTER_PROPS.length)];

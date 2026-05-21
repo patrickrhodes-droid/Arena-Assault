@@ -372,6 +372,12 @@ export function initNetworking(actions) {
       game.hasJetpack = false;
       game.jetpackFuel = 100;
       game.collectedWeapons = new Set(['pistol']);
+      game.outposts = Array.isArray(payload?.outposts) ? payload.outposts : [{ id: 'origin', x: 0, z: 0, name: 'HOME OUTPOST' }];
+      game.homeBaseId = 'origin';
+      game.oreVeins = Array.isArray(payload?.oreVeins) ? payload.oreVeins.slice() : [];
+      game.supplyPods = [];
+      game.caravan = null;
+      game.weatherActive = false;
       await showPreGameCharSelect();
       actions.startSurvivalGame();
     } else if (mode === "FFA") {
@@ -486,6 +492,15 @@ export function initNetworking(actions) {
 
   game.socket.on("survivalEvent", (data) => {
     if (data?.type === 'bloodMoon') game.bloodMoon = !!data.active;
+    else if (data?.type === 'weather') {
+      game.weatherActive = !!data.active;
+      if (typeof window !== 'undefined' && window.applySurvivalWeather) window.applySurvivalWeather(game.weatherActive);
+    }
+    else if (data?.type === 'championSpawned' && typeof window !== 'undefined' && window.flashChampionEvent) {
+      window.flashChampionEvent(data.x, data.z);
+    } else if (data?.type === 'droneSpawned' && typeof window !== 'undefined' && window.flashDroneEvent) {
+      window.flashDroneEvent();
+    }
   });
 
   game.socket.on("survivalRunEnded", () => {
@@ -494,6 +509,49 @@ export function initNetworking(actions) {
 
   game.socket.on("effectExpired", (data) => {
     if (data?.kind && game.effects) delete game.effects[data.kind];
+  });
+
+  game.socket.on("homeBaseChanged", (data) => {
+    game.homeBaseId = data?.baseId || 'origin';
+    if (typeof window !== 'undefined' && window.flashHomeBaseSet) window.flashHomeBaseSet(data?.name || 'BASE');
+  });
+
+  game.socket.on("homeBaseRejected", () => {
+    if (typeof window !== 'undefined' && window.flashHomeBaseReject) window.flashHomeBaseReject();
+  });
+
+  game.socket.on("supplyPodSpawned", (data) => {
+    if (!Array.isArray(game.supplyPods)) game.supplyPods = [];
+    game.supplyPods.push(data);
+    if (typeof window !== 'undefined' && window.addSupplyPodMesh) window.addSupplyPodMesh(data);
+  });
+
+  game.socket.on("supplyPodCollected", (data) => {
+    const idx = (game.supplyPods || []).findIndex(p => p.id === data?.podId);
+    if (idx >= 0) game.supplyPods.splice(idx, 1);
+    if (typeof window !== 'undefined' && window.removeSupplyPodMesh) window.removeSupplyPodMesh(data?.podId);
+  });
+
+  game.socket.on("caravanSpawned", (data) => {
+    game.caravan = data;
+    if (typeof window !== 'undefined' && window.addCaravanMesh) window.addCaravanMesh(data);
+  });
+
+  game.socket.on("caravanDespawned", () => {
+    game.caravan = null;
+    if (typeof window !== 'undefined' && window.removeCaravanMesh) window.removeCaravanMesh();
+  });
+
+  game.socket.on("oreVeinCollected", (data) => {
+    game.iron = data?.iron ?? game.iron;
+    game.crystal = data?.crystal ?? game.crystal;
+    if (typeof window !== 'undefined' && window.flashOreCollected) window.flashOreCollected(data?.kind);
+  });
+
+  game.socket.on("oreVeinRemoved", (data) => {
+    const idx = (game.oreVeins || []).findIndex(v => v.id === data?.veinId);
+    if (idx >= 0) game.oreVeins.splice(idx, 1);
+    if (typeof window !== 'undefined' && window.removeOreVeinMesh) window.removeOreVeinMesh(data?.veinId);
   });
 
   game.socket.on("newHost", (id) => {
@@ -698,7 +756,7 @@ export function initNetworking(actions) {
     let pos = new THREE.Vector3(data.x, 0, data.z);
     if (data.type === "soldier") createSoldier(pos, data.id);
     else if (data.type === "dog") createDog(pos, data.id);
-    else if (data.type === "skeleton") createSkeleton(pos, data.id);
+    else if (data.type === "skeleton" || data.type === "drone") createSkeleton(pos, data.id);
     else if (data.type === "boss") createBoss(pos, data.id);
     else if (data.type === "miniboss") createMiniBoss(pos, data.id);
     const enemy = game.enemies[game.enemies.length - 1];
@@ -710,6 +768,30 @@ export function initNetworking(actions) {
     if (typeof data.atkDmg === "number") enemy.atkDmg = data.atkDmg;
     if (typeof data.atkTmr === "number") enemy.atkTmr = data.atkTmr;
     enemy.ownerId = data.ownerId ?? null;
+    enemy.isChampion = !!data.isChampion;
+    enemy.isScoutDrone = !!data.isScoutDrone;
+    // Champion: scale up the mesh + tint it for a visual cue
+    if (enemy.isChampion && enemy.group) {
+      enemy.group.scale.setScalar(1.6);
+      enemy.group.traverse((node) => {
+        if (node.isMesh && node.material) {
+          node.material = node.material.clone();
+          if (node.material.color) node.material.color.lerp(new THREE.Color(0xff8030), 0.5);
+        }
+      });
+    }
+    // Scout drone: lift mesh, tint blue
+    if (enemy.isScoutDrone && enemy.group) {
+      enemy.group.position.y = (data.y || 8);
+      enemy.group.scale.setScalar(0.6);
+      enemy.group.traverse((node) => {
+        if (node.isMesh && node.material) {
+          node.material = node.material.clone();
+          if (node.material.color) node.material.color.set(0x66ccff);
+          if (node.material.emissive) { node.material.emissive.set(0x224488); node.material.emissiveIntensity = 0.6; }
+        }
+      });
+    }
   });
 
   // Server reassigns enemy ownership (e.g. when a player dies/disconnects).

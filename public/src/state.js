@@ -141,6 +141,14 @@ export const game = {
   chunks: new Map(),       // chunkKey -> client chunk record
   shopOpen: false,
   shopCatalog: [],
+  outposts: [],            // [{ id, x, z, name }] — wild + origin outposts
+  homeBaseId: 'origin',    // active home base for compass + respawn
+  oreVeins: [],            // [{ id, kind:'iron'|'crystal', x, z }]
+  iron: 0,
+  crystal: 0,
+  supplyPods: [],          // [{ id, x, z, y, landAt }]
+  caravan: null,           // { x, z, despawnAt }
+  weatherActive: false,
   knockbackX: 0,
   knockbackZ: 0,
   grappleState: "idle",   // "idle" | "hooked"

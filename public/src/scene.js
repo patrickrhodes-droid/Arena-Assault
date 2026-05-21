@@ -9,6 +9,7 @@ import { ARENA_SIZE, CHARACTERS, HALF, MAP_DEFS, WALL_H } from "./config.js";
 import { game } from "./state.js";
 import { disposeObject3D } from "./utils.js";
 import { buildMapFromJson } from "./mapLoader.js";
+import { sampleHeight } from "./shared/noise.js";
 
 export function applyCharacterHead(headGroup, characterId, options = {}) {
   for (let i = headGroup.children.length - 1; i >= 0; i -= 1) {
@@ -324,6 +325,10 @@ export async function rebuildArena(mapId) {
     buildSurvivalSceneChrome();
     // Outpost JSON loaded on top of the procedural world
     try { await buildMapFromJson('survival_outpost'); } catch { /* missing JSON is OK */ }
+    // Wild outposts: cheap procedural buildings placed at deterministic positions
+    buildWildOutposts();
+    // Ore veins: glowing destructibles at deterministic positions
+    buildOreVeinMeshes();
     return;
   }
 
@@ -390,6 +395,200 @@ function buildSurvivalSceneChrome() {
 
   game.shared.sunLight = sun;
   game.shared.hemiLight = hemi;
+}
+
+// ── Survival: wild outposts, ore veins, supply pods, caravan ───────────────────
+
+const _outpostMeshes = new Map();   // baseId -> THREE.Group
+const _oreMeshes = new Map();       // veinId -> { mesh, x, z, kind }
+const _supplyPodMeshes = new Map(); // podId -> { group, landAt }
+let _caravanMesh = null;
+let _weatherFogOriginal = null;
+
+function buildWildOutposts() {
+  for (const [, g] of _outpostMeshes) g.parent?.remove(g);
+  _outpostMeshes.clear();
+  // Also clear pods + caravan from any previous match
+  for (const [, rec] of _supplyPodMeshes) rec.group?.parent?.remove(rec.group);
+  _supplyPodMeshes.clear();
+  if (_caravanMesh) { _caravanMesh.parent?.remove(_caravanMesh); _caravanMesh = null; }
+  if (_weatherFogOriginal != null && game.scene?.fog) {
+    game.scene.fog.density = _weatherFogOriginal;
+    _weatherFogOriginal = null;
+  }
+  const outposts = game.outposts || [];
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x4a4a52, roughness: 0.9 });
+  const wallMat  = new THREE.MeshStandardMaterial({ color: 0x707080, roughness: 0.85 });
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x202028, roughness: 0.9 });
+  const beaconMat = new THREE.MeshStandardMaterial({ color: 0x00ffaa, emissive: 0x00ffaa, emissiveIntensity: 1.4 });
+  for (const o of outposts) {
+    if (o.id === 'origin') continue;
+    const y = sampleHeight(o.x, o.z, game.terrainSeed | 0);
+    const group = new THREE.Group();
+    group.position.set(o.x, y, o.z);
+
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(20, 0.4, 20), floorMat);
+    floor.position.y = 0.2;
+    floor.receiveShadow = true;
+    group.add(floor);
+
+    // Two L-shaped walls so the player can shelter inside but still see out
+    const w1 = new THREE.Mesh(new THREE.BoxGeometry(20, 4, 0.4), wallMat);
+    w1.position.set(0, 2.2, -10);
+    w1.castShadow = true;
+    group.add(w1);
+    const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 20), wallMat);
+    w2.position.set(-10, 2.2, 0);
+    w2.castShadow = true;
+    group.add(w2);
+
+    // Vendor stall in the centre (looks like the origin outpost's vendor block)
+    const vendor = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 1.2), pillarMat);
+    vendor.position.set(0, 1.2, -6);
+    vendor.castShadow = true;
+    group.add(vendor);
+
+    // Glowing beacon — easy to spot from a distance
+    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 5, 8), beaconMat);
+    beacon.position.set(0, 3, 0);
+    group.add(beacon);
+    const beaconLight = new THREE.PointLight(0x00ffaa, 1.0, 22);
+    beaconLight.position.set(0, 5.2, 0);
+    group.add(beaconLight);
+
+    game.scene.add(group);
+    _outpostMeshes.set(o.id, group);
+
+    // Push collision boxes (in world coords) so player can stand on the floor
+    const baseFloorHalf = 10;
+    game.oBs.push({
+      min: { x: o.x - baseFloorHalf, z: o.z - baseFloorHalf },
+      max: { x: o.x + baseFloorHalf, z: o.z + baseFloorHalf },
+      h: y + 0.4, yMin: y,
+    });
+  }
+}
+
+function buildOreVeinMeshes() {
+  for (const [, rec] of _oreMeshes) rec.mesh?.parent?.remove(rec.mesh);
+  _oreMeshes.clear();
+  const veins = game.oreVeins || [];
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0xd3d8e0, emissive: 0x303a44, emissiveIntensity: 0.6, roughness: 0.55, metalness: 0.4 });
+  const crystalMat = new THREE.MeshStandardMaterial({ color: 0xff66c8, emissive: 0xc01a80, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.2 });
+  for (const v of veins) {
+    const y = sampleHeight(v.x, v.z, game.terrainSeed | 0);
+    const geo = v.kind === 'crystal' ? new THREE.OctahedronGeometry(1.0, 0) : new THREE.IcosahedronGeometry(0.9, 0);
+    const mesh = new THREE.Mesh(geo, v.kind === 'crystal' ? crystalMat : ironMat);
+    mesh.position.set(v.x, y + 0.7, v.z);
+    mesh.castShadow = true;
+    game.scene.add(mesh);
+    _oreMeshes.set(v.id, { mesh, x: v.x, z: v.z, kind: v.kind });
+  }
+}
+
+if (typeof window !== 'undefined') {
+  // Called whenever the player is within reach of an ore vein and presses F.
+  window.tryCollectOreVein = function () {
+    if (!game.socket) return;
+    const pp = game.visuals?.player?.playerGroup?.position;
+    if (!pp) return;
+    for (const [veinId, rec] of _oreMeshes) {
+      const dx = pp.x - rec.x, dz = pp.z - rec.z;
+      if (dx * dx + dz * dz < 25) {
+        game.socket.emit('collectOreVein', { veinId });
+        return;
+      }
+    }
+    // Also try supply pods on the same key
+    for (const [podId, rec] of _supplyPodMeshes) {
+      const dx = pp.x - rec.x, dz = pp.z - rec.z;
+      if (dx * dx + dz * dz < 36) {
+        game.socket.emit('collectSupplyPod', { podId });
+        return;
+      }
+    }
+  };
+
+  window.removeOreVeinMesh = function (veinId) {
+    const rec = _oreMeshes.get(veinId);
+    if (!rec) return;
+    rec.mesh?.parent?.remove(rec.mesh);
+    _oreMeshes.delete(veinId);
+  };
+
+  window.addSupplyPodMesh = function (data) {
+    if (_supplyPodMeshes.has(data.id)) return;
+    const group = new THREE.Group();
+    const shellMat = new THREE.MeshStandardMaterial({ color: 0xb0a08c, roughness: 0.6, metalness: 0.4 });
+    const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 1.0 });
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.4, 2.2, 8), shellMat);
+    shell.position.y = 1.1;
+    shell.castShadow = true;
+    group.add(shell);
+    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.3, 8), stripeMat);
+    stripe.position.y = 1.8;
+    group.add(stripe);
+    const beacon = new THREE.PointLight(0xffaa00, 2.0, 30);
+    beacon.position.y = 4.0;
+    group.add(beacon);
+    // Visible smoke flare cylinder shooting up
+    const flare = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 12, 6),
+      new THREE.MeshBasicMaterial({ color: 0xff9020, transparent: true, opacity: 0.55 }),
+    );
+    flare.position.y = 8;
+    group.add(flare);
+    group.position.set(data.x, data.y ?? 0, data.z);
+    game.scene.add(group);
+    _supplyPodMeshes.set(data.id, { group, x: data.x, z: data.z, landAt: data.landAt || Date.now() });
+  };
+
+  window.removeSupplyPodMesh = function (podId) {
+    const rec = _supplyPodMeshes.get(podId);
+    if (!rec) return;
+    rec.group?.parent?.remove(rec.group);
+    _supplyPodMeshes.delete(podId);
+  };
+
+  window.addCaravanMesh = function (data) {
+    if (_caravanMesh) { _caravanMesh.parent?.remove(_caravanMesh); _caravanMesh = null; }
+    const group = new THREE.Group();
+    const wagonMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1c, roughness: 0.85 });
+    const tarpMat = new THREE.MeshStandardMaterial({ color: 0xaa3030, roughness: 0.7 });
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffd060, emissive: 0xffaa00, emissiveIntensity: 1.4 });
+    const wagon = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.4, 1.8), wagonMat);
+    wagon.position.y = 1.0;
+    wagon.castShadow = true;
+    group.add(wagon);
+    const tarp = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 3.0, 8, 1, false, 0, Math.PI), tarpMat);
+    tarp.rotation.z = Math.PI / 2;
+    tarp.position.y = 2.2;
+    group.add(tarp);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), lampMat);
+    lamp.position.set(0, 3.4, 0);
+    group.add(lamp);
+    const lampLight = new THREE.PointLight(0xffaa00, 1.6, 18);
+    lampLight.position.set(0, 3.4, 0);
+    group.add(lampLight);
+    group.position.set(data.x, data.y ?? 0, data.z);
+    game.scene.add(group);
+    _caravanMesh = group;
+  };
+
+  window.removeCaravanMesh = function () {
+    if (_caravanMesh) { _caravanMesh.parent?.remove(_caravanMesh); _caravanMesh = null; }
+  };
+
+  // Weather: thickens the fog and tints it ashen for a foggy roll-through
+  window.applySurvivalWeather = function (active) {
+    if (!game.scene?.fog) return;
+    if (active) {
+      if (_weatherFogOriginal == null) _weatherFogOriginal = game.scene.fog.density;
+      game.scene.fog.density = Math.max(0.022, (_weatherFogOriginal ?? 0.012) * 2.4);
+    } else {
+      if (_weatherFogOriginal != null) game.scene.fog.density = _weatherFogOriginal;
+    }
+  };
 }
 
 function addPermanentLighting() {

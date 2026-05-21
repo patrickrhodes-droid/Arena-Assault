@@ -109,6 +109,9 @@ export function cacheDom() {
     statusCrouch: document.getElementById("status-crouch"),
     grappleReadyLabel: document.getElementById("grapple-ready-label"),
     grappleCooldownFill: document.getElementById("grapple-cooldown-bar-fill"),
+    jetpackFuelWrap: document.getElementById("jetpack-fuel-wrap"),
+    jetpackReadyLabel: document.getElementById("jetpack-ready-label"),
+    jetpackFuelFill: document.getElementById("jetpack-fuel-bar-fill"),
     killFeed: document.getElementById("kill-feed"),
     waveClear: document.getElementById("wave-clear"),
     giveUpBtn: document.getElementById("give-up-btn"),
@@ -1255,6 +1258,21 @@ export function updateStatusIndicators() {
   game.dom.grappleCooldownFill.style.width = isReady
     ? "100%"
     : `${Math.max(0, (1 - cooldown / maxCd)) * 100}%`;
+
+  // Jetpack fuel slider — only visible when the player owns a jetpack in Survival.
+  if (game.dom.jetpackFuelWrap) {
+    const show = game.mode === 'SURVIVAL' && game.hasJetpack;
+    game.dom.jetpackFuelWrap.style.display = show ? 'flex' : 'none';
+    if (show) {
+      const fuel = Math.max(0, Math.min(100, game.jetpackFuel ?? 0));
+      game.dom.jetpackFuelFill.style.width = `${fuel}%`;
+      game.dom.jetpackReadyLabel.classList.toggle('ready', fuel > 0);
+      game.dom.jetpackReadyLabel.classList.toggle('active', !!game.jetpackActive);
+      game.dom.jetpackReadyLabel.textContent = game.jetpackActive
+        ? `JETPACK ${Math.round(fuel)}`
+        : (fuel > 0 ? 'JETPACK ✓' : 'JETPACK');
+    }
+  }
 }
 
 export function showTeammateDownAlert(name) {
@@ -1412,6 +1430,52 @@ export function drawMinimap() {
     }
   }
 
+  // Survival: outposts (visible if on screen) + home base compass arrow
+  let homeBase = null;
+  if (game.mode === 'SURVIVAL') {
+    const outposts = game.outposts || [];
+    homeBase = outposts.find(o => o.id === (game.homeBaseId || 'origin')) || outposts[0] || null;
+    for (const o of outposts) {
+      const dx = o.x - playerPos.x;
+      const dz = o.z - playerPos.z;
+      const isHome = homeBase && o.id === homeBase.id;
+      if (Math.hypot(dx, dz) <= MINIMAP_VIEW_RADIUS) {
+        const op = toCanvas(o.x, o.z);
+        // Diamond marker
+        ctx.fillStyle = isHome ? '#00ffaa' : '#ffd060';
+        ctx.beginPath();
+        ctx.moveTo(op.x, op.y - 4);
+        ctx.lineTo(op.x + 4, op.y);
+        ctx.lineTo(op.x, op.y + 4);
+        ctx.lineTo(op.x - 4, op.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    // Caravan
+    if (game.caravan) {
+      const dx = game.caravan.x - playerPos.x;
+      const dz = game.caravan.z - playerPos.z;
+      if (Math.hypot(dx, dz) <= MINIMAP_VIEW_RADIUS) {
+        const cp = toCanvas(game.caravan.x, game.caravan.z);
+        ctx.fillStyle = '#ff66cc';
+        ctx.fillRect(cp.x - 3, cp.y - 3, 6, 6);
+      }
+    }
+    // Supply pods
+    if (Array.isArray(game.supplyPods)) {
+      for (const pod of game.supplyPods) {
+        const dx = pod.x - playerPos.x;
+        const dz = pod.z - playerPos.z;
+        if (Math.hypot(dx, dz) <= MINIMAP_VIEW_RADIUS) {
+          const pp2 = toCanvas(pod.x, pod.z);
+          ctx.fillStyle = '#ffaa00';
+          ctx.beginPath(); ctx.arc(pp2.x, pp2.y, 3.5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+  }
+
   // Local player (always at centre)
   ctx.fillStyle = "#00ffaa";
   ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
@@ -1426,6 +1490,48 @@ export function drawMinimap() {
   // Border ring
   ctx.strokeStyle = "rgba(0,204,170,0.35)"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(cx, cy, cx - 0.5, 0, Math.PI * 2); ctx.stroke();
+
+  // Compass arrow + distance to home base (Survival only)
+  if (game.mode === 'SURVIVAL' && homeBase) {
+    const dx = homeBase.x - playerPos.x;
+    const dz = homeBase.z - playerPos.z;
+    const distHome = Math.hypot(dx, dz);
+    if (distHome > 2) {
+      const angle = Math.atan2(dz, dx);
+      const rim = cx - 2.5;
+      const ax = cx + Math.cos(angle) * rim;
+      const ay = cy + Math.sin(angle) * rim;
+      // Triangle head pointing outward at the rim
+      ctx.fillStyle = '#00ffaa';
+      ctx.strokeStyle = '#001a14';
+      ctx.lineWidth = 1.2;
+      const headLen = 9;
+      const headHalf = 5;
+      const bx = cx + Math.cos(angle) * (rim - headLen);
+      const by = cy + Math.sin(angle) * (rim - headLen);
+      const px1 = bx + Math.cos(angle + Math.PI / 2) * headHalf;
+      const py1 = by + Math.sin(angle + Math.PI / 2) * headHalf;
+      const px2 = bx + Math.cos(angle - Math.PI / 2) * headHalf;
+      const py2 = by + Math.sin(angle - Math.PI / 2) * headHalf;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(px1, py1);
+      ctx.lineTo(px2, py2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    // Distance label below the minimap
+    ctx.fillStyle = '#cffae0';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(distHome)}u → ${homeBase.name || 'HOME'}`, cx, H - 4);
+    // Distance from origin too
+    const distOrigin = Math.hypot(playerPos.x, playerPos.z);
+    ctx.fillStyle = '#9ab';
+    ctx.font = '9px monospace';
+    ctx.fillText(`origin ${Math.round(distOrigin)}u`, cx, H - 16);
+  }
 }
 
 export function showRankings(rankings) {

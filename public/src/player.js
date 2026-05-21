@@ -379,11 +379,44 @@ export function setupInput(actions) {
       }
       // E: open shop if near vendor (uses VENDOR_POS / VENDOR_REACH from
       // survivalConfig so client + server agree on the radius check).
+      // Counts the origin outpost, any wild outpost, and the active caravan
+      // — server validates the exact match.
       if (event.code === 'KeyE' && game.state === 'PLAYING' && !event.repeat) {
         const pp = game.visuals.player.playerGroup.position;
-        const dx = pp.x - 0, dz = pp.z - (-6);
-        if (dx * dx + dz * dz < 36) { // 6u radius — matches VENDOR_REACH
-          if (typeof window !== 'undefined' && window.toggleShopUI) window.toggleShopUI();
+        const isNear = (cx, cz, r) => {
+          const dx = pp.x - cx, dz = pp.z - cz;
+          return dx * dx + dz * dz < r * r;
+        };
+        let near = isNear(0, -6, 6); // origin vendor
+        const outposts = game.outposts || [];
+        for (const o of outposts) {
+          if (o.id === 'origin') continue;
+          if (isNear(o.x + 0, o.z + -6, 8) || isNear(o.x, o.z, 10)) { near = true; break; }
+        }
+        if (!near && game.caravan) {
+          if (isNear(game.caravan.x, game.caravan.z, 6)) near = true;
+        }
+        if (near && typeof window !== 'undefined' && window.toggleShopUI) {
+          window.toggleShopUI();
+        }
+      }
+      // B: set the nearest wild outpost as the home base
+      if (event.code === 'KeyB' && game.state === 'PLAYING' && !event.repeat) {
+        const pp = game.visuals.player.playerGroup.position;
+        let best = null, bestD = Infinity;
+        for (const o of (game.outposts || [])) {
+          const dx = pp.x - o.x, dz = pp.z - o.z;
+          const d = dx * dx + dz * dz;
+          if (d < bestD) { bestD = d; best = o; }
+        }
+        if (best && bestD < 36) { // 6u reach
+          game.socket?.emit('setHomeBase', { baseId: best.id });
+        }
+      }
+      // F: collect an ore vein or supply pod within reach
+      if (event.code === 'KeyF' && game.state === 'PLAYING' && !event.repeat) {
+        if (typeof window !== 'undefined' && window.tryCollectOreVein) {
+          window.tryCollectOreVein();
         }
       }
     } else if (game.mode !== "PVP") {

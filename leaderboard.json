@@ -33,6 +33,14 @@
     },
     {
       "playerName": "Patrick",
+      "score": 4625,
+      "wave": 0,
+      "kills": 55,
+      "date": "2026-05-20",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
       "score": 2950,
       "wave": 8,
       "kills": 4,

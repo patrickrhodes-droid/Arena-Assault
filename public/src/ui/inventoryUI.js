@@ -303,12 +303,50 @@ export function refreshInventoryUI() {
   }
   const cap = inventoryCapacity();
   if (game.activeSlot >= cap) game.activeSlot = 0;
-  // Shop proximity hint: show when within vendor reach and shop is closed.
+  // Shop / base / pickup proximity hint
   const pp = game.visuals?.player?.playerGroup?.position;
   if (pp && !_shopOpen) {
-    const dx = pp.x - 0, dz = pp.z - (-6);
-    const near = dx * dx + dz * dz < 36; // 6u radius
-    ensureShopHint().style.display = near ? 'block' : 'none';
+    let hint = null;
+    // Check supply pod / ore vein first (F)
+    for (const pod of (game.supplyPods || [])) {
+      const dx = pp.x - pod.x, dz = pp.z - pod.z;
+      if (dx * dx + dz * dz < 36) { hint = '[F] OPEN SUPPLY POD'; break; }
+    }
+    if (!hint) {
+      for (const v of (game.oreVeins || [])) {
+        const dx = pp.x - v.x, dz = pp.z - v.z;
+        if (dx * dx + dz * dz < 25) { hint = `[F] MINE ${v.kind === 'crystal' ? 'CRYSTAL' : 'IRON'}`; break; }
+      }
+    }
+    // Then nearest outpost — show shop OR set-home depending on whether it's already home
+    if (!hint) {
+      const outposts = game.outposts || [];
+      let bestO = null, bestD = Infinity;
+      for (const o of outposts) {
+        const dx = pp.x - o.x, dz = pp.z - o.z;
+        const d = dx * dx + dz * dz;
+        if (d < bestD) { bestD = d; bestO = o; }
+      }
+      if (bestO) {
+        // Origin's vendor is offset to (0, -6); wild outposts also have stall at (ox+0, oz-6)
+        const stallX = bestO.x + 0, stallZ = bestO.z + -6;
+        const sdx = pp.x - stallX, sdz = pp.z - stallZ;
+        if (sdx * sdx + sdz * sdz < 36) hint = 'PRESS <span style="color:#00ffaa;font-weight:bold">[E]</span> TO OPEN SHOP';
+        else if (bestD < 36 && bestO.id !== (game.homeBaseId || 'origin')) hint = `PRESS <span style="color:#00ffaa;font-weight:bold">[B]</span> TO SET HOME (${bestO.name || 'OUTPOST'})`;
+      }
+    }
+    // Caravan
+    if (!hint && game.caravan) {
+      const dx = pp.x - game.caravan.x, dz = pp.z - game.caravan.z;
+      if (dx * dx + dz * dz < 36) hint = 'PRESS <span style="color:#ff66cc;font-weight:bold">[E]</span> TO OPEN CARAVAN';
+    }
+    if (hint) {
+      const h = ensureShopHint();
+      h.innerHTML = hint;
+      h.style.display = 'block';
+    } else if (_shopHintEl) {
+      _shopHintEl.style.display = 'none';
+    }
   } else if (_shopHintEl) {
     _shopHintEl.style.display = 'none';
   }
@@ -480,6 +518,91 @@ if (typeof window !== 'undefined') {
   window.addPlacedTorch = function (data) {
     // Defer to scene.js to actually add a mesh + point light
     if (window.__addPlacedTorchMesh) window.__addPlacedTorchMesh(data);
+  };
+  window.flashHomeBaseSet = function (name) {
+    const t = el('div', { style: {
+      position: 'fixed', top: '90px', left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '8px 18px',
+      background: 'rgba(0, 30, 20, 0.85)',
+      border: '1px solid #00ffaa',
+      color: '#cffae0',
+      fontFamily: 'monospace', fontSize: '14px', letterSpacing: '3px',
+      zIndex: '60', pointerEvents: 'none',
+      transition: 'opacity 1.6s ease-out',
+    }});
+    t.textContent = `HOME SET: ${name}`;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 1500);
+    setTimeout(() => t.remove(), 3100);
+  };
+  window.flashHomeBaseReject = function () {
+    const t = el('div', { style: {
+      position: 'fixed', top: '90px', left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '8px 18px',
+      background: 'rgba(40,0,0,0.85)',
+      border: '1px solid #ff5050',
+      color: '#ffd0d0',
+      fontFamily: 'monospace', fontSize: '13px', letterSpacing: '2px',
+      zIndex: '60', pointerEvents: 'none',
+      transition: 'opacity 1.4s ease-out',
+    }});
+    t.textContent = 'STAND INSIDE A BASE TO SET HOME';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 1200);
+    setTimeout(() => t.remove(), 2700);
+  };
+  window.flashChampionEvent = function (x, z) {
+    const t = el('div', { style: {
+      position: 'fixed', top: '20%', left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '10px 22px',
+      background: 'rgba(50,10,0,0.9)',
+      border: '1px solid #ff7733',
+      color: '#ffd0a0',
+      fontFamily: 'monospace', fontSize: '18px', letterSpacing: '4px',
+      zIndex: '60', pointerEvents: 'none',
+      transition: 'opacity 2.5s ease-out',
+    }});
+    t.textContent = 'FORGOTTEN CHAMPION HAS APPEARED';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    setTimeout(() => t.remove(), 5100);
+  };
+  window.flashDroneEvent = function () {
+    const t = el('div', { style: {
+      position: 'fixed', top: '120px', left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '6px 14px',
+      background: 'rgba(0, 20, 40, 0.85)',
+      border: '1px solid #66ccff',
+      color: '#cce4ff',
+      fontFamily: 'monospace', fontSize: '12px', letterSpacing: '2px',
+      zIndex: '60', pointerEvents: 'none',
+      transition: 'opacity 1.4s ease-out',
+    }});
+    t.textContent = 'SCOUT DRONE DETECTED';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 1500);
+    setTimeout(() => t.remove(), 3000);
+  };
+  window.flashOreCollected = function (kind) {
+    const t = el('div', { style: {
+      position: 'fixed', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      padding: '8px 18px',
+      background: 'rgba(20, 30, 40, 0.9)',
+      border: '1px solid ' + (kind === 'crystal' ? '#ff66c8' : '#cccccc'),
+      color: '#fff',
+      fontFamily: 'monospace', fontSize: '13px', letterSpacing: '2px',
+      zIndex: '60', pointerEvents: 'none',
+      transition: 'opacity 1.4s ease-out',
+    }});
+    t.textContent = '+1 ' + (kind === 'crystal' ? 'CRYSTAL' : 'IRON');
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 1200);
+    setTimeout(() => t.remove(), 2700);
   };
   window.showSurvivalEndScreen = function () {
     const m = el('div', { style: {

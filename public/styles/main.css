@@ -1968,6 +1968,37 @@ canvas {
   transition: width 0.05s linear;
 }
 
+#jetpack-fuel-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#jetpack-ready-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+#jetpack-ready-label.ready { color: #ffaa44; }
+#jetpack-ready-label.active { color: #ffd060; text-shadow: 0 0 6px rgba(255, 200, 80, 0.7); }
+
+#jetpack-fuel-bar-bg {
+  width: 52px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 170, 60, 0.35);
+  overflow: hidden;
+}
+
+#jetpack-fuel-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: #ffaa44;
+  transition: width 0.05s linear;
+}
+
 /* ── Kill feed ── */
 #kill-feed {
   position: absolute;

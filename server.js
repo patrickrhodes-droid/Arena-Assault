@@ -19,6 +19,7 @@ import {
 import {
   CHUNK_SIZE, OUTPOST_RADIUS, VENDOR_REACH, VENDOR_POS, FULL_CYCLE, DAY_DURATION,
   difficultyAt, biomeBonus, worldToChunk, chunkKey,
+  getOutpostLocations, HOME_BASE_REACH, OUTPOST_BUILD_RADIUS,
 } from './public/src/shared/survivalConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1465,6 +1466,18 @@ const SURVIVAL_SHOP_CATALOG = [
     { id: 'backpack_large', name: 'Large Backpack', price: 800, kind: 'gear', stackSize: 1 },
 ];
 
+// Caravan: a roving premium vendor that visits once per day for 90s and
+// offers buffed/discounted gear you can't buy at the outpost.
+const CARAVAN_PREMIUM_CATALOG = [
+    { id: 'minigun',       name: 'Minigun (caravan)',  price: 700, kind: 'weapon',     stackSize: 1 },
+    { id: 'bazooka',       name: 'Bazooka (caravan)',  price: 500, kind: 'weapon',     stackSize: 1 },
+    { id: 'jetpack',       name: 'Jetpack (caravan)',  price: 350, kind: 'gear',       stackSize: 1 },
+    { id: 'medkit',        name: 'Medkit ×4',          price: 220, kind: 'consumable', stackSize: 4 },
+    { id: 'potion_damage', name: 'Damage Brew ×4',     price: 380, kind: 'consumable', stackSize: 4 },
+    { id: 'potion_fuel',   name: 'Fuel Brew ×4',       price: 320, kind: 'consumable', stackSize: 4 },
+    { id: 'backpack_large', name: 'Large Backpack',    price: 600, kind: 'gear',       stackSize: 1 },
+];
+
 // Survival starts with a small inventory (5 slots). Backpacks add capacity:
 // tier 0 = 5, tier 1 = 10, tier 2 = 15.
 const SURVIVAL_BASE_SLOTS = 5;
@@ -1572,6 +1585,14 @@ function pickSurvivalSpawnPos(player) {
         const x = player.x + Math.cos(angle) * radius;
         const z = player.z + Math.sin(angle) * radius;
         if (Math.hypot(x, z) < OUTPOST_RADIUS + 5) continue;
+        // Reject if inside or adjacent to any wild outpost
+        let inWild = false;
+        for (const o of (gameState.outposts || [])) {
+            if (o.id === 'origin') continue;
+            const dx = x - o.x, dz = z - o.z;
+            if (dx * dx + dz * dz < (OUTPOST_BUILD_RADIUS + 6) * (OUTPOST_BUILD_RADIUS + 6)) { inWild = true; break; }
+        }
+        if (inWild) continue;
         return { x, z };
     }
     return { x: player.x + 60, z: player.z + 60 };
@@ -1622,14 +1643,95 @@ function spawnSurvivalEnemy(player) {
 }
 
 function isInsideOutpost(p) {
-    return Math.hypot(p.x || 0, p.z || 0) < OUTPOST_RADIUS;
+    if (Math.hypot(p.x || 0, p.z || 0) < OUTPOST_RADIUS) return true;
+    for (const o of (gameState.outposts || [])) {
+        if (o.id === 'origin') continue;
+        const dx = (p.x || 0) - o.x, dz = (p.z || 0) - o.z;
+        if (dx * dx + dz * dz < OUTPOST_BUILD_RADIUS * OUTPOST_BUILD_RADIUS) return true;
+    }
+    return false;
+}
+
+function spawnChampion(target) {
+    // Spawn a beefy miniboss far from any outpost, deterministic-ish per day
+    const ang = Math.random() * Math.PI * 2;
+    const r = 280 + Math.random() * 200;
+    const cx = target.x + Math.cos(ang) * r;
+    const cz = target.z + Math.sin(ang) * r;
+    const e = makeMiniBoss(cx, cz);
+    e.hp = Math.round(e.hp * 3.5);
+    e.maxHp = e.hp;
+    if (e.atkDmg) e.atkDmg = Math.round(e.atkDmg * 1.8);
+    if (e.spd) e.spd = Math.min(e.spd * 1.4, 16);
+    e.y = sampleHeight(cx, cz, gameState.terrainSeed);
+    e.isChampion = true;
+    e.type = 'miniboss'; // keep type for client renderer; flag via isChampion
+    gameState.enemies.push(e);
+    e.ownerId = target.playerId;
+    io.emit('enemySpawned', {
+        id: e.id, type: e.type, x: e.x, y: e.y, z: e.z,
+        hp: e.hp, maxHp: e.maxHp, ownerId: e.ownerId, isChampion: true,
+    });
+    io.emit('survivalEvent', { type: 'championSpawned', x: cx, z: cz });
+    gameState.champion = { id: e.id, x: cx, z: cz };
+    return e;
+}
+
+function spawnScoutDrone(target) {
+    // Lightweight passive flying enemy — tied into the enemy list but with
+    // low hp and harmless. On spawn, pings the owner's position.
+    const ang = Math.random() * Math.PI * 2;
+    const r = 90 + Math.random() * 40;
+    const dx = target.x + Math.cos(ang) * r;
+    const dz = target.z + Math.sin(ang) * r;
+    const e = makeSkeleton(dx, dz);
+    e.type = 'drone';
+    e.hp = 30; e.maxHp = 30;
+    e.atkDmg = 0;
+    e.spd = 4;
+    e.y = sampleHeight(dx, dz, gameState.terrainSeed) + 8; // hovers
+    e.isScoutDrone = true;
+    gameState.enemies.push(e);
+    e.ownerId = target.playerId;
+    io.emit('enemySpawned', {
+        id: e.id, type: 'drone', x: e.x, y: e.y, z: e.z,
+        hp: e.hp, maxHp: e.maxHp, ownerId: e.ownerId, isScoutDrone: true,
+    });
+    io.emit('survivalEvent', { type: 'droneSpawned' });
+}
+
+function spawnSupplyPod(target) {
+    // Deterministic-ish pod landing zone several chunks from the target
+    const ang = Math.random() * Math.PI * 2;
+    const r = 140 + Math.random() * 220;
+    const x = target.x + Math.cos(ang) * r;
+    const z = target.z + Math.sin(ang) * r;
+    const id = `pod_${Date.now().toString(36)}_${Math.floor(Math.random() * 1000)}`;
+    const pod = { id, x, z, y: sampleHeight(x, z, gameState.terrainSeed), landAt: Date.now() + 4500 };
+    gameState.supplyPods.push(pod);
+    if (gameState.supplyPods.length > 6) gameState.supplyPods.shift();
+    io.emit('supplyPodSpawned', pod);
+}
+
+function spawnCaravan(target) {
+    // Caravan parks at a random spot near the player ring for 90s
+    const ang = Math.random() * Math.PI * 2;
+    const r = 80 + Math.random() * 100;
+    const x = target.x + Math.cos(ang) * r;
+    const z = target.z + Math.sin(ang) * r;
+    gameState.caravan = {
+        x, z,
+        y: sampleHeight(x, z, gameState.terrainSeed),
+        despawnAt: Date.now() + 90_000,
+    };
+    io.emit('caravanSpawned', gameState.caravan);
 }
 
 function tickSurvival(dt) {
     gameState.dayTimeSec += dt;
     if (gameState.dayTimeSec >= FULL_CYCLE) {
         gameState.dayTimeSec -= FULL_CYCLE;
-        // Day rollover — blood moon roll
+        // Day rollover — blood moon, champion, caravan, pod schedule rolls
         const dayIndex = Math.floor((Date.now() - gameState.matchEpoch * 1000) / (FULL_CYCLE * 1000)) | 0;
         if (dayIndex >= gameState.nextBloodMoonDay) {
             gameState.bloodMoon = true;
@@ -1638,6 +1740,49 @@ function tickSurvival(dt) {
         } else if (gameState.bloodMoon) {
             gameState.bloodMoon = false;
             io.emit('survivalEvent', { type: 'bloodMoon', active: false });
+        }
+        // Champion every ~4 days
+        if (dayIndex >= (gameState.nextChampionDay | 0)) {
+            const alive = getAlivePlayers();
+            if (alive.length > 0) spawnChampion(alive[Math.floor(Math.random() * alive.length)]);
+            gameState.nextChampionDay = dayIndex + 4;
+        }
+        // Caravan once per day
+        if (dayIndex >= (gameState.nextCaravanDay | 0)) {
+            const alive = getAlivePlayers();
+            if (alive.length > 0) spawnCaravan(alive[Math.floor(Math.random() * alive.length)]);
+            gameState.nextCaravanDay = dayIndex + 1;
+        }
+        // Supply pod every ~3 days
+        if (dayIndex >= (gameState.nextSupplyPodDay | 0)) {
+            const alive = getAlivePlayers();
+            if (alive.length > 0) spawnSupplyPod(alive[Math.floor(Math.random() * alive.length)]);
+            gameState.nextSupplyPodDay = dayIndex + 3;
+        }
+    }
+
+    // Caravan auto-despawn
+    if (gameState.caravan && Date.now() > gameState.caravan.despawnAt) {
+        io.emit('caravanDespawned');
+        gameState.caravan = null;
+    }
+
+    // Weather (Ashfen fog banks): toggle every ~2-4 minutes
+    gameState.weatherTmr -= dt;
+    if (gameState.weatherTmr <= 0) {
+        gameState.weatherActive = !gameState.weatherActive;
+        gameState.weatherTmr = 120 + Math.random() * 120;
+        io.emit('survivalEvent', { type: 'weather', active: gameState.weatherActive });
+    }
+
+    // Scout drones: throttled spawn, prefer a random alive player target
+    gameState.nextDroneTmr -= dt;
+    if (gameState.nextDroneTmr <= 0) {
+        gameState.nextDroneTmr = 60 + Math.random() * 60;
+        const alive = getAlivePlayers();
+        const drones = gameState.enemies.filter(e => e.isScoutDrone).length;
+        if (alive.length > 0 && drones < 2) {
+            spawnScoutDrone(alive[Math.floor(Math.random() * alive.length)]);
         }
     }
 
@@ -2258,6 +2403,27 @@ io.on('connection', (socket) => {
         gameState.caravan = null;
         gameState.champion = null;
         gameState.nextChampionDay = 4;
+        gameState.nextCaravanDay = 1;
+        gameState.nextSupplyPodDay = 2;
+        gameState.nextDroneTmr = 30;
+        gameState.weatherActive = false;
+        gameState.weatherTmr = 60 + Math.random() * 120;
+        gameState.outposts = getOutpostLocations(seed);
+        // Pre-spawn ore veins as destructibles, one per wild outpost cluster
+        gameState.oreVeins = [];
+        for (let i = 0; i < 12; i++) {
+            const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.3;
+            const r = 180 + Math.random() * 380;
+            const ox = Math.round(Math.cos(ang) * r);
+            const oz = Math.round(Math.sin(ang) * r);
+            const { id: biomeId } = sampleBiome(ox, oz, seed);
+            // Iron in frostpine, crystal in crimson, skip meadow/ashfen
+            if (biomeId === BIOME_FROSTPINE) {
+                gameState.oreVeins.push({ id: `vein_iron_${i}`, kind: 'iron', x: ox, z: oz });
+            } else if (biomeId === BIOME_CRIMSON) {
+                gameState.oreVeins.push({ id: `vein_crystal_${i}`, kind: 'crystal', x: ox, z: oz });
+            }
+        }
 
         Object.values(players).forEach(p => {
             p.isAlive = true;
@@ -2277,6 +2443,9 @@ io.on('connection', (socket) => {
             p.x = 0; p.z = 4;
             p.y = sampleHeight(0, 4, seed);
             p.deepestDistance = 0;
+            p.homeBaseId = 'origin';
+            p.iron = 0;
+            p.crystal = 0;
         });
         selectedMap = 'survival';
         resetGameState('SURVIVAL', 1);
@@ -2288,12 +2457,25 @@ io.on('connection', (socket) => {
             map: 'survival',
             terrainSeed: seed,
             dayTimeSec: 0,
+            outposts: gameState.outposts,
+            oreVeins: gameState.oreVeins,
         });
         broadcastPauseState();
     });
 
     socket.on('shopOpen', () => {
         if (gameState.mode !== 'SURVIVAL') return;
+        const p = players[socket.id];
+        // If a caravan is up and the player is closer to it than to the outpost,
+        // serve the premium caravan catalog instead.
+        if (p && gameState.caravan) {
+            const dvx = p.x - gameState.caravan.x;
+            const dvz = p.z - gameState.caravan.z;
+            if (dvx * dvx + dvz * dvz < VENDOR_REACH * VENDOR_REACH) {
+                socket.emit('shopCatalog', { items: CARAVAN_PREMIUM_CATALOG, caravan: true });
+                return;
+            }
+        }
         socket.emit('shopCatalog', { items: SURVIVAL_SHOP_CATALOG });
     });
 
@@ -2304,12 +2486,30 @@ io.on('connection', (socket) => {
         if (!p || !p.isAlive) return;
         const itemId = data?.itemId;
         const qty = Math.max(1, Math.min(8, Number(data?.qty) || 1));
-        const item = SURVIVAL_SHOP_CATALOG.find(i => i.id === itemId);
+        // Look up item by id in either catalog (caravan is a superset of premium overrides)
+        const item = CARAVAN_PREMIUM_CATALOG.find(i => i.id === itemId)
+            || SURVIVAL_SHOP_CATALOG.find(i => i.id === itemId);
         if (!item) { socket.emit('shopRejected', { reason: 'unknown' }); return; }
-        // Distance check — measure against the actual vendor stall, not origin.
-        const dvx = p.x - VENDOR_POS.x;
-        const dvz = p.z - VENDOR_POS.z;
-        if (dvx * dvx + dvz * dvz > VENDOR_REACH * VENDOR_REACH) {
+        // Distance check: pass if near vendor stall OR the active caravan.
+        const homeBase = (gameState.outposts || []).find(o => o.id === (p.homeBaseId || 'origin'))
+            || (gameState.outposts || [])[0];
+        const vx = homeBase ? homeBase.x + VENDOR_POS.x : VENDOR_POS.x;
+        const vz = homeBase ? homeBase.z + VENDOR_POS.z : VENDOR_POS.z;
+        const dvx = p.x - vx;
+        const dvz = p.z - vz;
+        const nearVendor = dvx * dvx + dvz * dvz <= VENDOR_REACH * VENDOR_REACH;
+        let nearCaravan = false;
+        if (gameState.caravan) {
+            const cx = p.x - gameState.caravan.x, cz = p.z - gameState.caravan.z;
+            nearCaravan = cx * cx + cz * cz <= VENDOR_REACH * VENDOR_REACH;
+        }
+        // Also accept any of the wild outposts as a shop point
+        let nearAnyOutpost = false;
+        for (const o of (gameState.outposts || [])) {
+            const ox = p.x - o.x, oz = p.z - o.z;
+            if (ox * ox + oz * oz <= (VENDOR_REACH + 2) * (VENDOR_REACH + 2)) { nearAnyOutpost = true; break; }
+        }
+        if (!nearVendor && !nearCaravan && !nearAnyOutpost) {
             socket.emit('shopRejected', { reason: 'distance' });
             return;
         }
@@ -2399,6 +2599,75 @@ io.on('connection', (socket) => {
         p.bestMoney = Math.max(p.bestMoney || 0, p.money);
         emitMoneyUpdate(socket.id, p, dollars, kind);
         io.emit('propDestroyed', { propId: data.propId, x, y: 0, z });
+    });
+
+    socket.on('setHomeBase', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'setHomeBase', 500)) return;
+        const p = players[socket.id];
+        if (!p) return;
+        const baseId = String(data?.baseId || '');
+        const base = (gameState.outposts || []).find(o => o.id === baseId);
+        if (!base) return;
+        // Must be inside the base to claim it
+        const dx = p.x - base.x, dz = p.z - base.z;
+        if (dx * dx + dz * dz > HOME_BASE_REACH * HOME_BASE_REACH) {
+            socket.emit('homeBaseRejected', { reason: 'distance' });
+            return;
+        }
+        p.homeBaseId = base.id;
+        socket.emit('homeBaseChanged', { baseId: base.id, x: base.x, z: base.z, name: base.name });
+    });
+
+    socket.on('collectSupplyPod', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'podCollect', 500)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const podId = String(data?.podId || '');
+        const idx = (gameState.supplyPods || []).findIndex(pod => pod.id === podId);
+        if (idx < 0) return;
+        const pod = gameState.supplyPods[idx];
+        const dx = p.x - pod.x, dz = p.z - pod.z;
+        if (dx * dx + dz * dz > 36) return; // 6u reach
+        gameState.supplyPods.splice(idx, 1);
+        // Roll loot — either rare cash or a rare weapon
+        const RARE_WEAPONS = ['sniper', 'bazooka', 'minigun', 'shotgun', 'assault'];
+        const rollCash = Math.random() < 0.45;
+        if (rollCash) {
+            const cash = 300 + Math.floor(Math.random() * 400);
+            p.money += cash;
+            p.bestMoney = Math.max(p.bestMoney || 0, p.money);
+            emitMoneyUpdate(socket.id, p, cash, 'supply_pod');
+        } else {
+            const wpn = RARE_WEAPONS[Math.floor(Math.random() * RARE_WEAPONS.length)];
+            tryAddToInventory(p, wpn, 1);
+            socket.emit('inventorySynced', survivalSnapshotFor(p));
+        }
+        io.emit('supplyPodCollected', { podId });
+    });
+
+    socket.on('collectOreVein', (data) => {
+        if (gameState.mode !== 'SURVIVAL') return;
+        if (!checkRateLimit(socket.id, 'oreCollect', 500)) return;
+        const p = players[socket.id];
+        if (!p || !p.isAlive) return;
+        const veinId = String(data?.veinId || '');
+        const idx = (gameState.oreVeins || []).findIndex(v => v.id === veinId);
+        if (idx < 0) return;
+        const vein = gameState.oreVeins[idx];
+        const dx = p.x - vein.x, dz = p.z - vein.z;
+        if (dx * dx + dz * dz > 25) return;
+        gameState.oreVeins.splice(idx, 1);
+        if (vein.kind === 'iron') p.iron = (p.iron || 0) + 1;
+        else if (vein.kind === 'crystal') p.crystal = (p.crystal || 0) + 1;
+        // Also pay out a chunk of money — ore is rare so reward generously
+        const cash = vein.kind === 'crystal' ? 120 : 60;
+        p.money += cash;
+        p.bestMoney = Math.max(p.bestMoney || 0, p.money);
+        emitMoneyUpdate(socket.id, p, cash, 'ore_' + vein.kind);
+        socket.emit('oreVeinCollected', { veinId, kind: vein.kind, iron: p.iron, crystal: p.crystal });
+        io.emit('oreVeinRemoved', { veinId });
     });
 
     socket.on('placeTorch', (data) => {
