@@ -1728,6 +1728,14 @@ function spawnCaravan(target) {
 }
 
 function tickSurvival(dt) {
+    // Time-based difficulty: enemies pick up roughly one wave's worth of stats
+    // (HP, speed, damage from the make* factories) every 60 seconds. Survival
+    // hides the wave HUD, so bumping gameState.wave silently drives the math.
+    gameState.survivalElapsedSec = (gameState.survivalElapsedSec || 0) + dt;
+    const minutesElapsed = Math.floor(gameState.survivalElapsedSec / 60);
+    const targetWave = (gameState.survivalBaseWave || 1) + minutesElapsed;
+    if (gameState.wave !== targetWave) gameState.wave = targetWave;
+
     gameState.dayTimeSec += dt;
     if (gameState.dayTimeSec >= FULL_CYCLE) {
         gameState.dayTimeSec -= FULL_CYCLE;
@@ -2397,6 +2405,8 @@ io.on('connection', (socket) => {
         gameState.partyDownTmr = 0;
         gameState.worldTimeBroadcastTmr = 0;
         gameState.survivalEnemySpawnTmr = 0;
+        gameState.survivalElapsedSec = 0;
+        gameState.survivalBaseWave = 1; // wave 1 power at match start, +1 wave per minute
         gameState.placedTorches = [];
         gameState.nextTorchId = 1;
         gameState.supplyPods = [];
