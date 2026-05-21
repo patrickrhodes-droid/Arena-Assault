@@ -1821,10 +1821,11 @@ function discoverContentCell(cellX, cellZ) {
             id: `camp_${_campIdCounter++}`,
             x: cx, z: cz, biome: biomeId,
             size,
+            patrolRadius: 10 + size * 2,
             respawnTmr: rng() * 6,
         };
         gameState.camps.push(camp);
-        io.emit('campSpawned', { id: camp.id, x: camp.x, z: camp.z, size: camp.size, biome: camp.biome });
+        io.emit('campSpawned', { id: camp.id, x: camp.x, z: camp.z, size: camp.size, biome: camp.biome, patrolRadius: camp.patrolRadius });
     }
 
     // ── Ore veins (biome-gated) ─────────────────────────────────────────────
@@ -1884,7 +1885,7 @@ function spawnCampEnemy(camp, ownerPlayer) {
     e.campId = camp.id;
     e.homeX  = camp.x;
     e.homeZ  = camp.z;
-    e.leashRange = LEASH_BY_TYPE[kind] || 30;
+    e.leashRange = camp.patrolRadius || (LEASH_BY_TYPE[kind] || 30);
     e.ownerId = ownerPlayer?.playerId || null;
     gameState.enemies.push(e);
     io.emit('enemySpawned', {
@@ -2938,7 +2939,7 @@ io.on('connection', (socket) => {
             dayTimeSec: 0,
             outposts: gameState.outposts,
             oreVeins: gameState.oreVeins,
-            camps: gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome })),
+            camps: gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome, patrolRadius: c.patrolRadius })),
         });
         broadcastPauseState();
     });
@@ -3649,7 +3650,7 @@ io.on('connection', (socket) => {
             terrainSeed: gameState.mode === 'SURVIVAL' ? gameState.terrainSeed : undefined,
             outposts:   gameState.mode === 'SURVIVAL' ? gameState.outposts : undefined,
             camps:      gameState.mode === 'SURVIVAL'
-                ? gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome }))
+                ? gameState.camps.map(c => ({ id: c.id, x: c.x, z: c.z, size: c.size, biome: c.biome, patrolRadius: c.patrolRadius }))
                 : undefined,
             oreVeins:   gameState.mode === 'SURVIVAL' ? gameState.oreVeins : undefined,
         });

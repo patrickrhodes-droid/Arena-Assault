@@ -801,7 +801,7 @@ function _buildOneCampMarker(camp) {
   group.add(skullMesh);
 
   // Ground ring showing the camp's patrol boundary
-  const campRadius = 15 + camp.size * 1.5;
+  const campRadius = camp.patrolRadius || (15 + camp.size * 1.5);
   const ringGeo = new THREE.RingGeometry(campRadius - 0.5, campRadius, 48);
   ringGeo.rotateX(-Math.PI / 2);
   const ring = new THREE.Mesh(ringGeo, boundaryMat);
