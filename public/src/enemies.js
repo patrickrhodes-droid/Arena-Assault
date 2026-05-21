@@ -753,8 +753,9 @@ export function updateEnemies() {
       runOwnedEnemyAI(enemy);
       // Survival: every frame, snap the enemy's feet to the procedural terrain
       // so they don't sink into hills or float over valleys. Skip bosses/escape
-      // states where vertical motion is intentional.
-      if (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number' && !enemy.escaping) {
+      // states where vertical motion is intentional, and skip flying enemies
+      // (scout drones) that maintain their own altitude.
+      if (game.mode === 'SURVIVAL' && typeof game.terrainSeed === 'number' && !enemy.escaping && !enemy.isScoutDrone) {
         const p = enemy.group.position;
         const targetY = sampleHeight(p.x, p.z, game.terrainSeed);
         // Smoothly track to terrain rather than teleport (helps animation)
@@ -1009,13 +1010,53 @@ function runOwnedEnemyAI(enemy) {
   const dist = Math.max(closestDist, 0.001);
   const ndx = dx / dist, ndz = dz / dist;
   enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
-  if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
+  if (enemy.isScoutDrone) {
+    ownedDroneAI(enemy, pos, closest, dist, ndx, ndz);
+  }
+  else if (enemy.type === "soldier")       ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz);
   else if (enemy.type === "dog") {
     ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, DOG_TUNING.attackRange, DOG_TUNING.attackFrequency, 12, DOG_TUNING.preferredCombatDist, 0);
   } else if (enemy.type === "skeleton") {
     ownedMeleeAI(enemy, pos, closest, dist, ndx, ndz, SKELETON_TUNING.attackRange, SKELETON_TUNING.attackFrequency, 12, SKELETON_TUNING.preferredCombatDist, 0);
   }
   else if (enemy.type === "boss" || enemy.type === "miniboss") ownedBossAI(enemy, pos, closest, dist, ndx, ndz);
+}
+
+// Scout drones don't attack — they orbit the nearest player at ~12u radius,
+// staying ~10u above local terrain. The orbit gives a clear visual ping and
+// makes them feel alive without putting the player in danger.
+function ownedDroneAI(enemy, pos, closest, dist, ndx, ndz) {
+  const orbitR = 12;
+  const hoverAbove = 10;
+  // Smoothly steer toward the orbit ring around the target
+  const ringX = closest.pos.x - ndx * orbitR;
+  const ringZ = closest.pos.z - ndz * orbitR;
+  const toRingX = ringX - pos.x;
+  const toRingZ = ringZ - pos.z;
+  const toRingLen = Math.hypot(toRingX, toRingZ) || 1;
+  // Tangential component: cross product gives lateral orbit motion
+  const tangX = -ndz;
+  const tangZ = ndx;
+  // Blend radial (approach the ring) and tangential (orbit along it) movement
+  const radialWeight = Math.min(1, toRingLen / orbitR);
+  const dirX = (toRingX / toRingLen) * radialWeight + tangX * (1 - radialWeight * 0.5);
+  const dirZ = (toRingZ / toRingLen) * radialWeight + tangZ * (1 - radialWeight * 0.5);
+  const dirLen = Math.hypot(dirX, dirZ) || 1;
+  const spd = enemy.spd || 4;
+  pos.x += (dirX / dirLen) * spd * game.dt;
+  pos.z += (dirZ / dirLen) * spd * game.dt;
+  // Hover above local terrain (or above closest player's feet if higher)
+  let groundY = 0;
+  if (typeof game.terrainSeed === 'number') {
+    groundY = sampleHeight(pos.x, pos.z, game.terrainSeed);
+  }
+  const baseY = Math.max(groundY, closest.pos.y || 0);
+  const targetY = baseY + hoverAbove + Math.sin((performance.now() / 1000 + (enemy.id || 0)) * 1.4) * 0.6;
+  pos.y += (targetY - pos.y) * Math.min(1, 4 * game.dt);
+  // Face the target so the drone's "front" tracks them
+  enemy.group.rotation.y = Math.atan2(ndx, ndz) + Math.PI;
+  // Slow propeller-style bob via z-roll
+  enemy.group.rotation.z = Math.sin(performance.now() / 220 + (enemy.id || 0)) * 0.08;
 }
 
 function ownedSoldierAI(enemy, pos, closest, dist, ndx, ndz) {

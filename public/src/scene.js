@@ -894,6 +894,24 @@ function buildSharedRuntimeAssets() {
     game.shared.mechGltf = gltf;
   });
 
+  game.shared.droneGltf = null;
+  new GLTFLoader().load("/assets/models/Drone.glb", (gltf) => {
+    gltf.scene.traverse((n) => { if (n.isMesh) { n.castShadow = true; } });
+    game.shared.droneGltf = gltf;
+    // Swap in the GLB model on any drones already in the scene
+    for (const enemy of game.enemies) {
+      if (enemy.isScoutDrone && enemy.group && !enemy._droneModelApplied) {
+        // Strip placeholder children, attach the drone GLB
+        const ghost = enemy.group;
+        while (ghost.children.length) ghost.remove(ghost.children[0]);
+        const model = gltf.scene.clone(true);
+        model.scale.setScalar(0.6);
+        ghost.add(model);
+        enemy._droneModelApplied = true;
+      }
+    }
+  });
+
   game.shared.characterHeadGltfs = {};
   const characterHeadDefs = {
     patrick: { file: "/assets/models/PatrickHead.glb" },

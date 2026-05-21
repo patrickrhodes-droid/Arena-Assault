@@ -780,17 +780,31 @@ export function initNetworking(actions) {
         }
       });
     }
-    // Scout drone: lift mesh, tint blue
+    // Scout drone: swap to the Drone.glb model (or tinted skeleton as fallback
+    // until the GLB finishes loading). Keep it hovering above the ground.
     if (enemy.isScoutDrone && enemy.group) {
       enemy.group.position.y = (data.y || 8);
-      enemy.group.scale.setScalar(0.6);
-      enemy.group.traverse((node) => {
-        if (node.isMesh && node.material) {
-          node.material = node.material.clone();
-          if (node.material.color) node.material.color.set(0x66ccff);
-          if (node.material.emissive) { node.material.emissive.set(0x224488); node.material.emissiveIntensity = 0.6; }
-        }
-      });
+      enemy.radius = 0.5;
+      enemy.hoverBaseY = enemy.group.position.y;
+      const droneGltf = game.shared?.droneGltf;
+      if (droneGltf) {
+        // Strip placeholder skeleton meshes and attach the drone model
+        while (enemy.group.children.length) enemy.group.remove(enemy.group.children[0]);
+        const model = droneGltf.scene.clone(true);
+        model.scale.setScalar(0.6);
+        enemy.group.add(model);
+        enemy._droneModelApplied = true;
+      } else {
+        // Fallback: scale + tint the skeleton mesh
+        enemy.group.scale.setScalar(0.6);
+        enemy.group.traverse((node) => {
+          if (node.isMesh && node.material) {
+            node.material = node.material.clone();
+            if (node.material.color) node.material.color.set(0x66ccff);
+            if (node.material.emissive) { node.material.emissive.set(0x224488); node.material.emissiveIntensity = 0.6; }
+          }
+        });
+      }
     }
   });
 
