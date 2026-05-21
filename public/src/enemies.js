@@ -1396,7 +1396,7 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
 
   if (enemy.escaping) {
     enemy.bossVelY = (enemy.bossVelY || 0) - BOSS_ESCAPE_GRAVITY * game.dt;
-    pos.y = Math.max(0, pos.y + enemy.bossVelY * game.dt);
+    pos.y += enemy.bossVelY * game.dt;
     pos.x = Math.max(-HALF + 1, Math.min(HALF - 1, pos.x + (enemy.bossEfx || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
     pos.z = Math.max(-HALF + 1, Math.min(HALF - 1, pos.z + (enemy.bossEfz || 0) * BOSS_ESCAPE_FORWARD_SPEED * game.dt));
     // Also clamp within the dome during mid-air traversal
@@ -1420,14 +1420,8 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
       }
     }
 
-    // Check obstacle surfaces below the boss so it can land on tall structures
-    let floorY = 0;
-    for (const ob of game.oBs) {
-      if (pos.x >= ob.min.x && pos.x <= ob.max.x && pos.z >= ob.min.z && pos.z <= ob.max.z) {
-        const top = ob.h ?? 0;
-        if (top > floorY && top <= pos.y + 0.5) floorY = top;
-      }
-    }
+    // Use the same floor logic as the gravity system so survival terrain is respected.
+    const floorY = getFloorYAtPos(pos.x, pos.z);
 
     if (pos.y <= floorY) {
       pos.y = floorY; enemy.bossVelY = 0; enemy.escaping = false;
