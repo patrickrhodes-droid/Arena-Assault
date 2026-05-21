@@ -2,6 +2,14 @@
   "coop": [
     {
       "playerName": "Patrick",
+      "score": 5600,
+      "wave": 0,
+      "kills": 61,
+      "date": "2026-05-21",
+      "token": null
+    },
+    {
+      "playerName": "Patrick",
       "score": 5550,
       "wave": 12,
       "kills": 34,
@@ -30,6 +38,14 @@
       "wave": 7,
       "kills": 52,
       "date": "2026-05-08"
+    },
+    {
+      "playerName": "Patrick",
+      "score": 4775,
+      "wave": 0,
+      "kills": 44,
+      "date": "2026-05-21",
+      "token": null
     },
     {
       "playerName": "Patrick",

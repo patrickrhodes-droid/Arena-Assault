@@ -19,6 +19,7 @@ import { getSupportHeight, resolveCircleBox } from "./collision.js";
 import {
   applySpread,
   cycleWeapon,
+  cycleWeaponBack,
   getWeapon,
   processHit,
   spawnBullet,
@@ -497,9 +498,39 @@ export function setupInput(actions) {
     _mouseDeltaY += event.movementY;
   });
 
+  // Mouse wheel:
+  //  - Sniper ADS (scoped): adjust the scope's zoom multiplier (more zoom on scroll-up)
+  //  - All other times: cycle the inventory / weapon list
+  //    (Survival → activeSlot; other modes → WEAPON_ORDER cycle)
+  // Third-person camera distance is no longer scroll-driven; use the slider
+  // in the pause-menu CONTROLS section instead.
   document.addEventListener("wheel", (event) => {
-    if (usingFirstPersonView() || document.pointerLockElement !== game.renderer.domElement) return;
-    game.camDist = Math.max(3, Math.min(20, game.camDist + event.deltaY * 0.01));
+    if (document.pointerLockElement !== game.renderer.domElement) return;
+    if (game.state !== "PLAYING") return;
+    const dir = event.deltaY > 0 ? 1 : (event.deltaY < 0 ? -1 : 0);
+    if (dir === 0) return;
+    if (usingScopedSniperView()) {
+      // Scroll-up zooms IN (smaller mult = tighter FOV). Clamp to a sane range.
+      game.sniperZoomMult = Math.max(0.45, Math.min(1.4, game.sniperZoomMult + dir * 0.08));
+      return;
+    }
+    if (game.mode === 'SURVIVAL') {
+      const cap = Array.isArray(game.inventory) ? game.inventory.length : 0;
+      if (cap <= 0) return;
+      const next = ((game.activeSlot + dir) % cap + cap) % cap;
+      game.activeSlot = next;
+      game.socket?.emit('inventorySetActive', { slot: next });
+      const entry = game.inventory?.[next];
+      if (entry?.itemId && WEAPON_ORDER.includes(entry.itemId)) {
+        actions.setWeapon(entry.itemId);
+      }
+      if (typeof window !== 'undefined' && window.refreshInventoryUI) window.refreshInventoryUI();
+      return;
+    }
+    // Endless/Campaign/PvP/FFA: cycle through WEAPON_ORDER (limited by collected weapons in COOP)
+    if (dir > 0) cycleWeapon();
+    else cycleWeaponBack();
+    actions.updateHUD();
   }, { passive: true });
 
   document.addEventListener("pointerlockchange", actions.onPointerLockChange);
@@ -1138,7 +1169,12 @@ export function updateCamera() {
   ).normalize();
 
   const sprintFovBonus = (game.isSprinting && game.isMoving && !game.isAiming) ? 8 : 0;
-  const targetFov = game.isAiming ? weapon.aimFov : BASE_FOV + sprintFovBonus;
+  // Sniper ADS uses an adjustable zoom multiplier driven by the mouse wheel.
+  // Lower multiplier = tighter zoom. Other ADS weapons ignore the multiplier.
+  const aimFov = scopedSniper
+    ? weapon.aimFov * Math.max(0.45, Math.min(1.4, game.sniperZoomMult ?? 1.0))
+    : weapon.aimFov;
+  const targetFov = game.isAiming ? aimFov : BASE_FOV + sprintFovBonus;
   if (Math.abs(game.camera.fov - targetFov) > 0.05) {
     game.camera.fov += (targetFov - game.camera.fov) * Math.min(1, 10 * game.dt);
     game.camera.updateProjectionMatrix();

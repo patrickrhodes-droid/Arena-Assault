@@ -43,6 +43,8 @@ export function cacheDom() {
     sensVal: document.getElementById("sens-val"),
     gpSensSlider: document.getElementById("gp-sens-slider"),
     gpSensVal: document.getElementById("gp-sens-val"),
+    tpZoomSlider: document.getElementById("tp-zoom-slider"),
+    tpZoomVal: document.getElementById("tp-zoom-val"),
     minimap: document.getElementById("minimap"),
     crosshair: document.getElementById("crosshair"),
     scopeOverlay: document.getElementById("scope-overlay"),
@@ -608,6 +610,27 @@ export function bindMenuControls(actions) {
       game.gpSens = v * 0.5;
       if (game.dom.gpSensVal) game.dom.gpSensVal.textContent = v;
       try { localStorage.setItem("arena_gp_sens", v); } catch {}
+    });
+  }
+
+  // ── Third-person camera zoom slider ───────────────────────────────────────
+  // Replaces the scroll-wheel TP zoom (the wheel is now used for inventory
+  // cycling and sniper-scope zoom). Stored per-browser in localStorage.
+  if (game.dom.tpZoomSlider) {
+    try {
+      const saved = localStorage.getItem("arena_tp_zoom");
+      if (saved !== null) {
+        const v = Math.max(3, Math.min(20, Number(saved) || 8));
+        game.dom.tpZoomSlider.value = String(v);
+        game.camDist = v;
+        if (game.dom.tpZoomVal) game.dom.tpZoomVal.textContent = String(v);
+      }
+    } catch {}
+    game.dom.tpZoomSlider.addEventListener("input", () => {
+      const v = Math.max(3, Math.min(20, Number(game.dom.tpZoomSlider.value) || 8));
+      game.camDist = v;
+      if (game.dom.tpZoomVal) game.dom.tpZoomVal.textContent = String(v);
+      try { localStorage.setItem("arena_tp_zoom", v); } catch {}
     });
   }
 

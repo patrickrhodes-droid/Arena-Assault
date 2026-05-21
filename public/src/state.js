@@ -36,6 +36,7 @@ export const game = {
   fireTmr: 0,
   isSprinting: false,
   isFPS: true,
+  sniperZoomMult: 1.0,     // scroll-wheel scope zoom while sniper-ADS (0.45..1.4)
   isAiming: false,
   camTheta: 0,
   camPhi: 0.6,
