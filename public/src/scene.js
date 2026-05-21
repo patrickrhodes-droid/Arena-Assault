@@ -514,6 +514,9 @@ function buildVehicleMesh(data) {
     const model = gltf.scene.clone(true);
     model.scale.setScalar(isJeep ? 1.0 : 1.4);
     model.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    // Lift model so its bottom sits at y=0 within the group (avoids sinking into terrain)
+    const bbox = new THREE.Box3().setFromObject(model);
+    model.position.y = -bbox.min.y;
     group.add(model);
   } else {
     const mat = new THREE.MeshStandardMaterial({ color: isJeep ? 0x6a8d4a : 0x4a5040, roughness: 0.85 });
@@ -610,7 +613,7 @@ export function attachJetpackToPlayer() {
   const gltf = game.shared.jetpackGltf;
   if (!gltf) return; // model not loaded yet; will retry on load
   const model = gltf.scene.clone(true);
-  model.scale.setScalar(0.5);
+  model.scale.setScalar(0.06);
   // Orient so the pack faces backwards; tweak in-engine if needed.
   model.rotation.y = Math.PI;
   pv.jetpackGroup.add(model);
