@@ -755,11 +755,15 @@ let _campMats = null;
 function _getCampMats() {
   if (!_campMats) {
     _campMats = {
-      stone:   new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true }),
+      stone:    new THREE.MeshStandardMaterial({ color: 0x44423a, roughness: 0.95, flatShading: true }),
       charcoal: new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.9 }),
-      flame:   new THREE.MeshBasicMaterial({ color: 0xff9040 }),
-      totem:   new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 }),
-      skull:   new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 }),
+      flame:    new THREE.MeshBasicMaterial({ color: 0xff9040 }),
+      totem:    new THREE.MeshStandardMaterial({ color: 0x3a2110, roughness: 0.9 }),
+      skull:    new THREE.MeshStandardMaterial({ color: 0xd8d2bf, roughness: 0.7 }),
+      boundary: new THREE.MeshBasicMaterial({
+        color: 0xff4422, transparent: true, opacity: 0.28,
+        side: THREE.DoubleSide, depthWrite: false,
+      }),
     };
   }
   return _campMats;
@@ -767,7 +771,7 @@ function _getCampMats() {
 
 function _buildOneCampMarker(camp) {
   if (_campMarkers.has(camp.id) || !game.scene) return;
-  const { stone: stoneMat, charcoal: charcoalMat, flame: flameMat, totem: totemMat, skull: totemSkullMat } = _getCampMats();
+  const { stone: stoneMat, charcoal: charcoalMat, flame: flameMat, totem: totemMat, skull: totemSkullMat, boundary: boundaryMat } = _getCampMats();
   const y = sampleHeight(camp.x, camp.z, game.terrainSeed | 0);
   const group = new THREE.Group();
   group.position.set(camp.x, y, camp.z);
@@ -795,6 +799,14 @@ function _buildOneCampMarker(camp) {
   const skullMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), totemSkullMat);
   skullMesh.position.set(2.4, totemH + 0.12, 0);
   group.add(skullMesh);
+
+  // Ground ring showing the camp's patrol boundary
+  const campRadius = 15 + camp.size * 1.5;
+  const ringGeo = new THREE.RingGeometry(campRadius - 0.5, campRadius, 48);
+  ringGeo.rotateX(-Math.PI / 2);
+  const ring = new THREE.Mesh(ringGeo, boundaryMat);
+  ring.position.y = 0.12;
+  group.add(ring);
 
   game.scene.add(group);
   _campMarkers.set(camp.id, group);
