@@ -2005,18 +2005,18 @@ function spawnRoamingBoss(target) {
     const r = 60 + Math.random() * 25;
     const bx = target.x + Math.cos(ang) * r;
     const bz = target.z + Math.sin(ang) * r;
-    const isTank = Math.random() < 0.6;
+    const roll = Math.random();
     let e;
+    const isTank = roll < 0.5;
+    const isMech = roll >= 0.5;
     if (isTank) {
         e = makeTank(bx, bz, { hpMult: 1.0, bossName: 'ARMOR TITAN' });
         e.isRoamingBoss = true;
     } else {
-        e = makeMiniBoss(bx, bz);
-        e.type = 'miniboss';
-        e.hp = Math.round(e.hp * 1.5);
-        e.maxHp = e.hp;
+        // Full mech boss (same as wave-7 campaign boss) — full size, phase 2 enrage
+        e = makeBoss(bx, bz, 1.0);
         e.isRoamingBoss = true;
-        e.bossName = 'ROGUE TITAN';
+        e.bossName = 'ROGUE MECH';
     }
     e.y = sampleHeight(bx, bz, gameState.terrainSeed);
     e.leashRange = 9999; // never leash — they're the arena

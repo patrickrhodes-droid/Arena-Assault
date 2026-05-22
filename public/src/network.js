@@ -844,7 +844,7 @@ export function initNetworking(actions) {
     if (data.type === "soldier") createSoldier(pos, data.id);
     else if (data.type === "dog") createDog(pos, data.id);
     else if (data.type === "skeleton" || data.type === "drone") createSkeleton(pos, data.id);
-    else if (data.type === "boss") createBoss(pos, data.id);
+    else if (data.type === "boss") createBoss(pos, data.id, { bossName: data.bossName, hp: data.maxHp });
     else if (data.type === "miniboss") createMiniBoss(pos, data.id);
     else if (data.type === "tank") createTank(pos, data.id, { hp: data.maxHp, bossName: data.bossName });
     const enemy = game.enemies[game.enemies.length - 1];

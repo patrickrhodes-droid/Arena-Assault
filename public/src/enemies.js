@@ -386,7 +386,7 @@ export function createBoss(position, id = Math.random(), options = {}) {
   game.scene.add(group);
 
   const hpMultiplier = options.hpMultiplier ?? 1;
-  const hpMax = Math.round(BOSS_TUNING.baseHp * Math.pow(BOSS_TUNING.hpScale, game.wave) * hpMultiplier);
+  const hpMax = options.hp ?? Math.round(BOSS_TUNING.baseHp * Math.pow(BOSS_TUNING.hpScale, game.wave) * hpMultiplier);
   const hpBar = new THREE.Group();
   const hpBarBg = new THREE.Mesh(game.shared.hpBgGeo, game.shared.hpBgMat);
   const hpFill = new THREE.Mesh(
@@ -431,7 +431,7 @@ export function createBoss(position, id = Math.random(), options = {}) {
     lastTrackZ: position.z,
     hpBar,
     hpFg: hpFill,
-    bossName: hpMultiplier > 1 ? "TITAN BRUTE ELITE" : "TITAN BRUTE",
+    bossName: options.bossName || (hpMultiplier > 1 ? "TITAN BRUTE ELITE" : "TITAN BRUTE"),
   });
 }
 
@@ -1525,7 +1525,11 @@ function ownedBossAI(enemy, pos, closest, dist, ndx, ndz) {
     if (enemy.atkTmr <= 0 && inAttackRange) { enemy.atkTmr = atkFrequency; enemy.windupTmr = 0.2; }
   }
 
-  if (!inAttackRange && movedDistSq < 0.08) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
+  // Only flag as stuck when the enemy barely moved relative to its expected step
+  // (i.e. a wall is blocking it). The old absolute threshold of 0.08 was smaller
+  // than a normal frame's movement at 60 fps, causing constant false jumps.
+  const expectedMoveSq = (enemy.spd * game.dt) ** 2;
+  if (!inAttackRange && movedDistSq < expectedMoveSq * 0.05) enemy.stuckTmr = (enemy.stuckTmr || 0) + game.dt;
   else enemy.stuckTmr = 0;
 
   // Frustration: boss is horizontally close but player is elevated out of melee reach
