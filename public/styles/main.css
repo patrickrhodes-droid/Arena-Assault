@@ -2125,6 +2125,16 @@ canvas {
   animation: hit-flash 0.18s ease-out forwards;
 }
 
+/* ── Grapple enemy lock-on: crosshair turns orange when an enemy is in pull range ── */
+#crosshair.xh-grapple-target::before,
+#crosshair.xh-grapple-target::after {
+  background: #ff7a00;
+  box-shadow: none;
+}
+#crosshair.xh-grapple-target::before { box-shadow: 0 14px 0 #ff7a00; }
+#crosshair.xh-grapple-target::after  { box-shadow: 14px 0 0 #ff7a00; }
+#crosshair.xh-grapple-target #crosshair-dot { background: #ff7a00; }
+
 /* ── Damage direction indicator ───────────────────────────────────────── */
 #dmg-dir {
   position: fixed;

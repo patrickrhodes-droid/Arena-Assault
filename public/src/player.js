@@ -853,6 +853,18 @@ export function updatePlayer(actions) {
         xh.classList.remove("xh-spread", "xh-tight");
       }
     }
+
+    // Grapple lock-on tint: orange when crosshair is over a pullable enemy
+    if (game.currentWeapon === "grapple" && game.grappleState !== "hooked" && (game.grappleCooldown || 0) <= 0) {
+      _aimRaycaster.setFromCamera(new THREE.Vector2(0, 0), game.camera);
+      _aimRaycaster.far = GRAPPLE_TUNING.maxDistance;
+      const enemyGroups = game.enemies.filter(e => e.hp > 0).map(e => e.group);
+      const hits = enemyGroups.length > 0 ? _aimRaycaster.intersectObjects(enemyGroups, true) : [];
+      const lockedOn = hits.length > 0 && findEnemyFromHit(hits[0].object) !== null;
+      xh.classList.toggle("xh-grapple-target", lockedOn);
+    } else {
+      xh.classList.remove("xh-grapple-target");
+    }
   }
 
 
